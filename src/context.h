@@ -1,9 +1,11 @@
 #pragma once
 
+#include "video_renderer.h"
+
 #include <xcb/xcb.h>
 #include <EGL/egl.h>
 
-typedef struct {
+typedef struct Context {
         xcb_connection_t *connection;
         xcb_screen_t *screen;
         int screen_nbr;
@@ -16,4 +18,6 @@ typedef struct {
         EGLSurface *surface;
         EGLDisplay display;
         EGLContext *context;
-} Video;
+
+        Video_t video;
+} Context_t;

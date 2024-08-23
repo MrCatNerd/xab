@@ -1,8 +1,8 @@
-#include "utils.h"
-#include "egl_stuff.h"
-
 #include <EGL/egl.h>
-#include <stdio.h>
+
+#include "utils.h"
+#include "logging.h"
+#include "egl_stuff.h"
 
 void pretty_print_egl_check(int do_assert_on_failure, const char *message) {
     int error = eglGetError();
@@ -49,55 +49,55 @@ void pretty_print_egl_check(int do_assert_on_failure, const char *message) {
     switch (error) {
 
     case EGL_SUCCESS:
-        printf("%s: %s", message, egl_success_string);
+        LOG("%s: %s", message, egl_success_string);
         break;
     case EGL_NOT_INITIALIZED:
-        printf("%s: %s", message, egl_not_initialized_string);
+        LOG("%s: %s", message, egl_not_initialized_string);
         break;
     case EGL_BAD_ACCESS:
-        printf("%s: %s", message, egl_bad_access_string);
+        LOG("%s: %s", message, egl_bad_access_string);
         break;
     case EGL_BAD_ALLOC:
-        printf("%s: %s", message, egl_bad_alloc_string);
+        LOG("%s: %s", message, egl_bad_alloc_string);
         break;
     case EGL_BAD_ATTRIBUTE:
-        printf("%s: %s", message, egl_bad_attribute_string);
+        LOG("%s: %s", message, egl_bad_attribute_string);
         break;
     case EGL_BAD_CONTEXT:
-        printf("%s: %s", message, egl_bad_context_string);
+        LOG("%s: %s", message, egl_bad_context_string);
         break;
     case EGL_BAD_CONFIG:
-        printf("%s: %s", message, egl_bad_config_string);
+        LOG("%s: %s", message, egl_bad_config_string);
         break;
     case EGL_BAD_CURRENT_SURFACE:
-        printf("%s: %s", message, egl_bad_current_surface_string);
+        LOG("%s: %s", message, egl_bad_current_surface_string);
         break;
     case EGL_BAD_DISPLAY:
-        printf("%s: %s", message, egl_bad_display_string);
+        LOG("%s: %s", message, egl_bad_display_string);
         break;
     case EGL_BAD_SURFACE:
-        printf("%s: %s", message, egl_bad_surface_string);
+        LOG("%s: %s", message, egl_bad_surface_string);
         break;
     case EGL_BAD_MATCH:
-        printf("%s: %s", message, egl_bad_match_string);
+        LOG("%s: %s", message, egl_bad_match_string);
         break;
     case EGL_BAD_PARAMETER:
-        printf("%s: %s", message, egl_bad_parameter_string);
+        LOG("%s: %s", message, egl_bad_parameter_string);
         break;
     case EGL_BAD_NATIVE_PIXMAP:
-        printf("%s: %s", message, egl_bad_native_pixmap_string);
+        LOG("%s: %s", message, egl_bad_native_pixmap_string);
         break;
     case EGL_BAD_NATIVE_WINDOW:
-        printf("%s: %s", message, egl_bad_native_window_string);
+        LOG("%s: %s", message, egl_bad_native_window_string);
         break;
     case EGL_CONTEXT_LOST:
-        printf("%s: %s", message, egl_context_lost_string);
+        LOG("%s: %s", message, egl_context_lost_string);
         break;
     default:
-        printf("%s: %s", message, "Unknown EGL error");
+        LOG("%s: %s", message, "Unknown EGL error");
         break;
     }
-    printf("\n");
+    LOG("\n");
     if (do_assert_on_failure) {
         Assert(error == EGL_SUCCESS);
     }

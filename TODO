@@ -1,0 +1,6 @@
+fix: update background / pixmap
+change only 1 screen
+make frame waiting not take 100% of my cpu
+mess around with xcb damage?
+tests?
+make a better error system cuz currently its just a mess

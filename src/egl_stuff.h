@@ -10,7 +10,7 @@
 
 void pretty_print_egl_check(int do_assert_on_failure, const char *message);
 
-// Function lists for EGL and OpenGL
+/*Function lists for EGL and OpenGL
 
 // This is needed to get EGL native display from xcb connection
 // eglGetDisplay(EGL_DEFAULT_DISPLAY) and eglGetDisplay(conn) work on my maching
@@ -22,7 +22,8 @@ void pretty_print_egl_check(int do_assert_on_failure, const char *message);
 #define EGL_FUNCTIONS(X)                                                       \
     X(PFNEGLGETPLATFORMDISPLAYEXTPROC, eglGetPlatformDisplayEXT)
 
-// make sure you use functions that are valid for selected GL version (specified \
+make sure you use functions that are valid for selected GL version (specified
+\
         // when context is created)
 #define GL_FUNCTIONS(X)                                                        \
     X(PFNGLENABLEPROC, glEnable)                                               \
@@ -34,6 +35,10 @@ void pretty_print_egl_check(int do_assert_on_failure, const char *message);
     X(PFNGLDRAWARRAYSPROC, glDrawArrays)                                       \
     X(PFNGLDRAWELEMENTSPROC, glDrawElements)                                   \
     X(PFNGLCREATEBUFFERSPROC, glCreateBuffers)                                 \
+    X(PFNGLGENTEXTURESPROC, glGenTextures)                                     \
+    X(PFNGLGENBUFFERSPROC, glGenBuffers)                                       \
+    X(PFNGLMAPBUFFERPROC, glMapBuffer)                                         \
+    X(PFNGLUNMAPBUFFERPROC, glUnmapBuffer)                                     \
     X(PFNGLNAMEDBUFFERSTORAGEPROC, glNamedBufferStorage)                       \
     X(PFNGLBINDVERTEXARRAYPROC, glBindVertexArray)                             \
     X(PFNGLBINDBUFFERPROC, glBindBuffer)                                       \
@@ -52,15 +57,25 @@ void pretty_print_egl_check(int do_assert_on_failure, const char *message);
     X(PFNGLPROGRAMUNIFORMMATRIX2FVPROC, glProgramUniformMatrix2fv)             \
     X(PFNGLPROGRAMUNIFORMMATRIX3FVPROC, glProgramUniformMatrix3fv)             \
     X(PFNGLBINDTEXTUREUNITPROC, glBindTextureUnit)                             \
+    X(PFNGLBINDTEXTUREPROC, glBindTexture)                                     \
     X(PFNGLCREATETEXTURESPROC, glCreateTextures)                               \
     X(PFNGLTEXTUREPARAMETERIPROC, glTextureParameteri)                         \
     X(PFNGLTEXTURESTORAGE2DPROC, glTextureStorage2D)                           \
     X(PFNGLTEXTURESUBIMAGE2DPROC, glTextureSubImage2D)                         \
-    X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback)
+    X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback)                   \
+    X(PFNGLTEXIMAGE1DPROC, glTeximage1D)                                       \
+    X(PFNGLTEXIMAGE2DPROC, glTexImage2D)                                       \
+    X(PFNGLTEXPARAMETERIPROC, glTexParameteri)                                 \
+    X(PFNGLTEXSUBIMAGE2DPROC, glTexSubImage2D)                                 \
+    X(PFNGLDELETETEXTURESPROC, glDeleteTextures)                               \
+    X(PFNGLDELETEBUFFERSPROC, glDeleteBuffers)                                 \
+    X(PFNGLDELETEPROGRAMPIPELINESPROC, glDeleteProgramPipelines)               \
+    X(PFNGLDELETEPROGRAMPROC, glDeleteProgram)                                 \
+    X(PFNGLDELETEVERTEXARRAYSPROC, glDeleteVertexArrays)
 
-#define X(type, name) static type name;
+#define X(type, name) type name;
 GL_FUNCTIONS(X)
-#undef X
+#undef X */
 
 #ifndef NDEBUG
 #pragma GCC diagnostic push
