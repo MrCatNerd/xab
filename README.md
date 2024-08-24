@@ -19,7 +19,7 @@ xab \<path/to/file.mp4> \<screen-number>
 <!-- readme totally not similar to picom -->
 
 #### Hardware requirements
-Anything that supports OpenGL ES 3.3.
+Anything that supports OpenGL 3.3.
 
 ## Build
 
@@ -52,7 +52,7 @@ TODO: fedora and arch
 ```sh
 make compile RELEASE=1
 ```
-Built binary can be found in `bin/Release/xab` <!-- TODO: find a name for da program -->
+Built binary can be found in `bin/Release/xab`
 
 ---
 
@@ -86,6 +86,8 @@ make compile_commands.json
 sudo make install
 
 ### VARIABLES:
+
+make ARGV=TODO
 
 # If on release mode, verbose won't do a thing
 make RELEASE=1
