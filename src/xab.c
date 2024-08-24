@@ -59,10 +59,10 @@ struct argument_options {
 static void setup(struct argument_options *opts) {
     LOG("-- Initializing...\n");
 
-#ifdef NEDBUG
-    LOG("-- Currently in release mode\n"); // idk why i did that lol
-#else
+#ifndef NEDBUG
     LOG("-- Currently in debug mode\n");
+#else
+    LOG("-- Currently in release mode\n"); // idk why i did that lol
 #endif
 
     LOG("-- Checking egl extensions...\n");

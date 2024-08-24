@@ -1,5 +1,9 @@
 <!-- xab temporary name, probably -->
 
+<!-- TODO: -->
+<!-- TOC -->
+<!-- supported file formats -->
+
 <img src="res/logo.webp" alt="logo" style="width:30em;"/>
 
 __X11 Animated Background__
@@ -10,12 +14,12 @@ __X11 Animated Background__
 ---
 
 ### Run
-xab \<path/to/file.gif> \<screen-number>
+xab \<path/to/file.mp4> \<screen-number>
 
 <!-- readme totally not similar to picom -->
 
 #### Hardware requirements
-Anything that supports OpenGL 3.3.
+Anything that supports OpenGL ES 3.3.
 
 ## Build
 

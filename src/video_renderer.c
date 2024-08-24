@@ -159,19 +159,20 @@ Video_t video_from_file(const char *path) {
 
 void video_render(Video_t *vid, float delta) {
     // read the frame
+    static double pt_sec;
+
+    if (pt_sec - get_time_since_start() > 0) {
+        return;
+    }
+
     int64_t pts;
     if (!video_reader_read_frame(&vid->vr_state, vid->pbuffer, &pts)) {
         fprintf(stderr, "Couldn't load video frame\n");
         exit(EXIT_FAILURE);
     }
 
-    double pt_sec = pts * (double)vid->vr_state.time_base.num /
-                    (double)vid->vr_state.time_base.den;
-    struct timespec ts = {
-        0.0f,
-        (pt_sec - get_time_since_start()) * 1000000000,
-    };
-    nanosleep(&ts, &ts);
+    pt_sec = pts * (double)vid->vr_state.time_base.num /
+             (double)vid->vr_state.time_base.den;
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid->vr_state.width,
                  vid->vr_state.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
