@@ -1,39 +1,40 @@
 MAKE ?= make # if you are using mingw-make or smh
 PKG_CONFIG = pkg-config
 
-ARGV ?= ./res/vids/test_vid.3840x2160.mp4 1 # TODO: clean this when im done
+ARGV ?= ./res/vids/vid.mp4 1 # TODO: clean this up
 SRCDIR ?= src
 RELEASE ?= 0
 VERBOSE ?= 0
 
+PREPROCESSORS =
+
 ifeq ($(RELEASE),1)
 	# Release
 
-	PREPROCESSORS = -DNDEBUG -DNVERBOSE
+	PREPROCESSORS += -DNDEBUG
 	BIN = bin/Release
 	BIN_INT = bin-int/Release
-	BUILD_MODE_CFLAGS = -O3
+	BUILD_MODE_CFLAGS += -O3
+	# don't need to set verobse to 0, because its already set to zero, and if it is 1,
+	# than the user explicitly wants xab to be verbose
 else
 	# Debug
-
-ifeq ($(VERBOSE), 0)
-    PREPROCESSORS = -DNVERBOSE
-else
-	PREPROCESSORS =
-endif
 	BIN = bin/Debug
 	BIN_INT = bin-int/Debug
-	BUILD_MODE_CFLAGS = -O0 -g
+	BUILD_MODE_CFLAGS += -O0 -g
+endif
+
+ifeq ($(VERBOSE), 0)
+	PREPROCESSORS += -DNVERBOSE
 endif
 
 PROG = xab
-SRC = xab.c video_renderer.c video_reader.c egl_stuff.c utils.c egl_test.c
+SRC = xab.c context.c atom.c video_renderer.c video_reader.c egl_stuff.c utils.c framebuffer.c
 OBJ = $(addprefix ${BIN_INT}/, $(SRC:.c=.o))
 
 CC = gcc
 
-#todo: cleanup
-PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto egl xcb-util libavcodec libavformat libavfilter libavutil libswresample libswscale
+PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto xcb-randr xcb-util egl libavcodec libavformat libavfilter libavutil libswresample libswscale
 
 INCS = -I$(SRCDIR) -Ivendor $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_LIBS))
 
@@ -42,16 +43,23 @@ LIBS = -lm $(shell $(PKG_CONFIG) --libs $(PKG_CONFIG_LIBS))
 LDFLAGS = ${LIBS}
 CFLAGS = -Wall -Wextra ${BUILD_MODE_CFLAGS} ${INCS} -DSHM
 
+# Pretty print
+Q := @
+ifeq ($(V), 1)
+	Q :=
+endif
+
 ####################################
 # commands
 
-default: run
+default: compile
 .PHONY: default
 
 all: compile_commands.json compile
 .PHONY: all
 
 compile: ${BIN}/${PROG}
+	@echo "Task '$@' - DONE"
 .PHONY: compile
 
 run: compile
@@ -60,31 +68,50 @@ run: compile
 
 clean:
 	@# I do need to change it to the variables but im too lazy
-	-rm -rf bin bin-int compile_commands.json .cache
+	-$(RM) -rf bin bin-int compile_commands.json .cache
+	@echo "Task '$@' - DONE"
 .PHONY: clean
 
 install: compile
-	sudo cp ${BIN}/${PROG} /usr/local/bin
+	@echo "COPY ${BIN}/${PROG} /usr/local/bin/"
+	$(Q)sudo cp ${BIN}/${PROG} /usr/local/bin/
+	@echo "Task '$@' - DONE"
 .PHONY: install
 
+uninstall:
+	@echo "REMOVE /usr/local/bin/${PROG}"
+	$(Q)-$(RM) -f /usr/local/bin/${PROG}
+	@echo "Task '$@' - DONE"
+.PHONY: uninstall
 
-# TODO: find out if there is a way to not compile
 compile_commands.json:
-	# btw this compiles the program too so deal with it
-	bear -- $(MAKE) ${BIN}/${PROG}
+	@echo "BTW this compiles the project so have fun lol"
+
+	@echo "GEN compile_commands.json"
+	@bear -- make -n ${BIN}/${PROG} > /dev/null
+	@echo "Task '$@' - DONE"
+
 
 ####################################
 # building
-$(BIN)/$(PROG): $(OBJ) | $(BIN)
-	$(CC) $(PREPROCESSORS) -o $@ $(OBJ) $(LDFLAGS)
 
+# xab executable
+$(BIN)/$(PROG): $(OBJ) | $(BIN)
+	@echo "LD $<"
+	$(Q)$(CC) $(PREPROCESSORS) -o $@ $(OBJ) $(LDFLAGS)
+
+# objs
 ${BIN_INT}/%.o: $(SRCDIR)/%.c | ${BIN_INT}
-	$(CC) $(PREPROCESSORS) -c $< -o $@ $(CFLAGS)
+	@echo "CC $<"
+	$(Q)$(CC) $(PREPROCESSORS) -c $< -o $@ $(CFLAGS)
 
 ####################################
 # directories
+
 ${BIN}:
-	mkdir -p $@
+	@echo "DIR $@"
+	$(Q)mkdir -p $@
 
 ${BIN_INT}:
-	mkdir -p $@
+	@echo "DIR $@"
+	$(Q)mkdir -p $@

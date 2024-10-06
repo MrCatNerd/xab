@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <libavformat/avformat.h>
 
 typedef struct VideoReaderState {
@@ -10,11 +11,13 @@ typedef struct VideoReaderState {
 
         // internal
         AVFormatContext *av_format_ctx;
-        AVCodecContext *av_codec_ctx;
+        struct AVCodecContext *av_codec_ctx;
         int video_stream_idx;
         AVFrame *av_frame;
         AVPacket *av_packet;
         struct SwsContext *sws_scaler_ctx;
+
+        unsigned char internal_data[64];
 } VideoReaderState_t;
 
 bool video_reader_open(VideoReaderState_t *state, const char *path);

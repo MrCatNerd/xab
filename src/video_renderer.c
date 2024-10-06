@@ -1,3 +1,6 @@
+#include <libavformat/avformat.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/rational.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
@@ -6,6 +9,7 @@
 #include <epoxy/gl.h>
 #include <epoxy/gl_generated.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "video_reader.h"
 #include "video_renderer.h"
@@ -42,14 +46,16 @@ double get_time_since_start() {
     return current_time - start_time;
 }
 
-Video_t video_from_file(const char *path) {
-    Video_t vid;
+VideoRenderer_t video_from_file(const char *path, bool pixelated) {
+    VideoRenderer_t vid;
 
     // Load the thingy
     if (!video_reader_open(&vid.vr_state, path)) {
         fprintf(stderr, "Couldn't load video frame from: %s\n", path);
         exit(EXIT_FAILURE); // todo: maybe gracefully shut down?
-    };
+    }
+
+    vid.pixelated = pixelated;
 
     const int frame_width = vid.vr_state.width;
     const int frame_height = vid.vr_state.height;
@@ -141,11 +147,10 @@ Video_t video_from_file(const char *path) {
                           (void *)offsetof(Vertex_t, color));
     glEnableVertexAttribArray(2);
 
-    // const unsigned int width = 100, height = 100;
-    LOG("-- video width: %d, video height: %d\n", frame_width, frame_width);
+    // Texture
+    LOG("-- video dimensions: %dx%dpx\n", frame_width, frame_width);
     glGenTextures(1, &vid.texture_id);
     glBindTexture(GL_TEXTURE_2D, vid.texture_id);
-
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0,
@@ -157,12 +162,13 @@ Video_t video_from_file(const char *path) {
     return vid;
 }
 
-void video_render(Video_t *vid, float delta) {
+void video_render(VideoRenderer_t *vid) {
     // read the frame
-    static double pt_sec;
+    static double pt_sec = 0.0f;
 
-    if (pt_sec - get_time_since_start() > 0) {
-        return;
+    if (get_time_since_start() - pt_sec < 0) {
+        // printf("wait a sec\n");
+        // return;
     }
 
     int64_t pts;
@@ -171,47 +177,49 @@ void video_render(Video_t *vid, float delta) {
         exit(EXIT_FAILURE);
     }
 
-    pt_sec = pts * (double)vid->vr_state.time_base.num /
-             (double)vid->vr_state.time_base.den;
+    pt_sec = pts * av_q2d(vid->vr_state.time_base);
+    // pt_sec = pts * (double)vid->vr_state.time_base.num /
+    //          (double)vid->vr_state.time_base.den;
+    // printf("pt_sec: %f\n", pt_sec);
 
+    glBindTexture(GL_TEXTURE_2D, vid->texture_id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid->vr_state.width,
                  vid->vr_state.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  vid->pbuffer);
 
     // texture stuff
-    glTextureParameteri(vid->texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(vid->texture_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(vid->texture_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(vid->texture_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    vid->pixelated ? GL_NEAREST : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    vid->pixelated ? GL_NEAREST : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glActiveTexture(
-        GL_TEXTURE0); // activate the texture unit first before binding texture
-    glBindTexture(GL_TEXTURE_2D, vid->texture_id);
+    glActiveTexture(GL_TEXTURE0);
 
     // shader stuff
     glUseProgram(vid->shader_program);
 
     // geometry stuff
     glBindVertexArray(vid->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vid->vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vid->ebo);
 
     // finally render
     glDrawElements(GL_TRIANGLES,
                    (unsigned int)(sizeof(indices) / sizeof(*indices)),
                    GL_UNSIGNED_INT, 0);
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void video_clean(Video_t *vid) {
+void video_clean(VideoRenderer_t *vid) {
     video_reader_close(&vid->vr_state);
     free((void *)vid->pbuffer);
 
-    glDeleteVertexArrays(1, &vid->vao);
-    glDeleteBuffers(1, &vid->vbo);
     glDeleteBuffers(1, &vid->ebo);
-    glDeleteTextures(1, &vid->texture_id);
+    glDeleteBuffers(1, &vid->vbo);
     glDeleteProgram(vid->shader_program);
+    glDeleteTextures(1, &vid->texture_id);
+    glDeleteVertexArrays(1, &vid->vao);
 }

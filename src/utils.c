@@ -7,7 +7,7 @@
 
 const char *ReadFile(const char *path) {
     char *buffer = NULL;
-    long length;
+    long length = 0;
     FILE *f = fopen(path, "rb");
 
     if (f) {
@@ -21,9 +21,21 @@ const char *ReadFile(const char *path) {
         fclose(f);
     }
 
-    buffer[length] = '\0';
+    buffer[length] = '\0'; // ensure EOF
 
-    Assert(buffer != NULL && "Could not read file %s" STR(path));
+    Assert(
+        buffer != NULL &&
+        "Could not read file %s\n" STR(
+            path)); // FIXME: STR(path) not working, i need a new assert system
 
     return buffer;
+}
+
+void program_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    fprintf(stderr, "-- ERROR: ");
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+    va_end(args);
 }

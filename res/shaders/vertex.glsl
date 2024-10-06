@@ -19,7 +19,7 @@ out vec2 uv;
 out vec3 color;
 
 void main() {
-    vec3 pos = rot_mat * shear_mat * a_pos;
+    vec3 pos = shear_mat * a_pos;
     gl_Position = vec4(pos.xy, 0, 1);
 
     uv = a_uv;

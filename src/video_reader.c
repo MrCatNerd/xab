@@ -1,3 +1,4 @@
+#include <libavformat/avio.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,6 +15,18 @@
 #include "video_reader.h"
 #include "logging.h"
 
+struct packet_list {
+        AVPacket packet;
+        struct packet_list *next;
+};
+
+struct packet_queue {
+        struct packet_list *first_packet;
+        struct packet_list *last_packet;
+        int packet_count;
+        int size;
+};
+
 bool video_reader_open(VideoReaderState_t *state, const char *path) {
     // remember to set everything to NULL
     state->width = -1;
@@ -27,12 +40,12 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     state->sws_scaler_ctx = NULL;
 
     // get members
+    // todo: fix this pointer mess idk why i did that lol
     AVFormatContext **av_format_ctx = &state->av_format_ctx;
     AVCodecContext **av_codec_ctx = &state->av_codec_ctx;
     int *video_stream_idx = &state->video_stream_idx;
     AVFrame **av_frame = &state->av_frame;
     AVPacket **av_packet = &state->av_packet;
-    struct SwsContext *sws_scaler_ctx = state->sws_scaler_ctx;
 
     VLOG("-- Reading file: %s\n", path);
     // open file
@@ -46,6 +59,9 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         fprintf(stderr, "Couldn't open video file: %s\n", path);
         return false;
     }
+
+    avformat_find_stream_info(state->av_format_ctx, NULL);
+
     VLOG("-- File format long name: %s\n",
          (*av_format_ctx)->iformat->long_name);
 
@@ -54,11 +70,11 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     *video_stream_idx = -1;
 
     // find the first valid video stream inside the file
-    for (int i = 0; i < (*av_format_ctx)->nb_streams; ++i) {
+    for (unsigned int i = 0; i < (*av_format_ctx)->nb_streams; ++i) {
         AVStream *stream = (*av_format_ctx)->streams[i];
 
-        av_codec_params = (*av_format_ctx)->streams[i]->codecpar;
-        av_codec = avcodec_find_decoder(av_codec_params->codec_id);
+        av_codec_params = stream->codecpar;
+        av_codec = (AVCodec *)avcodec_find_decoder(av_codec_params->codec_id);
 
         if (!av_codec) {
             LOG("-- Warning: can't find a codec on stream #%d", i);
@@ -74,7 +90,7 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
             *video_stream_idx = i;
             state->width = av_codec_params->width;
             state->height = av_codec_params->height;
-            state->time_base = (*av_format_ctx)->streams[i]->time_base;
+            state->time_base = stream->time_base;
             break;
         }
     }
@@ -112,6 +128,10 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         fprintf(stderr, "Couldn't allocate AVPacket\n");
     }
 
+    state->internal_data[0] =
+        (*av_format_ctx)->streams[state->video_stream_idx]->start_time &
+        0xFFFFFFFFFFFFFFFF;
+
     return true;
 }
 bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
@@ -122,7 +142,6 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
     int video_stream_idx = state->video_stream_idx;
     AVFrame *av_frame = state->av_frame;
     AVPacket *av_packet = state->av_packet;
-    struct SwsContext *sws_scaler_ctx = state->sws_scaler_ctx;
 
     int response;
     while (av_read_frame(av_format_ctx, av_packet) >= 0) {
@@ -139,10 +158,12 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
         }
 
         response = avcodec_receive_frame(av_codec_ctx, av_frame);
+
         if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
             av_packet_unref(av_packet);
             continue;
         } else if (response < 0) {
+            av_packet_unref(av_packet);
             fprintf(stderr, "Failed to decode packet %s\n",
                     av_err2str(response));
             return false;
@@ -153,13 +174,13 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
     }
 
     // convert YUV to RGB0 and get the pixel data
-    if (!sws_scaler_ctx) {
-        sws_scaler_ctx =
+    if (!state->sws_scaler_ctx) {
+        state->sws_scaler_ctx =
             sws_getContext(state->width, state->height, av_codec_ctx->pix_fmt,
                            state->width, state->height, AV_PIX_FMT_RGB0,
                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
     }
-    if (!sws_scaler_ctx) {
+    if (!state->sws_scaler_ctx) {
         fprintf(stderr, "Couldn't initialize SwsContext scaler\n");
         return false;
     }
@@ -169,10 +190,37 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
 
     *pts = av_frame->pts;
 
-    sws_scale(sws_scaler_ctx, (const uint8_t *const *)av_frame->data,
+    sws_scale(state->sws_scaler_ctx, (const uint8_t *const *)av_frame->data,
               av_frame->linesize, 0, av_frame->height, dest, dest_linesize);
+    //
+    // LOG("%ld/%ld\n", av_frame->pts,
+    //     av_format_ctx->streams[video_stream_idx]->duration)
 
-    // av_seek_frame(av_format_ctx, video_stream_idx, 0, NULL);
+    // maybe check if the previous pts is the same, this works because im
+    // reading new frames every function call, so i will stop getting different
+    // pts only when the video is over
+    // problem:
+    // i am reading the last frame twice
+
+    static int64_t last_pts = -1;
+
+    LOG("%ld/%ld\n", av_frame->pts,
+        av_format_ctx->streams[video_stream_idx]->duration);
+
+    // if (av_frame->pts == (av_format_ctx->streams[video_stream_idx]->duration
+    // - 1000)) { // FIXME: proper looping and not -1000
+    if (av_frame->pts == last_pts) {
+        LOG("looping video\n");
+        const int64_t start_time =
+            (int64_t)(state->internal_data[0] & 0xFFFFFFFFFFFFFFFF);
+        av_seek_frame(av_format_ctx, video_stream_idx,
+                      start_time != AV_NOPTS_VALUE ? start_time : 0,
+                      AVSEEK_FLAG_BACKWARD);
+        avcodec_flush_buffers(av_codec_ctx);
+    }
+
+    last_pts = av_frame->pts;
+
     return true;
 }
 
