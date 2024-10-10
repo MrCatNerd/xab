@@ -1,6 +1,7 @@
-video frame dropping
-fix up framebuffer implementation
+proper hardware acceleration for video decoding
+video frame dropping (can be turned off as on option)
 change only 1 screen (multiscreen suppoprt stuff)
+fix up framebuffer implementation
 loop over video correctly
 make a better error system cuz currently its just a mess (and warnings and stuff)
 check why no hw acceleration even though there are available decoders for hw acceleration
