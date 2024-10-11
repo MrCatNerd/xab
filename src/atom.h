@@ -2,6 +2,7 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
+#include <xcb/xproto.h>
 
 #include "context.h"
 

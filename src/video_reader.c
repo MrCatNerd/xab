@@ -1,4 +1,4 @@
-#include <libavformat/avio.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -10,7 +10,7 @@
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
 #include <libswscale/swscale.h>
-#include <stdio.h>
+#include <libavformat/avio.h>
 
 #include "video_reader.h"
 #include "logging.h"
@@ -111,10 +111,10 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     }
 
     if (state->av_codec_ctx->hwaccel != NULL) {
-        LOG("-- HW acceleration in use: %s\n",
+        LOG("-- HW acceleration in use for video reading: %s\n",
             state->av_codec_ctx->hwaccel->name);
     } else {
-        LOG("-- no HW acceleration in use :( good luck cpu\n");
+        LOG("-- no HW acceleration in use for video reading:( good luck cpu\n");
     }
 
     state->av_codec_ctx->thread_count = 4;
@@ -204,8 +204,8 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
 
     static int64_t last_pts = -1;
 
-    LOG("%ld/%ld\n", av_frame->pts,
-        av_format_ctx->streams[video_stream_idx]->duration);
+    VLOG("%ld/%ld\n", av_frame->pts,
+         av_format_ctx->streams[video_stream_idx]->duration);
 
     // if (av_frame->pts == (av_format_ctx->streams[video_stream_idx]->duration
     // - 1000)) { // FIXME: proper looping and not -1000

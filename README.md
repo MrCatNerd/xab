@@ -2,14 +2,13 @@
 
 <!-- TODO: -->
 <!-- TOC -->
-<!-- supported file formats -->
 
 <img src="res/logo.webp" alt="logo" style="width:30em;"/>
 
 __X11 Animated Background__
 
 > [!WARNING]
-> THIS PROJECT NOT FULLY BAKED YET
+> THIS PROJECT NOT FULLY BAKED YET AND MANY OF THE FEATURES ARE NOT IMPLEMENTED YET
 
 ---
 
@@ -17,14 +16,18 @@ __X11 Animated Background__
 xab \<path/to/file.mp4> \<screen-number>
 
 flags:
-* --pixelated=0|1
-* --vsync=0|1
-* --max_framerate=0|n
+* --pixelated=0|1     | use bilinear or point filtering for rendering the background (default: 0)
+* --vsync=0|1         | synchronize framerate to monitor framerate                   (default: 1)
+* --max_framerate=0|n | limit framerate to n fps (overrides vsync)                   (default: 0)
+* --hw_accel=0|1      | use hardware acceleration for video decoding                 (default: 1)
 
-<!-- readme totally not similar to picom -->
+<!-- readme totally not similar to picom lol -->
 
 #### Hardware requirements
 Anything that supports OpenGL 3.3.
+
+#### Supported file formats
+anything that ffmpeg (libav) supports
 
 ## Build
 
@@ -85,7 +88,7 @@ make compile_commands.json
 
 ```sh
 make
-make all # creates compile_commands.json and compiles
+make all # creates compile_commands.json and compiles xab
 make run
 make compile
 make clean

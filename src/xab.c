@@ -16,11 +16,6 @@
 #include <xcb/xproto.h>
 #include <xcb/xcb_atom.h>
 
-/* #define EGL_EGLEXT_PROTOTYPES
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <GL/glcorearb.h>
-#include <EGL/eglplatform.h> */
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
 #include <epoxy/common.h>
@@ -53,6 +48,7 @@ struct argument_options {
         bool vsync;
         int max_framerate;
         bool pixelated;
+        bool hw_accel;
 };
 
 static void setup(struct argument_options *opts) {
@@ -138,7 +134,7 @@ static void mainloop() {
             // glViewport(1600, 0, 1920,
             //            height); // for multiple screens maybe i can have
             // multiple smaller viewports?
-            glViewport(0, 0, width, height);
+            // glViewport(0, 0, width, height);
 
             // clear screen
             // glEnable(GL_SCISSOR_TEST);
@@ -267,7 +263,8 @@ static struct argument_options parse_args(int argc, char *argv[]) {
     if (argc < 2 || argc > 5) {
         fprintf(stderr,
                 "Usage: %s <video> <screen_number> "
-                "[max_framerate=0|n] [vsync=true|false]\n",
+                "[max_framerate=0|n] [pixelated=0|1] [hw_accel=0|1] "
+                "[vsync=0|1]\n",
                 argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -286,6 +283,7 @@ static struct argument_options parse_args(int argc, char *argv[]) {
     // defaults:
     bool vsync = true;
     bool pixelated = false;
+    bool hw_accel = true;
     int max_framerate = 0;
 
     for (int i = 3; i < argc; i++) {
@@ -299,10 +297,12 @@ static struct argument_options parse_args(int argc, char *argv[]) {
 
         if (strcmp(key, "--pixelated") == 0)
             pixelated = atoi(value) >= 1;
-        else if (strcmp(key, "--max_framerate") == 0) // TODO:: implement this
-            max_framerate = atoi(value);
+        else if (strcmp(key, "--hw_accel") == 0)
+            hw_accel = atoi(value) >= 1;
         else if (strcmp(key, "--vsync") == 0)
             vsync = atoi(value) >= 1;
+        else if (strcmp(key, "--max_framerate") == 0) // TODO:: implement this
+            max_framerate = atoi(value);
     }
 
     struct argument_options opts = {.video_path = video_file,
