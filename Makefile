@@ -88,7 +88,7 @@ compile_commands.json:
 	@echo "BTW this compiles the project so have fun lol"
 
 	@echo "GEN compile_commands.json"
-	@bear -- make -n ${BIN}/${PROG} > /dev/null
+	$(Q)compiledb make compile
 	@echo "Task '$@' - DONE"
 
 

@@ -75,7 +75,7 @@ this will install xab at `/usr/local/bin`
 ---
 
 ### Compilation databases
-requires [__bear__](https://github.com/rizsotto/Bear)
+requires [__compiledb__](https://github.com/nickdiego/compiledb)
 
 ```sh
 make compile_commands.json
