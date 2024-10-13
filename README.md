@@ -36,7 +36,7 @@ anything that ffmpeg (libav) supports
 Assuming you already have the building tools installed (e.g. gcc, make, etc.), you still need:
 * xcb
 * xcb-util
-* xcb-randr
+* xcb-randr (optional but required for multi monitor support)
 * xproto
 * libGL
 * libEGL

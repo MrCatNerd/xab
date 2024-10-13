@@ -27,6 +27,7 @@
 #include "atom.h"
 #include "context.h"
 #include "framebuffer.h"
+#include "setbg.h"
 
 context_t context_create(bool vsync) {
     context_t context;
@@ -76,12 +77,10 @@ context_t context_create(bool vsync) {
     VLOG("  depth.........: %" PRIu8 " bits\n", context.screen->root_depth);
     VLOG("\n");
 
-    LOG("-- Getting X server atoms\n");
-    load_atoms(&context);
-
     // create a pixmap than turn it into the root's pixmap
-    LOG("-- Creating pixmap\n");
-    context.background_pixmap = xcb_generate_id(context.connection);
+    LOG("-- Setting up background...\n");
+    setup_background(&context);
+    /* context.background_pixmap = xcb_generate_id(context.connection);
     xcb_create_pixmap(context.connection, context.screen->root_depth,
                       context.background_pixmap, context.screen->root,
                       context.screen->width_in_pixels,
@@ -103,6 +102,7 @@ context_t context_create(bool vsync) {
     xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE,
                         context.screen->root, ESETROOT_PMAP_ID, XCB_ATOM_PIXMAP,
                         32, 1, &context.background_pixmap);
+    xcb_flush(context.connection);
 
     // make sure the old wallpaper is freed (only do this for ESETROOT_PMAP_ID)
     xcb_get_property_reply_t *property_reply =
@@ -117,10 +117,12 @@ context_t context_create(bool vsync) {
 
     // make sure our pixmap is not destroyed when we disconnect
     xcb_set_close_down_mode(context.connection,
-                            XCB_CLOSE_DOWN_RETAIN_PERMANENT);
+                            XCB_CLOSE_DOWN_RETAIN_PERMANENT); */
 
-    context.esetroot_window = &context.background_pixmap;
-    context.xroot_window = &context.background_pixmap;
+    LOG("-- Getting unloaded X server atoms\n");
+    load_atoms(&context,
+               NULL); // loads the rest of the unloaded atoms (if there are any)
+                      // or creates atoms with XCB_ATOM_NONE
 
     LOG("-- Initializing EGL\n");
     // initialize EGL

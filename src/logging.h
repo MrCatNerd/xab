@@ -2,15 +2,14 @@
 
 #ifndef NDEBUG
 #include <stdio.h>
-#define LOG(...) printf(__VA_ARGS__);
+#define LOG(...) printf(__VA_ARGS__)
+#else
+#define LOG(...)
+#endif // !NDEBUG
 
 #ifndef NVERBOSE
-#define VLOG(...) printf(__VA_ARGS__);
+#include <stdio.h>
+#define VLOG(...) printf(__VA_ARGS__)
 #else
 #define VLOG(...)
 #endif // !NVERBOSE
-
-#else
-#define LOG(...)
-#define VLOG(...)
-#endif // !NDEBUG

@@ -1,22 +1,22 @@
 MAKE ?= make # if you are using mingw-make or smh
-PKG_CONFIG = pkg-config
+PKG_CONFIG ?= pkg-config
 
 ARGV ?= ./res/vids/vid.mp4 1 # TODO: clean this up
-SRCDIR ?= src
 RELEASE ?= 0
 VERBOSE ?= 0
 
 PREPROCESSORS =
 
+ifeq (${xrandr},1)
+	PREPROCESSORS += -DHAVE_LIBXRANDR
+endif
+
 ifeq ($(RELEASE),1)
 	# Release
-
 	PREPROCESSORS += -DNDEBUG
 	BIN = bin/Release
 	BIN_INT = bin-int/Release
 	BUILD_MODE_CFLAGS += -O3
-	# don't need to set verobse to 0, because its already set to zero, and if it is 1,
-	# than the user explicitly wants xab to be verbose
 else
 	# Debug
 	BIN = bin/Debug
@@ -28,13 +28,18 @@ ifeq ($(VERBOSE), 0)
 	PREPROCESSORS += -DNVERBOSE
 endif
 
-PROG = xab
-SRC = xab.c context.c atom.c video_renderer.c video_reader.c egl_stuff.c utils.c framebuffer.c
-OBJ = $(addprefix ${BIN_INT}/, $(SRC:.c=.o))
+CC := gcc
 
-CC = gcc
+PROG := xab
 
-PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto xcb-randr xcb-util egl libavcodec libavformat libavfilter libavutil libswresample libswscale
+SRCDIR := src
+SRC :=  $(wildcard ${SRCDIR}/*.c)
+OBJ := $(patsubst ${SRCDIR}/%.c, ${BIN_INT}/%.o, ${SRC})
+
+PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto xcb-util egl libavcodec libavformat libavfilter libavutil libswresample libswscale
+ifeq (${xrandr},1)
+	PKG_CONFIG_LIBS += xcb-randr
+endif
 
 INCS = -I$(SRCDIR) -Ivendor $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_LIBS))
 
@@ -55,7 +60,7 @@ endif
 default: compile
 .PHONY: default
 
-all: compile_commands.json compile
+all: compile compile_commands.json
 .PHONY: all
 
 compile: ${BIN}/${PROG}
@@ -68,7 +73,7 @@ run: compile
 
 clean:
 	@# I do need to change it to the variables but im too lazy
-	-$(RM) -rf bin bin-int compile_commands.json .cache
+	-$(RM) -rf bin bin-int compile_commands.json
 	@echo "Task '$@' - DONE"
 .PHONY: clean
 
@@ -97,7 +102,7 @@ compile_commands.json:
 
 # xab executable
 $(BIN)/$(PROG): $(OBJ) | $(BIN)
-	@echo "LD $<"
+	@echo "LD $(BIN)/$(PROG)"
 	$(Q)$(CC) $(PREPROCESSORS) -o $@ $(OBJ) $(LDFLAGS)
 
 # objs
@@ -109,9 +114,9 @@ ${BIN_INT}/%.o: $(SRCDIR)/%.c | ${BIN_INT}
 # directories
 
 ${BIN}:
-	@echo "DIR $@"
+	@echo "MKDIR $@"
 	$(Q)mkdir -p $@
 
 ${BIN_INT}:
-	@echo "DIR $@"
+	@echo "MKDIR $@"
 	$(Q)mkdir -p $@

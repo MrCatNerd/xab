@@ -1,9 +1,9 @@
-#include "utils.h"
-
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+
+#include "utils.h"
 
 const char *ReadFile(const char *path) {
     char *buffer = NULL;

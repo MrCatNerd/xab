@@ -33,9 +33,9 @@
 #include "context.h"
 #include "video_renderer.h"
 #include "logging.h"
-#include "atom.h"
 #include "framebuffer.h"
 #include "utils.h"
+#include "setbg.h"
 
 static context_t context;
 
@@ -206,12 +206,7 @@ static void mainloop() {
                 program_error("Failed to swap OpenGL buffers!\n");
             }
 
-            xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE,
-                                context.screen->root, _XROOTPMAP_ID,
-                                XCB_ATOM_PIXMAP, 32, 1,
-                                &context.background_pixmap);
-            xcb_clear_area(context.connection, 0, context.background_pixmap, 0,
-                           0, 0, 0);
+            update_background(&context);
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);

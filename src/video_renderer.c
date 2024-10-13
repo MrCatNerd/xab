@@ -1,15 +1,16 @@
-#include <libavformat/avformat.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/rational.h>
-#include <stdio.h>
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <epoxy/gl.h>
 #include <epoxy/gl_generated.h>
-#include <stdlib.h>
-#include <unistd.h>
+
+#include <libavformat/avformat.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/rational.h>
 
 #include "video_reader.h"
 #include "video_renderer.h"

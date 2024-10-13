@@ -1,8 +1,8 @@
 #pragma once
 
-#include "utils.h"
-
 #include <stdio.h>
+
+#include "utils.h"
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
