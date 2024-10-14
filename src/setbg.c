@@ -37,7 +37,6 @@ void setup_background(context_t *context) {
                                   .filter_len = 2,
                                   .override = true};
     load_atoms(context, &config);
-    printf("_XROOTPMAP = %d\n", _XROOTPMAP_ID);
 
     if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
         (_XROOTPMAP_ID != XCB_ATOM_NONE)) {
@@ -138,8 +137,8 @@ static xcb_window_t *find_desktop(context_t *context) {
     load_atoms(context, &config);
 
     if (!_NET_WM_WINDOW_TYPE) {
-        fprintf(stderr, "Could not find window with _NET_WM_WINDOW_TYPE type "
-                        "set, defaulting to root window\n");
+        LOG("-- Could not find window with _NET_WM_WINDOW_TYPE type "
+            "set, defaulting to root window\n");
         return NULL;
     }
 

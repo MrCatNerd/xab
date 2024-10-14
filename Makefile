@@ -11,21 +11,31 @@ ifeq (${xrandr},1)
 	PREPROCESSORS += -DHAVE_LIBXRANDR
 endif
 
+ifeq (${noglcalldebug},1)
+	noglcalldebug := 1
+endif
+
 ifeq ($(RELEASE),1)
 	# Release
 	PREPROCESSORS += -DNDEBUG
 	BIN = bin/Release
 	BIN_INT = bin-int/Release
 	BUILD_MODE_CFLAGS += -O3
+	noglcalldebug := 1
 else
 	# Debug
 	BIN = bin/Debug
 	BIN_INT = bin-int/Debug
 	BUILD_MODE_CFLAGS += -O0 -g
+	noglcalldebug := 0
 endif
 
 ifeq ($(VERBOSE), 0)
 	PREPROCESSORS += -DNVERBOSE
+endif
+
+ifeq ($(noglcalldebug), 1)
+	PREPROCESSORS += -DNGLCALLDEBUG
 endif
 
 CC := gcc
@@ -90,9 +100,8 @@ uninstall:
 .PHONY: uninstall
 
 compile_commands.json:
-	@echo "BTW this compiles the project so have fun lol"
-
 	@echo "GEN compile_commands.json"
+	@echo "BTW this compiles the project so have fun lol"
 	$(Q)compiledb make compile
 	@echo "Task '$@' - DONE"
 

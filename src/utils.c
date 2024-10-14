@@ -25,7 +25,7 @@ const char *ReadFile(const char *path) {
 
     Assert(
         buffer != NULL &&
-        "Could not read file %s\n" STR(
+        "Could not read file %s" STR(
             path)); // FIXME: STR(path) not working, i need a new assert system
 
     return buffer;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <libavformat/avformat.h>
 #include <libavutil/buffer.h>
@@ -12,6 +13,7 @@ typedef struct VideoReaderState {
         int width;
         int height;
         AVRational time_base;
+        size_t frame_size_bytes;
 
         // internal
         int video_stream_idx;

@@ -21,13 +21,13 @@
 #define EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE
 #endif /* EGL_EXT_platform_xcb */
 
-#include "logging.h"
-#include "utils.h"
 #include "egl_stuff.h"
+#include "logging.h"
 #include "atom.h"
 #include "context.h"
 #include "framebuffer.h"
 #include "setbg.h"
+#include "utils.h"
 
 context_t context_create(bool vsync) {
     context_t context;
@@ -37,7 +37,7 @@ context_t context_create(bool vsync) {
         const char *egl_extensions =
             eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
 
-        Assert(egl_extensions != NULL && "bro fix your computer lmao");
+        Assert(egl_extensions != NULL && "no EGL extensions found");
 
         VLOG("-- EGL extensions: %s\n", egl_extensions);
 
@@ -80,44 +80,6 @@ context_t context_create(bool vsync) {
     // create a pixmap than turn it into the root's pixmap
     LOG("-- Setting up background...\n");
     setup_background(&context);
-    /* context.background_pixmap = xcb_generate_id(context.connection);
-    xcb_create_pixmap(context.connection, context.screen->root_depth,
-                      context.background_pixmap, context.screen->root,
-                      context.screen->width_in_pixels,
-                      context.screen->height_in_pixels);
-
-    xcb_get_property_cookie_t property_cookie = xcb_get_property_unchecked(
-        context.connection, false, context.screen->root, ESETROOT_PMAP_ID,
-        XCB_ATOM_PIXMAP, 0, 1);
-
-    xcb_change_window_attributes(context.connection, context.screen->root,
-                                 XCB_CW_BACK_PIXMAP,
-                                 &context.background_pixmap);
-    xcb_clear_area(context.connection, 0, context.screen->root, 0, 0, 0, 0);
-
-    // make pseudo-transparency work by setting the atoms
-    xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE,
-                        context.screen->root, _XROOTPMAP_ID, XCB_ATOM_PIXMAP,
-                        32, 1, &context.background_pixmap);
-    xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE,
-                        context.screen->root, ESETROOT_PMAP_ID, XCB_ATOM_PIXMAP,
-                        32, 1, &context.background_pixmap);
-    xcb_flush(context.connection);
-
-    // make sure the old wallpaper is freed (only do this for ESETROOT_PMAP_ID)
-    xcb_get_property_reply_t *property_reply =
-        xcb_get_property_reply(context.connection, property_cookie, NULL);
-    if (property_reply && property_reply->value_len) {
-        xcb_pixmap_t *root_pixmap = xcb_get_property_value(property_reply);
-        if (root_pixmap) {
-        }
-        xcb_kill_client(context.connection, *root_pixmap);
-    }
-    free((void *)property_reply);
-
-    // make sure our pixmap is not destroyed when we disconnect
-    xcb_set_close_down_mode(context.connection,
-                            XCB_CLOSE_DOWN_RETAIN_PERMANENT); */
 
     LOG("-- Getting unloaded X server atoms\n");
     load_atoms(&context,
@@ -150,6 +112,9 @@ context_t context_create(bool vsync) {
 
         LOG("-- libepoxy EGL version: %0.1f\n",
             (float)epoxy_egl_version(context.display) / 10);
+
+        LOG("-- xcb-xrandr version: %d.%d\n", XCB_RANDR_MAJOR_VERSION,
+            XCB_RANDR_MINOR_VERSION);
 
         // don't assert on debug mode
 #ifndef NDEBUG

@@ -1,8 +1,58 @@
-#include <EGL/egl.h>
+#include <stdio.h>
+
+#include <epoxy/gl.h>
+#include <epoxy/egl.h>
 
 #include "utils.h"
 #include "logging.h"
 #include "egl_stuff.h"
+
+void clear_error() {
+    while (glGetError() != GL_NO_ERROR)
+        ;
+}
+
+GLenum glCheckError_(const char *file, int line) {
+    GLenum errorCode;
+    static unsigned long errorCount = 0;
+
+    char *error = NULL;
+    while ((errorCode = glGetError()) != GL_NO_ERROR) {
+        switch (errorCode) {
+        case GL_INVALID_ENUM:
+            error = "INVALID_ENUM";
+            break;
+        case GL_INVALID_VALUE:
+            error = "INVALID_VALUE";
+            break;
+        case GL_INVALID_OPERATION:
+            error = "INVALID_OPERATION";
+            break;
+        case GL_STACK_OVERFLOW:
+            error = "STACK_OVERFLOW";
+            break;
+        case GL_STACK_UNDERFLOW:
+            error = "STACK_UNDERFLOW";
+            break;
+        case GL_OUT_OF_MEMORY:
+            error = "OUT_OF_MEMORY";
+            break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            error = "INVALID_FRAMEBUFFER_OPERATION";
+            break;
+        default:
+            error = "Unrecognized error code";
+            break;
+        }
+
+        errorCount++;
+        if (errorCount <= 10)
+            printf("[OpenGL Error] %s | %s:%d (error count: %lu | error "
+                   "code:%d)\n",
+                   error, file, line, errorCount, errorCode);
+    }
+    return errorCode;
+}
 
 void pretty_print_egl_check(int do_assert_on_failure, const char *message) {
     int error = eglGetError();

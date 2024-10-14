@@ -11,10 +11,12 @@
 #include <libavutil/frame.h>
 #include <libswscale/swscale.h>
 #include <libavformat/avio.h>
+#include <libavutil/pixfmt.h>
 
 #include "video_reader.h"
 #include "logging.h"
 
+// todo: smh like that
 struct packet_list {
         AVPacket packet;
         struct packet_list *next;
@@ -132,6 +134,8 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         state->av_format_ctx->streams[state->video_stream_idx]->start_time &
         0xFFFFFFFFFFFFFFFF;
 
+    state->frame_size_bytes = state->width * state->height * 4;
+
     return true;
 }
 bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
@@ -173,10 +177,14 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
         break;
     }
 
-    // convert YUV to RGB0 and get the pixel data
+    // convert YUV to YUv420 and get the pixel data
+    // (maybe i should consider using YUV422 because its higher quality but less
+    // performance)
     if (!state->sws_scaler_ctx) {
         state->sws_scaler_ctx =
             sws_getContext(state->width, state->height, av_codec_ctx->pix_fmt,
+                           // state->width, state->height, AV_PIX_FMT_YUV420P,
+                           // // next up: YUV to save memory
                            state->width, state->height, AV_PIX_FMT_RGB0,
                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
     }
@@ -192,23 +200,11 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
 
     sws_scale(state->sws_scaler_ctx, (const uint8_t *const *)av_frame->data,
               av_frame->linesize, 0, av_frame->height, dest, dest_linesize);
-    //
-    // LOG("%ld/%ld\n", av_frame->pts,
-    //     av_format_ctx->streams[video_stream_idx]->duration)
-
-    // maybe check if the previous pts is the same, this works because im
-    // reading new frames every function call, so i will stop getting different
-    // pts only when the video is over
-    // problem:
-    // i am reading the last frame twice
-
     static int64_t last_pts = -1;
 
     VLOG("%ld/%ld\n", av_frame->pts,
          av_format_ctx->streams[video_stream_idx]->duration);
 
-    // if (av_frame->pts == (av_format_ctx->streams[video_stream_idx]->duration
-    // - 1000)) { // FIXME: proper looping and not -1000
     if (av_frame->pts == last_pts) {
         LOG("looping video\n");
         const int64_t start_time =

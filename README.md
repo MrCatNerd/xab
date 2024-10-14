@@ -16,10 +16,10 @@ __X11 Animated Background__
 xab \<path/to/file.mp4> \<screen-number>
 
 flags:
-* --pixelated=0|1     | use bilinear or point filtering for rendering the background (default: 0)
-* --vsync=0|1         | synchronize framerate to monitor framerate                   (default: 1)
-* --max_framerate=0|n | limit framerate to n fps (overrides vsync)                   (default: 0)
-* --hw_accel=0|1      | use hardware acceleration for video decoding                 (default: 1)
+* --pixelated=0|1     | use bilinear or point filtering for rendering the background                (default: 0)
+* --vsync=0|1         | synchronize framerate to monitor framerate                                  (default: 1)
+* --max_framerate=0|n | limit framerate to n fps (overrides vsync)                                  (default: 0)
+* --hw_accel=0|1      | use hardware acceleration for video decoding (hardware needs to support it) (default: 1)
 
 <!-- readme totally not similar to picom lol -->
 

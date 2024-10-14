@@ -1,9 +1,9 @@
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include <epoxy/gl.h>
 #include <epoxy/gl_generated.h>
@@ -17,6 +17,7 @@
 #include "vertex.h"
 #include "utils.h"
 #include "logging.h"
+#include "egl_stuff.h"
 
 // clang-format off
 static const Vertex_t vertices[] = {
@@ -47,7 +48,8 @@ double get_time_since_start() {
     return current_time - start_time;
 }
 
-VideoRenderer_t video_from_file(const char *path, bool pixelated) {
+VideoRenderer_t video_from_file(const char *path,
+                                VideoRendererConfig_t config) {
     VideoRenderer_t vid;
 
     // Load the thingy
@@ -56,14 +58,7 @@ VideoRenderer_t video_from_file(const char *path, bool pixelated) {
         exit(EXIT_FAILURE); // todo: maybe gracefully shut down?
     }
 
-    vid.pixelated = pixelated;
-
-    const int frame_width = vid.vr_state.width;
-    const int frame_height = vid.vr_state.height;
-    LOG("-- Allocating a %luMB pixel buffer\n",
-        ((sizeof(uint8_t) * frame_width * frame_height * 4) / 1048576));
-    vid.pbuffer = malloc(sizeof(uint8_t) * frame_width * frame_height * 4);
-    Assert(vid.pbuffer != NULL && "Couldn't allocate a pixel buffer");
+    vid.config = config;
 
     // Shader
     // and no im not gonna DRY this code up
@@ -76,8 +71,8 @@ VideoRenderer_t video_from_file(const char *path, bool pixelated) {
         unsigned int vshader;
         const char *vshader_src = ReadFile("res/shaders/vertex.glsl");
         vshader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vshader, 1, &vshader_src, NULL);
-        glCompileShader(vshader);
+        GLCALL(glShaderSource(vshader, 1, &vshader_src, NULL));
+        GLCALL(glCompileShader(vshader));
 
         glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
         if (!success) {
@@ -89,8 +84,8 @@ VideoRenderer_t video_from_file(const char *path, bool pixelated) {
         unsigned int fshader;
         const char *fshader_src = ReadFile("res/shaders/fragment.glsl");
         fshader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fshader, 1, &fshader_src, NULL);
-        glCompileShader(fshader);
+        GLCALL(glShaderSource(fshader, 1, &fshader_src, NULL));
+        GLCALL(glCompileShader(fshader));
 
         glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
         if (!success) {
@@ -100,9 +95,9 @@ VideoRenderer_t video_from_file(const char *path, bool pixelated) {
 
         // shader program
         vid.shader_program = glCreateProgram();
-        glAttachShader(vid.shader_program, vshader);
-        glAttachShader(vid.shader_program, fshader);
-        glLinkProgram(vid.shader_program);
+        GLCALL(glAttachShader(vid.shader_program, vshader));
+        GLCALL(glAttachShader(vid.shader_program, fshader));
+        GLCALL(glLinkProgram(vid.shader_program));
 
         glGetProgramiv(vid.shader_program, GL_LINK_STATUS, &success);
         if (!success) {
@@ -148,16 +143,33 @@ VideoRenderer_t video_from_file(const char *path, bool pixelated) {
                           (void *)offsetof(Vertex_t, color));
     glEnableVertexAttribArray(2);
 
+    // PBO
+    glGenBuffers(2, vid.pbos);
+    for (int i = 0; i < 2; i++) {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid.pbos[i]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, vid.vr_state.frame_size_bytes, 0,
+                     GL_STREAM_DRAW);
+
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid.pbos[i]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, vid.vr_state.frame_size_bytes, 0,
+                     GL_STREAM_DRAW);
+    }
+
     // Texture
-    LOG("-- video dimensions: %dx%dpx\n", frame_width, frame_width);
+    LOG("-- Video dimensions: %dx%dpx\n", vid.vr_state.width,
+        vid.vr_state.height);
     glGenTextures(1, &vid.texture_id);
     glBindTexture(GL_TEXTURE_2D, vid.texture_id);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, vid.pbuffer);
+    GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid.vr_state.width,
+                        vid.vr_state.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                        0)); // set all to black
 
-    // unbind and stuff
+    // unbind stuff
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     return vid;
@@ -173,42 +185,76 @@ void video_render(VideoRenderer_t *vid) {
     }
 
     int64_t pts;
-    if (!video_reader_read_frame(&vid->vr_state, vid->pbuffer, &pts)) {
-        fprintf(stderr, "Couldn't load video frame\n");
-        exit(EXIT_FAILURE);
+    // upload texture to gpu
+    // frame_idx: is used to copy pixels from a PBO to a texture
+    // next_frame_idx: is used to update pixels in the other PBO
+    const unsigned int frame_idx = 0;
+    const unsigned int next_frame_idx = 1;
+
+    //  upload to texture
+    glBindTexture(GL_TEXTURE_2D, vid->texture_id);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[frame_idx]);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vid->vr_state.width,
+                    vid->vr_state.height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+    //  get current frame
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[next_frame_idx]);
+
+    // Note that glMapBuffer() causes sync issue. If GPU is working with
+    // this buffer, glMapBuffer() will wait until GPU to finish its job. To
+    // avoid waiting, you can call first glBufferData() with NULL pointer
+    // before glMapBuffer(). If you do that, the previous data in PBO will
+    // be discarded and glMapBuffer() returns a new allocated pointer
+    // immediately even if GPU is still working with the previous data.
+    GLCALL(glBufferData(GL_PIXEL_UNPACK_BUFFER, vid->vr_state.frame_size_bytes,
+                        0, GL_STREAM_DRAW));
+    GLubyte *ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    if (ptr) {
+        if (!video_reader_read_frame(&vid->vr_state, ptr, &pts)) {
+            fprintf(stderr, "Couldn't load video frame\n");
+            exit(EXIT_FAILURE);
+        }
+
+        pt_sec = pts * av_q2d(vid->vr_state.time_base);
+
+        glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     }
 
-    pt_sec = pts * av_q2d(vid->vr_state.time_base);
-    // pt_sec = pts * (double)vid->vr_state.time_base.num /
-    //          (double)vid->vr_state.time_base.den;
-    // printf("pt_sec: %f\n", pt_sec);
+    // swap the pixel buffers (with the id)
+    const unsigned int temp = vid->pbos[next_frame_idx];
+    vid->pbos[next_frame_idx] = vid->pbos[frame_idx];
+    vid->pbos[frame_idx] = temp;
 
-    glBindTexture(GL_TEXTURE_2D, vid->texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid->vr_state.width,
-                 vid->vr_state.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 vid->pbuffer);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0); // unbind when done
+
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid->vr_states.width,
+    //              vid->vr_states.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+    //              vid->pbuffer);
 
     // texture stuff
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    vid->pixelated ? GL_NEAREST : GL_LINEAR);
+                    vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                    vid->pixelated ? GL_NEAREST : GL_LINEAR);
+                    vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glActiveTexture(GL_TEXTURE0);
 
     // shader stuff
-    glUseProgram(vid->shader_program);
+    GLCALL(glUseProgram(vid->shader_program));
 
     // geometry stuff
     glBindVertexArray(vid->vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vid->ebo);
 
     // finally render
-    glDrawElements(GL_TRIANGLES,
-                   (unsigned int)(sizeof(indices) / sizeof(*indices)),
-                   GL_UNSIGNED_INT, 0);
+    GLCALL(glDrawElements(GL_TRIANGLES,
+                          (unsigned int)(sizeof(indices) / sizeof(*indices)),
+                          GL_UNSIGNED_INT, 0));
+
+    // unbind stuff
     glUseProgram(0);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -216,11 +262,11 @@ void video_render(VideoRenderer_t *vid) {
 
 void video_clean(VideoRenderer_t *vid) {
     video_reader_close(&vid->vr_state);
-    free((void *)vid->pbuffer);
 
     glDeleteBuffers(1, &vid->ebo);
     glDeleteBuffers(1, &vid->vbo);
-    glDeleteProgram(vid->shader_program);
+    glDeleteBuffers(2, vid->pbos);
     glDeleteTextures(1, &vid->texture_id);
+    glDeleteProgram(vid->shader_program);
     glDeleteVertexArrays(1, &vid->vao);
 }

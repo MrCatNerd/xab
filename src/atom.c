@@ -41,7 +41,7 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
         bool should_continue = false;
         if (config->filter_len)
             for (unsigned int j = 0; j < config->filter_len; j++) {
-                LOG("skipping atom: %s\n", ATOM_LIST[i].name);
+                VLOG("skipping atom: %s\n", ATOM_LIST[i].name);
                 if ((!strcmp(ATOM_LIST[i].name, config->filters[j]) ||
                      (!config->override && ATOM_LIST[i].atom != XCB_ATOM_NONE)))
                     should_continue = true;
@@ -66,11 +66,9 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
             continue;
         }
 
-        printf("length: %d\n", reply->response_type);
-
         *ATOM_LIST[index].atom = reply->atom;
-        LOG("-- atom: %s - 0x%08x\n", ATOM_LIST[index].name,
-            *ATOM_LIST[index].atom);
+        VLOG("-- atom: %s - 0x%08x\n", ATOM_LIST[index].name,
+             *ATOM_LIST[index].atom);
 
         free((void *)reply);
     }

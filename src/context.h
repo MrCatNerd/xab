@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include <xcb/xcb.h>
-#include <EGL/egl.h>
+#include <epoxy/egl.h>
 
 #include "framebuffer.h"
 #include "video_renderer.h"

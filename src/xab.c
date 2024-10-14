@@ -36,6 +36,7 @@
 #include "framebuffer.h"
 #include "utils.h"
 #include "setbg.h"
+#include "egl_stuff.h"
 
 static context_t context;
 
@@ -66,7 +67,9 @@ static void setup(struct argument_options *opts) {
     Assert(ok && "Failed to set VSync for EGL");
 
     // load the video
-    context.video = video_from_file(opts->video_path, opts->pixelated);
+    VideoRendererConfig_t config = {.pixelated = opts->pixelated,
+                                    .hw_accel = opts->hw_accel};
+    context.video = video_from_file(opts->video_path, config);
 
     // sync everything up cuz why not
     xcb_aux_sync(context.connection);
@@ -131,20 +134,14 @@ static void mainloop() {
         // render only if window size is non-zero (minimized)
         if (width != 0 && height != 0) {
             // setup output size covering all client area of window
-            // glViewport(1600, 0, 1920,
-            //            height); // for multiple screens maybe i can have
-            // multiple smaller viewports?
-            // glViewport(0, 0, width, height);
+            glViewport(0, 0, width, height);
 
             // clear screen
-            // glEnable(GL_SCISSOR_TEST);
-            // glScissor(1600, 0, 1920, 1200);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
                     GL_STENCIL_BUFFER_BIT);
             // render_framebuffer_start_render(&context.framebuffer);
-            // // glViewport(0, 0, width, height);
-            // glViewport(1600, 0, 1920, height);
+            // glViewport(0, 0, width, height);
 
             // -- uniform and texture stuff
             // setup rotation matrix in uniform
@@ -174,28 +171,17 @@ static void mainloop() {
                     0.0f               , 0.0f, 1.0f,
                 };
 
-                // const float matrix[9] = { 
-                //     1, 0, 0,
-                //     0, 1, 0,
-                //     0, 0, 1
-                // };
-                // clang-format on
-
+                // set uniforms
                 glUseProgram(context.video.shader_program);
-                glUniformMatrix3fv(glGetUniformLocation(
+                GLCALL(glUniformMatrix3fv(glGetUniformLocation(
                                        context.video.shader_program, "rot_mat"),
-                                   1, GL_FALSE, matrix);
+                                   1, GL_FALSE, matrix));
 
-                glUniformMatrix3fv(
+                GLCALL(glUniformMatrix3fv(
                     glGetUniformLocation(context.video.shader_program,
                                          "shear_mat"),
-                    1, GL_FALSE, shear);
+                    1, GL_FALSE, shear));
             }
-
-            // bind texture to texture unit
-            // GLint s_texture =
-            //     0; // texture unit that sampler2D will use in GLSL code
-            // glBindTextureUnit(s_texture, context.video.texture_id);
 
             video_render(&context.video);
 
