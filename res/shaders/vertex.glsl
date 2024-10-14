@@ -1,6 +1,6 @@
 // vertex
 
-#version 450 core
+#version 330 core
 
 // position attribute index 0
 layout(location = 0) in vec3 a_pos;

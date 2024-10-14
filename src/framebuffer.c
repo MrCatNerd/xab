@@ -50,7 +50,7 @@ FrameBuffer_t create_framebuffer(int width, int height) {
         program_error("Failed to generate framebuffer color texture!\n");
     }
     glBindTexture(GL_TEXTURE_2D, fb.texture_color_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fb.width, fb.height, 0, GL_RGB,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb.width, fb.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

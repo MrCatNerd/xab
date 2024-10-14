@@ -134,7 +134,8 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         state->av_format_ctx->streams[state->video_stream_idx]->start_time &
         0xFFFFFFFFFFFFFFFF;
 
-    state->frame_size_bytes = state->width * state->height * 4;
+    state->frame_size_bytes = state->width * state->height * 3;
+    LOG("-- Frame size %zuMB\n", state->frame_size_bytes / 1048576);
 
     return true;
 }
@@ -177,15 +178,11 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
         break;
     }
 
-    // convert YUV to YUv420 and get the pixel data
-    // (maybe i should consider using YUV422 because its higher quality but less
-    // performance)
+    // convert YUV to RGB24 and get the pixel data (no alpha so 3 bits)
     if (!state->sws_scaler_ctx) {
         state->sws_scaler_ctx =
             sws_getContext(state->width, state->height, av_codec_ctx->pix_fmt,
-                           // state->width, state->height, AV_PIX_FMT_YUV420P,
-                           // // next up: YUV to save memory
-                           state->width, state->height, AV_PIX_FMT_RGB0,
+                           state->width, state->height, AV_PIX_FMT_RGB24,
                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
     }
     if (!state->sws_scaler_ctx) {
@@ -193,8 +190,8 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
         return false;
     }
 
-    uint8_t *dest[4] = {pbuffer, NULL, NULL, NULL};
-    int dest_linesize[4] = {state->width * 4, 0, 0, 0};
+    uint8_t *dest[2] = {pbuffer, NULL};
+    int dest_linesize[2] = {state->width * 3, 0};
 
     *pts = av_frame->pts;
 

@@ -113,7 +113,7 @@ context_t context_create(bool vsync) {
         LOG("-- libepoxy EGL version: %0.1f\n",
             (float)epoxy_egl_version(context.display) / 10);
 
-        LOG("-- xcb-xrandr version: %d.%d\n", XCB_RANDR_MAJOR_VERSION,
+        LOG("-- xcb-randr version: %d.%d\n", XCB_RANDR_MAJOR_VERSION,
             XCB_RANDR_MINOR_VERSION);
 
         // don't assert on debug mode

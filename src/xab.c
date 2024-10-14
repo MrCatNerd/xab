@@ -27,9 +27,13 @@
 // pull request about it and I got nothing to about it until it gets merged :(
 #ifndef EGL_EXT_platform_xcb
 #define EGL_EXT_platform_xcb 1
-#define EGL_PLATFORM_XCB_EXT 0x31DC
-#define EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE
 #endif /* EGL_EXT_platform_xcb */
+#ifndef EGL_PLATFORM_XCB_EXT
+#define EGL_PLATFORM_XCB_EXT 0x31DC
+#endif /* EGL_PLATFORM_XCB_EXT */
+#ifndef EGL_PLATFORM_XCB_SCREEN_EXT
+#define EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE
+#endif /* EGL_PLATFORM_XCB_SCREEN_EXT */
 
 #include "context.h"
 #include "video_renderer.h"

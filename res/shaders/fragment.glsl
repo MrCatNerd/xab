@@ -1,6 +1,6 @@
 // fragment
 
-#version 450 core
+#version 330 core
 
 in vec2 uv;
 in vec3 color;

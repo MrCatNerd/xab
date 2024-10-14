@@ -163,7 +163,7 @@ VideoRenderer_t video_from_file(const char *path,
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid.vr_state.width,
-                        vid.vr_state.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                        vid.vr_state.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
                         0)); // set all to black
 
     // unbind stuff
@@ -196,7 +196,7 @@ void video_render(VideoRenderer_t *vid) {
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[frame_idx]);
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vid->vr_state.width,
-                    vid->vr_state.height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+                    vid->vr_state.height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
     //  get current frame
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[next_frame_idx]);
@@ -227,10 +227,6 @@ void video_render(VideoRenderer_t *vid) {
     vid->pbos[frame_idx] = temp;
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0); // unbind when done
-
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vid->vr_states.width,
-    //              vid->vr_states.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-    //              vid->pbuffer);
 
     // texture stuff
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
