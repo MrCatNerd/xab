@@ -15,6 +15,7 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
 #include <xcb/xcb_atom.h>
+#include <xcb/randr.h>
 
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
@@ -290,7 +291,8 @@ static struct argument_options parse_args(int argc, char *argv[]) {
                                     .screen_nbr = screen_nbr,
                                     .vsync = vsync,
                                     .max_framerate = max_framerate,
-                                    .pixelated = pixelated};
+                                    .pixelated = pixelated,
+                                    .hw_accel=hw_accel};
 
     return opts;
 }
