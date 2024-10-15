@@ -23,11 +23,11 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
     xcb_intern_atom_cookie_t atoms_cookies[ATOM_COUNT];
     xcb_intern_atom_reply_t *reply = NULL;
 
+    const load_atoms_config_t default_config = {.only_if_exists = false,
+                                                .filters = NULL,
+                                                .filter_len = 0,
+                                                .override = false};
     if (!config) {
-        const load_atoms_config_t default_config = {.only_if_exists = false,
-                                                    .filters = NULL,
-                                                    .filter_len = 0,
-                                                    .override = false};
         config = (load_atoms_config_t *)&default_config;
     }
 
@@ -39,13 +39,16 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
     unsigned int index_map[ATOM_COUNT];
     for (unsigned int i = 0; i < ATOM_COUNT; i++) {
         bool should_continue = false;
-        if (config->filter_len)
+        if (config->filter_len) {
             for (unsigned int j = 0; j < config->filter_len; j++) {
                 VLOG("skipping atom: %s\n", ATOM_LIST[i].name);
                 if ((!strcmp(ATOM_LIST[i].name, config->filters[j]) ||
-                     (!config->override && ATOM_LIST[i].atom != XCB_ATOM_NONE)))
+                     (!config->override &&
+                      ATOM_LIST[i].atom != XCB_ATOM_NONE))) {
                     should_continue = true;
+                }
             }
+        }
         if (should_continue)
             continue;
 

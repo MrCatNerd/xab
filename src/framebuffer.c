@@ -49,12 +49,17 @@ FrameBuffer_t create_framebuffer(int width, int height) {
     if (fb.texture_color_id == 0) {
         program_error("Failed to generate framebuffer color texture!\n");
     }
+
     glBindTexture(GL_TEXTURE_2D, fb.texture_color_id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb.width, fb.height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, NULL);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    // attach texture to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            fb.texture_color_id, 0);
 
@@ -84,12 +89,13 @@ FrameBuffer_t create_framebuffer(int width, int height) {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
                           (void *)offsetof(Vertex_t, position));
     glEnableVertexAttribArray(0);
+
     // VAO - uv
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
                           (void *)offsetof(Vertex_t, uv));
     glEnableVertexAttribArray(1);
 
-    // we don't need color data
+    // i don't want color data, or do i?
 
     // Shader
     // totally not copied from video_renderer.c
@@ -163,16 +169,16 @@ void render_framebuffer_start_render(FrameBuffer_t *fb) {
     // first pass
     glBindFramebuffer(GL_FRAMEBUFFER, fb->fbo_id);
 
-    glClearColor(0.8f, 0.6f, 0.4f, 1.0f);
+    glClearColor(0.8f, 0.6f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 }
 
-void render_framebuffer_end_render(FrameBuffer_t *fb) {
+void render_framebuffer_end_render(FrameBuffer_t *fb, float da_time) {
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -183,25 +189,33 @@ void render_framebuffer_end_render(FrameBuffer_t *fb) {
     // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     // glClear(GL_COLOR_BUFFER_BIT);
 
+    // shader stuff
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
     glUseProgram(fb->shader_program);
+    glUniform1f(glGetUniformLocation(fb->shader_program, "Time"), da_time);
+
+    // geometry stuff
     glBindVertexArray(fb->vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fb->ebo);
+
+    // finally render
     glDrawElements(GL_TRIANGLES,
                    (unsigned int)(sizeof(indices) / sizeof(*indices)),
                    GL_UNSIGNED_INT, 0);
+
+    // unbind stuff
     glUseProgram(0);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void delete_framebuffer(FrameBuffer_t *fb) {
+    glDeleteProgram(fb->shader_program);
+    glDeleteTextures(1, &fb->texture_color_id);
     glDeleteBuffers(1, &fb->ebo);
     glDeleteBuffers(1, &fb->vbo);
-    glDeleteFramebuffers(1, &fb->fbo_id);
-    glDeleteProgram(fb->shader_program);
-    glDeleteRenderbuffers(GL_RENDERBUFFER, &fb->rbo_id);
-    glDeleteTextures(1, &fb->texture_color_id);
     glDeleteVertexArrays(1, &fb->vao);
+    glDeleteRenderbuffers(GL_RENDERBUFFER, &fb->rbo_id);
+    glDeleteFramebuffers(1, &fb->fbo_id);
 }

@@ -73,7 +73,6 @@ void setup_background(context_t *context) {
     }
 
     config.only_if_exists = false;
-    LOG("loading atoms..\n");
     load_atoms(context, &config);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
@@ -155,7 +154,7 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
     {
         xcb_get_property_reply_t *reply = xcb_get_property_reply(
             context->connection,
-            xcb_get_property(context->connection, false, context->screen->root,
+            xcb_get_property(context->connection, false, *window,
                              _NET_WM_WINDOW_TYPE, XCB_ATOM, 0L,
                              sizeof(xcb_atom_t)),
             NULL);

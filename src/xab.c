@@ -15,7 +15,6 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
 #include <xcb/xcb_atom.h>
-#include <xcb/randr.h>
 
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
@@ -50,11 +49,11 @@ static void handle_sigint(int sig);
 
 struct argument_options {
         char *video_path;
-        int screen_nbr;
+        int screen_nbr; // unfinished
         bool vsync;
-        int max_framerate;
+        int max_framerate; // unfinished
         bool pixelated;
-        bool hw_accel;
+        bool hw_accel; // unfinished
 };
 
 static void setup(struct argument_options *opts) {
@@ -65,7 +64,7 @@ static void setup(struct argument_options *opts) {
 #else
     LOG("-- Currently in release mode\n"); // idk why i did that lol
 #endif
-    context = context_create(true);
+    context = context_create(opts->vsync);
 
     // set vsync
     EGLBoolean ok = eglSwapInterval(context.display, (int)opts->vsync);
@@ -145,7 +144,7 @@ static void mainloop() {
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
                     GL_STENCIL_BUFFER_BIT);
-            // render_framebuffer_start_render(&context.framebuffer);
+            render_framebuffer_start_render(&context.framebuffer);
             // glViewport(0, 0, width, height);
 
             // -- uniform and texture stuff
@@ -190,7 +189,7 @@ static void mainloop() {
 
             video_render(&context.video);
 
-            // render_framebuffer_end_render(&context.framebuffer);
+            render_framebuffer_end_render(&context.framebuffer, da_time);
 
             // swap the buffers to show output
             if (!eglSwapBuffers(context.display, context.surface)) {

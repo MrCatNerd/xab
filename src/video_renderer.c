@@ -133,12 +133,13 @@ VideoRenderer_t video_from_file(const char *path,
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
                           (void *)offsetof(Vertex_t, position));
     glEnableVertexAttribArray(0);
+
     // VAO - uv
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
                           (void *)offsetof(Vertex_t, uv));
+    glEnableVertexAttribArray(1);
 
     // VAO - color
-    glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
                           (void *)offsetof(Vertex_t, color));
     glEnableVertexAttribArray(2);
@@ -233,13 +234,15 @@ void video_render(VideoRenderer_t *vid) {
                     vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
                     vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
     glActiveTexture(GL_TEXTURE0);
 
     // shader stuff
     GLCALL(glUseProgram(vid->shader_program));
+    glUniform1f(glGetUniformLocation(vid->shader_program, "Time"),
+                get_time_since_start());
 
     // geometry stuff
     glBindVertexArray(vid->vao);

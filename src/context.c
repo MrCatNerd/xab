@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xproto.h>
 #include <xcb/xcb_atom.h>
+#ifdef HAVE_LIBXRANDR
 #include <xcb/randr.h>
+#endif /* HAVE_LIBXRANDR */
 
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
@@ -99,9 +102,10 @@ context_t context_create(bool vsync) {
     Assert(context.display != EGL_NO_DISPLAY && "Failed to get EGL display.");
 
     {
-        EGLint major, minor;
+        EGLint major = 0, minor = 0;
         if (!eglInitialize(context.display, &major, &minor)) {
             program_error("Cannot initialize EGL display.\n");
+            exit(EXIT_FAILURE);
         }
         if (major < 1 || minor < 5) {
             program_error("EGL version 1.5 or higher required. you are "
@@ -113,8 +117,10 @@ context_t context_create(bool vsync) {
         LOG("-- libepoxy EGL version: %0.1f\n",
             (float)epoxy_egl_version(context.display) / 10);
 
+#ifdef HAVE_LIBXRANDR
         LOG("-- xcb-randr version: %d.%d\n", XCB_RANDR_MAJOR_VERSION,
             XCB_RANDR_MINOR_VERSION);
+#endif /* HAVE_LIBXRANDR */
 
         // don't assert on debug mode
 #ifndef NDEBUG

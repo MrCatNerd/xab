@@ -16,6 +16,6 @@ FrameBuffer_t create_framebuffer(int width, int height);
 void render_framebuffer_start_render(FrameBuffer_t *fb);
 
 /// use after you end rendering
-void render_framebuffer_end_render(FrameBuffer_t *fb);
+void render_framebuffer_end_render(FrameBuffer_t *fb, float da_time);
 
 void delete_framebuffer(FrameBuffer_t *fb);

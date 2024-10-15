@@ -4,9 +4,34 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform float Time;
+
+const float offset_x = 1.0f/3840.0f;
+const float offset_y = 1.0f/2160.0f;
+
+vec2 offsets[9] = vec2[]
+    (
+     vec2(-offset_x, offset_y) , vec2(0.0, offset_y) , vec2(offset_x, offset_y),
+     vec2(-offset_x, 0.0)      , vec2(0.0, 0.0)      , vec2(offset_x, 0.0),
+     vec2(-offset_x, -offset_y), vec2(0.0, -offset_y), vec2(offset_x, offset_y)
+    );
+
+float kernel[9] = float[]
+(
+ -1, -1, -1,
+ -1,  8, -1,
+ -1, -1, -1
+ );
 
 void main()
 {
-    FragColor = vec4(vec3(0.5f), 1.0f) - vec4(texture(screenTexture, TexCoords));
+    vec3 color = vec3(0.0f);
+    for (int i = 0; i < 9; i++)
+        color +=vec3(texture(screenTexture, TexCoords.st + offsets[i])) * kernel[i];
+    if (max(color-0.05, 0) == vec3(0.0))
+        color = vec3(0.4, 0.7, 0.5);
+    FragColor = vec4(color.rgb, 1.0f);
+    // FragColor = vec4(texture(screenTexture, vec2(TexCoords.x + sin(Time*0.5 + TexCoords.y*3)*0.2, TexCoords.y))); // trippy wallpaper lol
+
 }
 
