@@ -13,7 +13,7 @@ __X11 Animated Background__
 ---
 
 ### Run
-xab \<path/to/file.mp4> \[options] | \<path/to/another_file.gif> \[options]
+xab \<path/to/file.mp4> \[options] \<path/to/another_file.gif> \[options]
 
 example:
 xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
