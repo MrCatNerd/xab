@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+#include "camera.h"
 #include "video_reader.h"
 
 typedef struct VideoRendererConfig {
@@ -26,5 +27,6 @@ typedef struct VideoRenderer {
 } VideoRenderer_t;
 
 VideoRenderer_t video_from_file(const char *path, VideoRendererConfig_t config);
-void video_render(VideoRenderer_t *vid);
+void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
+                  camera_t *camera);
 void video_clean(VideoRenderer_t *vid);

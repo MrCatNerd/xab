@@ -12,12 +12,22 @@
 #include <libavutil/mathematics.h>
 #include <libavutil/rational.h>
 
+#include "camera.h"
 #include "video_reader.h"
 #include "video_renderer.h"
 #include "vertex.h"
 #include "utils.h"
 #include "logging.h"
 #include "egl_stuff.h"
+
+#ifdef HAVE_LIBCGLM
+#include <cglm/types.h>
+#include <cglm/struct.h>
+#include <cglm/io.h>
+#include <cglm/mat4.h>
+#include <cglm/affine.h>
+#include <cglm/cam.h>
+#endif
 
 // clang-format off
 static const Vertex_t vertices[] = {
@@ -30,7 +40,9 @@ static const Vertex_t vertices[] = {
 static const unsigned int indices[] = {0, 1, 2, 0, 3, 2};
 // clang-format on
 
-double get_time_since_start() {
+double get_time_since_start() { // i should probably make a better system for
+                                // this because im currently calculating time
+                                // twice (delta time and this)
     static double start_time = 0.0;
     if (start_time == 0.0) {
         // Initialize start_time if it hasn't been set yet
@@ -54,7 +66,7 @@ VideoRenderer_t video_from_file(const char *path,
 
     // Load the thingy
     if (!video_reader_open(&vid.vr_state, path)) {
-        fprintf(stderr, "Couldn't load video frame from: %s\n", path);
+        program_error("Couldn't load video frame from: %s\n", path);
         exit(EXIT_FAILURE); // todo: maybe gracefully shut down?
     }
 
@@ -77,7 +89,7 @@ VideoRenderer_t video_from_file(const char *path,
         glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(vshader, sizeof(infoLog), NULL, infoLog);
-            fprintf(stderr, "Failed to compile vertex shader\n%s\n", infoLog);
+            program_error("Failed to compile vertex shader\n%s\n", infoLog);
         }
 
         // fragment shader
@@ -90,7 +102,7 @@ VideoRenderer_t video_from_file(const char *path,
         glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(fshader, sizeof(infoLog), NULL, infoLog);
-            fprintf(stderr, "Failed to compile fragment shader\n%s\n", infoLog);
+            program_error("Failed to compile fragment shader\n%s\n", infoLog);
         }
 
         // shader program
@@ -103,7 +115,7 @@ VideoRenderer_t video_from_file(const char *path,
         if (!success) {
             glGetProgramInfoLog(vid.shader_program, sizeof(infoLog), NULL,
                                 infoLog);
-            fprintf(stderr, "Failed to link shaders!\n%s\n", infoLog);
+            program_error("Failed to link shaders!\n%s\n", infoLog);
         }
 
         // cleanup
@@ -176,13 +188,19 @@ VideoRenderer_t video_from_file(const char *path,
     return vid;
 }
 
-void video_render(VideoRenderer_t *vid) {
+void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
+                  camera_t *camera) {
     // read the frame
     static double pt_sec = 0.0f;
 
-    if (get_time_since_start() - pt_sec < 0) {
-        // printf("wait a sec\n");
-        // return;
+    const double tss = get_time_since_start();
+    bool skip_decode = false;
+    if (pt_sec > tss) { // wait for time to catch up
+        skip_decode = true;
+        LOG("skipped\n");
+    } else if (pt_sec - tss <
+               0) { // catch up frame to time
+                    // todo (i think this is supposed to be framedropping)
     }
 
     int64_t pts;
@@ -192,34 +210,36 @@ void video_render(VideoRenderer_t *vid) {
     const unsigned int frame_idx = 0;
     const unsigned int next_frame_idx = 1;
 
-    //  upload to texture
+    // upload to texture
     glBindTexture(GL_TEXTURE_2D, vid->texture_id);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[frame_idx]);
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vid->vr_state.width,
                     vid->vr_state.height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-    //  get current frame
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[next_frame_idx]);
+    // decode next frame
+    if (!skip_decode) {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[next_frame_idx]);
 
-    // Note that glMapBuffer() causes sync issue. If GPU is working with
-    // this buffer, glMapBuffer() will wait until GPU to finish its job. To
-    // avoid waiting, you can call first glBufferData() with NULL pointer
-    // before glMapBuffer(). If you do that, the previous data in PBO will
-    // be discarded and glMapBuffer() returns a new allocated pointer
-    // immediately even if GPU is still working with the previous data.
-    GLCALL(glBufferData(GL_PIXEL_UNPACK_BUFFER, vid->vr_state.frame_size_bytes,
-                        0, GL_STREAM_DRAW));
-    GLubyte *ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-    if (ptr) {
-        if (!video_reader_read_frame(&vid->vr_state, ptr, &pts)) {
-            fprintf(stderr, "Couldn't load video frame\n");
-            exit(EXIT_FAILURE);
+        // Note that glMapBuffer() causes sync issue. If GPU is working with
+        // this buffer, glMapBuffer() will wait until GPU to finish its job. To
+        // avoid waiting, you can call first glBufferData() with NULL pointer
+        // before glMapBuffer(). If you do that, the previous data in PBO will
+        // be discarded and glMapBuffer() returns a new allocated pointer
+        // immediately even if GPU is still working with the previous data.
+        GLCALL(glBufferData(GL_PIXEL_UNPACK_BUFFER,
+                            vid->vr_state.frame_size_bytes, 0, GL_STREAM_DRAW));
+        GLubyte *ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+        if (ptr) {
+            if (!video_reader_read_frame(&vid->vr_state, ptr, &pts)) {
+                program_error("Couldn't load video frame\n");
+                exit(EXIT_FAILURE);
+
+                pt_sec = pts * av_q2d(vid->vr_state.time_base);
+            }
+
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
         }
-
-        pt_sec = pts * av_q2d(vid->vr_state.time_base);
-
-        glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     }
 
     // swap the pixel buffers (with the id)
@@ -229,13 +249,15 @@ void video_render(VideoRenderer_t *vid) {
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0); // unbind when done
 
+    // now its time to start rendering
+
     // texture stuff
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
                     vid->config.pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
     glActiveTexture(GL_TEXTURE0);
 
@@ -243,6 +265,63 @@ void video_render(VideoRenderer_t *vid) {
     GLCALL(glUseProgram(vid->shader_program));
     glUniform1f(glGetUniformLocation(vid->shader_program, "Time"),
                 get_time_since_start());
+
+    bool all_identity = true;
+
+#ifdef HAVE_LIBCGLM
+    all_identity = false;
+    if (width == 0 || height == 0) {
+        all_identity = true;
+    }
+
+    if (!all_identity) {
+        // projection matrix
+        glUniformMatrix4fv(
+            glGetUniformLocation(vid->shader_program, "ortho_proj"), 1,
+            GL_FALSE, (const GLfloat *)camera->ortho);
+
+        // view matrix
+        glUniformMatrix4fv(glGetUniformLocation(vid->shader_program, "view"), 1,
+                           GL_FALSE, (const GLfloat *)camera->view);
+
+        // model matrix
+        mat4 model = GLM_MAT4_IDENTITY_INIT;
+
+        vec4 move = {x + (width / 2.f), y + (height / 2.f), 0.0f, 0.0f};
+        glm_translate(model, move);
+
+        vec4 da_scaler = {width / 2.f, height / 2.f, 1.0f, 1.0f};
+        glm_scale(model, da_scaler);
+
+        glUniformMatrix4fv(glGetUniformLocation(vid->shader_program, "model"),
+                           1, GL_FALSE, (const GLfloat *)model);
+
+        // don't flip the texture (cuz ortho already does)
+        glUniform1i(glGetUniformLocation(vid->shader_program, "flip"), 0);
+    }
+#endif
+
+    if (all_identity) {
+        // use identity matrix instead the actual matrices
+        float identity_matrix[16];
+        mat4_identity_nocglm(identity_matrix);
+
+        // projection matrix
+        glUniformMatrix4fv(
+            glGetUniformLocation(vid->shader_program, "ortho_proj"), 1,
+            GL_FALSE, (const GLfloat *)identity_matrix);
+
+        // view matrix
+        glUniformMatrix4fv(glGetUniformLocation(vid->shader_program, "view"), 1,
+                           GL_FALSE, (const GLfloat *)identity_matrix);
+
+        // model matrix
+        glUniformMatrix4fv(glGetUniformLocation(vid->shader_program, "model"),
+                           1, GL_FALSE, (const GLfloat *)identity_matrix);
+
+        // flip the texture
+        glUniform1i(glGetUniformLocation(vid->shader_program, "flip"), 1);
+    }
 
     // geometry stuff
     glBindVertexArray(vid->vao);

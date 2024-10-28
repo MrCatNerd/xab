@@ -24,15 +24,18 @@
 #define EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE
 #endif /* EGL_EXT_platform_xcb */
 
+#include "context.h"
 #include "egl_stuff.h"
 #include "logging.h"
 #include "atom.h"
-#include "context.h"
+#include "wallpaper.h"
 #include "framebuffer.h"
 #include "setbg.h"
+#include "monitor.h"
 #include "utils.h"
+#include "camera.h"
 
-context_t context_create(bool vsync) {
+context_t context_create(struct argument_options *opts) {
     context_t context;
 
     LOG("-- Checking EGL extensions...\n");
@@ -118,8 +121,25 @@ context_t context_create(bool vsync) {
             (float)epoxy_egl_version(context.display) / 10);
 
 #ifdef HAVE_LIBXRANDR
-        LOG("-- xcb-randr version: %d.%d\n", XCB_RANDR_MAJOR_VERSION,
-            XCB_RANDR_MINOR_VERSION);
+        // idk why i chose to do it this way instead of just use the values
+        // directly but idc
+        xcb_randr_query_version_reply_t *ver_reply =
+            xcb_randr_query_version_reply(
+                context.connection,
+                xcb_randr_query_version(context.connection,
+                                        XCB_RANDR_MAJOR_VERSION,
+                                        XCB_RANDR_MINOR_VERSION),
+                NULL);
+        if (!ver_reply) {
+            program_error("Failed to get RandR version\n");
+            xcb_disconnect(context.connection);
+            exit(EXIT_FAILURE);
+        }
+
+        LOG("-- xcb-randr version: %d.%d\n", ver_reply->major_version,
+            ver_reply->minor_version);
+
+        free(ver_reply);
 #endif /* HAVE_LIBXRANDR */
 
         // don't assert on debug mode
@@ -226,12 +246,69 @@ context_t context_create(bool vsync) {
 #endif
 
     // set vsync
-    ok = eglSwapInterval(context.display, (int)vsync);
+    ok = eglSwapInterval(context.display, (int)opts->vsync);
     Assert(ok && "Failed to set VSync for EGL");
+
+    LOG("-- Creating camera\n");
+    ViewPortConfig_t vpc = {.left = 0,
+                            .right = (float)context.screen->width_in_pixels,
+                            .top = 0,
+                            .bottom = (float)context.screen->height_in_pixels,
+                            .near = -1,
+                            .far = 1};
+
+    context.camera = create_camera(0.0f, 0.0f, 0.0f, vpc);
+
+    // set everything to zero
+    context.monitors = NULL;
+    context.monitor_count = 0;
+    // get monitors if randr
+#ifdef HAVE_LIBXRANDR
+    // TODO: ignore get monitors if there are no monitors
+    LOG("-- Getting monitors\n");
+    get_monitors_t monitors_ret =
+        get_monitors(context.connection, context.screen);
+    context.monitors = monitors_ret.monitors;
+    context.monitor_count = monitors_ret.monitor_count;
+#endif /* HAVE_LIBXRANDR */
+
+    // if no monitors/randr, use default monitor
+    if (context.monitors == NULL) {
+        context.monitor_count = 1;
+        context.monitors = malloc(sizeof(monitor_t **));
+        *context.monitors =
+            create_monitor("monitor", 0, true, context.screen->width_in_pixels,
+                           context.screen->height_in_pixels, 0, 0);
+    }
+
+#ifndef NVERBOSE
+    for (int i = 0; i < context.monitor_count; i++)
+        VLOG("[%d] x: %d, y: %d, w: %d, h: %d\n", i, (context.monitors[i])->x,
+             (context.monitors[i])->y, (context.monitors[i])->width,
+             (context.monitors[i])->height);
+#endif /* ifndef NVERBOSE */
 
     // create framebuffer
     context.framebuffer = create_framebuffer(context.screen->width_in_pixels,
                                              context.screen->height_in_pixels);
+
+    // load the videos
+    context.wallpaper_count = opts->n_wallpaper_options;
+    context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
+
+    for (int i = 0; i < context.wallpaper_count; i++) {
+        VideoRendererConfig_t config = {
+            .pixelated = opts->wallpaper_options[i].pixelated,
+            .hw_accel = opts->wallpaper_options[i].hw_accel};
+        // todo: offset in opts
+        const int idx = opts->wallpaper_options[i].monitor;
+
+        wallpaper_init(context.monitors[idx]->width,
+                       context.monitors[idx]->height, context.monitors[idx]->x,
+                       context.monitors[idx]->y,
+                       opts->wallpaper_options[i].video_path, config,
+                       &context.wallpapers[i]);
+    }
 
     return context;
 }

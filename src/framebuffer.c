@@ -56,8 +56,8 @@ FrameBuffer_t create_framebuffer(int width, int height) {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
     // attach texture to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
@@ -115,7 +115,7 @@ FrameBuffer_t create_framebuffer(int width, int height) {
         glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(vshader, sizeof(infoLog), NULL, infoLog);
-            fprintf(stderr, "Failed to compile vertex shader\n%s\n", infoLog);
+            program_error("Failed to compile vertex shader\n%s\n", infoLog);
         }
 
         // fragment shader
@@ -129,7 +129,7 @@ FrameBuffer_t create_framebuffer(int width, int height) {
         glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(fshader, sizeof(infoLog), NULL, infoLog);
-            fprintf(stderr, "Failed to compile fragment shader\n%s\n", infoLog);
+            program_error("Failed to compile fragment shader\n%s\n", infoLog);
         }
 
         // shader program
@@ -142,7 +142,7 @@ FrameBuffer_t create_framebuffer(int width, int height) {
         if (!success) {
             glGetProgramInfoLog(fb.shader_program, sizeof(infoLog), NULL,
                                 infoLog);
-            fprintf(stderr, "Failed to link shaders!\n%s\n", infoLog);
+            program_error("Failed to link shaders!\n%s\n", infoLog);
         }
 
         // cleanup

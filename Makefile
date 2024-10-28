@@ -1,7 +1,9 @@
 MAKE ?= make # if you are using mingw-make or smh
 PKG_CONFIG ?= pkg-config
 
-ARGV ?= ./res/vids/vid.mp4 1 # TODO: clean this up
+# ARGV ?= ./res/vids/vid.mp4
+# ARGV ?= ./res/vids/vid.mp4 --monitor=0
+ARGV ?= ~/Videos/Hidamari/cat-in-rain.mp4 --monitor=0 ~/Videos/Hidamari/pixel-mario.mp4 --monitor=1 --pixelated=1 # TODO: clean this up
 RELEASE ?= 0
 VERBOSE ?= 0
 
@@ -10,9 +12,16 @@ PREPROCESSORS =
 ifeq (${xrandr},1)
 	PREPROCESSORS += -DHAVE_LIBXRANDR
 endif
+ifeq (${cglm},1)
+	PREPROCESSORS += -DHAVE_LIBCGLM
+endif
 
+# too lazy to check how to do else ifs in make
 ifeq (${noglcalldebug},1)
 	noglcalldebug := 1
+endif
+ifeq (${noglcalldebug},0)
+	noglcalldebug := 0
 endif
 
 ifeq ($(RELEASE),1)
@@ -47,8 +56,12 @@ SRC :=  $(wildcard ${SRCDIR}/*.c)
 OBJ := $(patsubst ${SRCDIR}/%.c, ${BIN_INT}/%.o, ${SRC})
 
 PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto xcb-util egl libavcodec libavformat libavfilter libavutil libswresample libswscale
+
 ifeq (${xrandr},1)
 	PKG_CONFIG_LIBS += xcb-randr
+endif
+ifeq (${cglm},1)
+	PKG_CONFIG_LIBS +=cglm
 endif
 
 INCS = -I$(SRCDIR) -Ivendor $(shell $(PKG_CONFIG) --cflags $(PKG_CONFIG_LIBS))
@@ -101,8 +114,7 @@ uninstall:
 
 compile_commands.json:
 	@echo "GEN compile_commands.json"
-	@echo "BTW this compiles the project so have fun lol"
-	$(Q)compiledb make compile
+	$(Q)compiledb make compile xrandr=1 cglm=1
 	@echo "Task '$@' - DONE"
 
 

@@ -6,7 +6,10 @@
 #include <epoxy/egl.h>
 
 #include "framebuffer.h"
-#include "video_renderer.h"
+#include "camera.h"
+#include "monitor.h"
+#include "wallpaper.h"
+#include "arg_parser.h"
 
 typedef struct context {
         xcb_connection_t *connection;
@@ -20,8 +23,14 @@ typedef struct context {
         EGLDisplay display;
         EGLContext *context;
 
+        camera_t camera;
+
+        monitor_t **monitors;
+        int monitor_count;
+
         FrameBuffer_t framebuffer;
-        VideoRenderer_t video;
+        wallpaper_t *wallpapers;
+        int wallpaper_count;
 } context_t;
 
-context_t context_create(bool vsync);
+context_t context_create(struct argument_options *opts);

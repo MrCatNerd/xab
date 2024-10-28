@@ -15,6 +15,7 @@
 
 #include "video_reader.h"
 #include "logging.h"
+#include "utils.h"
 
 // todo: smh like that
 struct packet_list {
@@ -45,12 +46,12 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     // open file
     state->av_format_ctx = avformat_alloc_context();
     if (state->av_format_ctx == NULL) {
-        fprintf(stderr, "Couldn't create AVFormatContext\n");
+        program_error("Couldn't create AVFormatContext\n");
         return false;
     }
 
     if (avformat_open_input(&state->av_format_ctx, path, NULL, NULL) != 0) {
-        fprintf(stderr, "Couldn't open video file: %s\n", path);
+        program_error("Couldn't open video file: %s\n", path);
         return false;
     }
 
@@ -90,25 +91,25 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     }
 
     if (state->video_stream_idx == -1) {
-        fprintf(stderr, "Couldn't find a valid video stream inside file: %s\n",
-                path);
+        program_error("Couldn't find a valid video stream inside file: %s\n",
+                      path);
         return false;
     }
 
     // setup a codec context for the decoder
     state->av_codec_ctx = avcodec_alloc_context3(av_codec);
     if (!state->av_format_ctx) {
-        fprintf(stderr, "Couldn't allocate AVCodecContext\n");
+        program_error("Couldn't allocate AVCodecContext\n");
         return false;
     }
 
     if (avcodec_parameters_to_context(state->av_codec_ctx, av_codec_params) <
         0) {
-        fprintf(stderr, "Couldn't initialize AVCodecContext\n");
+        program_error("Couldn't initialize AVCodecContext\n");
         return false;
     }
     if (avcodec_open2(state->av_codec_ctx, av_codec, NULL) < 0) {
-        fprintf(stderr, "Couldn't open codec\n");
+        program_error("Couldn't open codec\n");
         return false;
     }
 
@@ -116,18 +117,18 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         LOG("-- HW acceleration in use for video reading: %s\n",
             state->av_codec_ctx->hwaccel->name);
     } else {
-        LOG("-- no HW acceleration in use for video reading:( good luck cpu\n");
+        LOG("-- no HW acceleration in use for video decoding :( good luck "
+            "cpu\n");
     }
 
-    state->av_codec_ctx->thread_count = 4;
     state->av_frame = av_frame_alloc();
     if (!state->av_frame) {
-        fprintf(stderr, "Couldn't allocate AVFrame\n");
+        program_error("Couldn't allocate AVFrame\n");
     }
 
     state->av_packet = av_packet_alloc();
     if (!state->av_packet) {
-        fprintf(stderr, "Couldn't allocate AVPacket\n");
+        program_error("Couldn't allocate AVPacket\n");
     }
 
     state->internal_data[0] =
@@ -139,6 +140,7 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
 
     return true;
 }
+
 bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
                              int64_t *pts) {
     // get members
@@ -157,8 +159,7 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
 
         response = avcodec_send_packet(av_codec_ctx, av_packet);
         if (response < 0) {
-            fprintf(stderr, "Failed to decode packet %s\n",
-                    av_err2str(response));
+            program_error("Failed to decode packet %s\n", av_err2str(response));
             return false;
         }
 
@@ -169,8 +170,7 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
             continue;
         } else if (response < 0) {
             av_packet_unref(av_packet);
-            fprintf(stderr, "Failed to decode packet %s\n",
-                    av_err2str(response));
+            program_error("Failed to decode packet %s\n", av_err2str(response));
             return false;
         }
 
@@ -186,7 +186,7 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
     }
     if (!state->sws_scaler_ctx) {
-        fprintf(stderr, "Couldn't initialize SwsContext scaler\n");
+        program_error("Couldn't initialize SwsContext scaler\n");
         return false;
     }
 
@@ -203,7 +203,7 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
          av_format_ctx->streams[video_stream_idx]->duration);
 
     if (av_frame->pts == last_pts) {
-        LOG("looping video\n");
+        VLOG("-- looping video\n");
         const int64_t start_time =
             (int64_t)(state->internal_data[0] & 0xFFFFFFFFFFFFFFFF);
         av_seek_frame(av_format_ctx, video_stream_idx,

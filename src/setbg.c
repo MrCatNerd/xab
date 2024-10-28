@@ -7,6 +7,7 @@
 #include "context.h"
 #include "atom.h"
 #include "logging.h"
+#include "utils.h"
 
 static xcb_window_t *find_desktop(context_t *context);
 static xcb_window_t *find_desktop_recursive(context_t *context,
@@ -76,7 +77,7 @@ void setup_background(context_t *context) {
     load_atoms(context, &config);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
-        fprintf(stderr, "Creation of pixmap property failed!\n");
+        program_error("Creation of pixmap property failed!\n");
         exit(1);
     }
 
@@ -186,7 +187,7 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
         context->connection, xcb_query_tree(context->connection, *window),
         NULL);
     if (!reply) {
-        fprintf(stderr, "XQueryTree failed!\n");
+        program_error("XQueryTree failed!\n");
         exit(1);
     }
 

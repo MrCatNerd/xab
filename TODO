@@ -1,10 +1,32 @@
-- proper hardware acceleration for video decoding
-- change only 1 screen (multiscreen suppoprt stuff)
-- video frame dropping (can be turned off as on option)
-- fix up framebuffer implementation
-- custom shader option cuz why not (in .config/xab)
-- load default shaders as strings (in build system or smh), so i don't have to have the 'res' directory near the xab executable
+-- TODO LIST --
+will be implemented (probably)
+
 - loop over video correctly
+- proper hardware acceleration for video decoding
+- video frame dropping (can be turned off as an option/flag)
+- load default shaders as strings (in build system or smh), so i don't have to have the 'res' directory near the xab executable, i wanna do that in the build system
+- custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
+- scaling, fitting, centering, tiling and other background stuff
 - make a better error system cuz currently its just a mess (and warnings and stuff)
 - clean up my bad code lol
-- man page?
+- man page
+
+
+--- IDEA LIST ---
+may or may not be implemented
+
+- a framebuffer for each background
+- maybe use mpv library for video decoding cuz they use ffmpeg too but they know what they're doing, unlike me
+- somehow cache the frames
+- find a way to only change 1 monitor/part of the screen without cleaning everything else (maybe save pixmap to a texture?)
+- very simple toml config that will become super complicated after a week
+- stb_image for normal backgrounds (as a compile option cuz ppl don't like bloat)
+- daemon and client thingy (like swww), so i can change the background on the fly and other cool things
+- an optional gui (with rust and iced or smh), as a seperate repo, but i think i have to make the daemon thingy first
+- tests with a dummy root window and stuff (and delete my garbage build testing thingy)
+- slideshow
+
+-- GIT STUFF --
+- when things get stable, make a stable branch
+- make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
+- use github actions to bulid releases

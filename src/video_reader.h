@@ -14,6 +14,7 @@ typedef struct VideoReaderState {
         int height;
         AVRational time_base;
         size_t frame_size_bytes;
+        double max_delay;
 
         // internal
         int video_stream_idx;

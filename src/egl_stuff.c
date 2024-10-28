@@ -47,9 +47,9 @@ GLenum glCheckError_(const char *file, int line) {
 
         errorCount++;
         if (errorCount <= 10)
-            printf("[OpenGL Error] %s | %s:%d (error count: %lu | error "
-                   "code:%d)\n",
-                   error, file, line, errorCount, errorCode);
+            LOG("[OpenGL Error] %s | %s:%d (error count: %lu | error "
+                "code:%d)\n",
+                error, file, line, errorCount, errorCode);
     }
     return errorCode;
 }

@@ -31,7 +31,7 @@ _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"");
 static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id,
                                    GLenum severity, GLsizei length,
                                    const GLchar *message, const void *user) {
-    fprintf(stderr, "%s\n", message);
+    program_error("%s\n", message);
     if (severity == GL_DEBUG_SEVERITY_HIGH ||
         severity == GL_DEBUG_SEVERITY_MEDIUM) {
         Assert(!"OpenGL API usage error! Use debugger to examine call stack!");

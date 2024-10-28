@@ -15,9 +15,8 @@ const char *ReadFile(const char *path) {
         length = ftell(f);
         fseek(f, 0, SEEK_SET);
         buffer = malloc(length + 1);
-        if (buffer) {
+        if (buffer)
             fread(buffer, 1, length, f);
-        }
         fclose(f);
     }
 
