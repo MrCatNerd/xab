@@ -45,7 +45,7 @@ Anything that ffmpeg (libav) supports
 
 ### Dependencies
 
-Assuming you already have the building tools installed (e.g. gcc, make, etc.), you still need:
+Assuming you already have the building tools installed (e.g. gcc, meson, etc.), you still need:
 * xcb
 * xcb-util
 * xproto
@@ -100,66 +100,36 @@ TODO: fedora and arch <!-- maybe -->
 
 ### To build
 ```sh
-make compile RELEASE=1
-
-# multi monitor support:
-#make compile xrandr=1 cglm=1 RELEASE=1
+meson setup build --buildtype=release
+meson -C build
 ```
-Built binary can be found in `bin/Release/xab`
+Built binary can be found in `build/xab`
 
 ---
 
 ### To install
 ```sh
-make compile RELEASE=1
-sudo make install RELEASE=1
-
-# multi monitor support:
-#make compile xrandr=1 cglm=1 RELEASE=1
-#sudo make install RELEASE=1 xrandr=1 cglm=1
+meson setup build --buildtype=release
+ninja -C build
+ninja -C build install
 ```
 this will install xab at `/usr/local/bin`
 
 ---
 
 ### Compilation databases
-requires [__compiledb__](https://github.com/nickdiego/compiledb)
 
 ```sh
-make compile_commands.json
+cp build/compile_commands.json .
 ```
 
 ---
 
 <details>
-<summary>make options and variables</summary>
+<summary>meson options</summary>
 
 ```sh
-make # currently defaults to 'compile'
-make all # creates compile_commands.json and compiles xab
-make run
-make compile
-make clean
-make compile_commands.json
-sudo make install
-
-### VARIABLES:
-
-make ARGV=TODO
-
-make xrandr=1
-
-# If on release mode, verbose won't do a thing
-make RELEASE=1
-make VERBOSE=1
-
-make V=1 # Verbose Makefile
-
-# defaults:
-# VERBOSE=0
-# RELEASE=0
-# xrandr=0
-# V=undefined
+# enable verbose logging
+meson setup build -Dverbose=true
 ```
-
 </details>

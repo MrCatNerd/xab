@@ -1,0 +1,13 @@
+option(
+  'verbose',
+  type: 'boolean',
+  value: false,
+  description: 'Enable verbose logging',
+)
+
+option(
+  # TODO
+  'static_build',
+  type: 'boolean',
+  value: false,
+)

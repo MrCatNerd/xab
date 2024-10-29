@@ -1,5 +1,4 @@
-bin
-bin-int
-.cache
+build
 compile_commands.json
 build_all_combinations.sh
+.cache
