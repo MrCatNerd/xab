@@ -93,4 +93,5 @@ executable(
   link_args: extra_link_args,
   dependencies: deps,
   include_directories: ['src'],
+  install: true,
 )
