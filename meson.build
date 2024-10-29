@@ -45,7 +45,7 @@ ffmpeg_deps = [
 ]
 
 # --- optional dependencies ---
-cglm_dep = dependency('cglm', required: false)
+cglm_dep = dependency('cglm', version: '>= 0.8.4', required: false)
 if cglm_dep.found()
   add_project_arguments('-DHAVE_LIBCGLM', language: 'c')
 endif

@@ -50,8 +50,8 @@ Assuming you already have the building tools installed (e.g. gcc, meson, etc.), 
 * xcb-util
 * xproto
 * libepoxy
-* xcb-randr (optional but required for multi monitor support) version >= 1.5 recommended
-* cglm (optional but required for multi monitor support)
+* xcb-randr version >= 1.5 recommended (optional but required for multi monitor support)
+* cglm version >= 0.8.4 (optional but required for multi monitor support)
 * libGL
 * libEGL
 * libavutil
@@ -77,17 +77,6 @@ sudo apt-get install \
 sudo apt-get install libxcb-randr-dev
 
 # cglm
-# they are on apt but outdated as hell, i would reccomend compiling from source
-git clone --depth 1 https://github.com/recp/cglm.git /tmp/cglm
-pushd /tmp/cglm
-sh autogen.sh
-./configure
-make
-make check
-sudo make install
-popd
-
-# or if you want an outdated version (version 0.8.4 instead of 0.9.5)
 sudo apt-get install libcglm-dev
 ```
 
