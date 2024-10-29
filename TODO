@@ -17,14 +17,14 @@ may or may not be implemented
 
 - a framebuffer for each background
 - maybe use mpv library for video decoding cuz they use ffmpeg too but they know what they're doing, unlike me
-- somehow cache the frames
 - find a way to only change 1 monitor/part of the screen without cleaning everything else (maybe save pixmap to a texture?)
 - very simple toml config that will become super complicated after a week
 - stb_image for normal backgrounds (as a compile option cuz ppl don't like bloat)
 - daemon and client thingy (like swww), so i can change the background on the fly and other cool things
 - an optional gui (with rust and iced or smh), as a seperate repo, but i think i have to make the daemon thingy first
-- tests with a dummy root window and stuff (and delete my garbage build testing thingy)
+- somehow cache the frames?
 - slideshow
+- tests with a dummy root window and stuff (and delete my garbage build testing thingy)
 
 -- GIT STUFF --
 - when things get stable, make a stable branch

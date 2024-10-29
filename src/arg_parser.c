@@ -68,11 +68,11 @@ struct argument_options parse_args(int argc, char *argv[]) {
         const char *value = strtok(NULL, "=");
 
         if (!strcmp(token, "--version") || !strcmp(token, "-V")) {
-#ifdef VERSION
-            printf("%s\n", VERSION);
+#ifdef XAB_VERSION
+            printf("%s\n", XAB_VERSION);
 #else
 #warning "VERSION macro is not set"
-            printf("no version specified while building\n");
+            printf("no version was specified while building\n");
 #endif
             exit(EXIT_SUCCESS);
         }

@@ -5,8 +5,22 @@ project(
   default_options: ['warning_level=3', 'b_ndebug=if-release'],
 )
 
+# --- macros and options and stuff ---
+extra_link_args = []
+buildtype = get_option('buildtype')
+
+if buildtype == 'release'
+  add_project_arguments('-DNDEBUG', language: 'c')
+endif
+if get_option('verbose') == false and buildtype != 'plain'
+  add_project_arguments('-DNVERBOSE', language: 'c')
+endif
+
+if get_option('static_build')
+  extra_link_args += '-static'
+endif
+
 # --- dependencies ---
-# PKG_CONFIG_LIBS = epoxy xcb xcb-atom xcb-aux xproto xcb-util egl libavcodec libavformat libavfilter libavutil libswresample libswscale
 xcb_deps = [
   dependency('xcb'),
   dependency('xcb-atom'),
@@ -43,21 +57,6 @@ endif
 
 deps = ffmpeg_deps + xcb_deps + [epoxy_dep, egl_dep, cglm_dep, xrandr_dep]
 
-# --- macros and options and stuff ---
-extra_link_args = []
-buildtype = get_option('buildtype')
-
-if buildtype == 'release'
-  add_project_arguments('-DNDEBUG', language: 'c')
-endif
-if get_option('verbose') == false and buildtype != 'plain'
-  add_project_arguments('-DNVERBOSE', language: 'c')
-endif
-
-if get_option('static_build')
-  extra_link_args += '-static'
-endif
-
 # --- source files ---
 src_files_list_raw = [
   'xab.c',
@@ -79,7 +78,7 @@ src_files_list_raw = [
 # <name> -> src/<name>
 src_files_list = []
 foreach file : src_files_list_raw
-  src_files_list += 'src/' + file
+  src_files_list += join_paths('src', file)
 endforeach
 
 src_files = files(src_files_list)
@@ -89,7 +88,7 @@ executable(
   meson.project_name(),
   src_files,
   c_args: [
-    '-DVERSION="' + meson.project_version() + '"',
+    '-DXAB_VERSION="' + meson.project_version() + '"',
   ],
   link_args: extra_link_args,
   dependencies: deps,
