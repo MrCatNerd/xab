@@ -86,10 +86,13 @@ sudo apt-get install libcglm-dev
 
 TODO: fedora and arch <!-- maybe -->
 
+### Setup
+```sh
+meson setup build --buildtype=release
+```
 
 ### To build
 ```sh
-meson setup build --buildtype=release
 meson -C build
 ```
 Built binary can be found in `build/xab`
@@ -98,11 +101,10 @@ Built binary can be found in `build/xab`
 
 ### To install
 ```sh
-meson setup build --buildtype=release
-ninja -C build
 ninja -C build install
 ```
-this will install xab at `/usr/local/bin`
+this will install xab at `/usr/local/bin` (probably)
+
 
 ---
 
