@@ -20,6 +20,7 @@ static void help(const char *program_name) {
            "--monitor=n         | which monitor to use                       "
            "                                 "
            "options:\n"
+           "* -V, --version       | print version\n"
            "* -M, --monitor=n     | which monitor to use (requires xrandr "
            "and cglm dependencies)                (default: 0)\n"
            "* --vsync=0|1         | synchronize framerate to monitor "
@@ -66,6 +67,15 @@ struct argument_options parse_args(int argc, char *argv[]) {
         const char *key = strtok(token, "=");
         const char *value = strtok(NULL, "=");
 
+        if (!strcmp(token, "--version") || !strcmp(token, "-V")) {
+#ifdef VERSION
+            printf("%s\n", VERSION);
+#else
+#warning "VERSION macro is not set"
+            printf("no version specified while building\n");
+#endif
+            exit(EXIT_SUCCESS);
+        }
         if (!strcmp(token, "--help") || !strcmp(token, "-h")) {
             help(program_name);
             exit(EXIT_SUCCESS);
