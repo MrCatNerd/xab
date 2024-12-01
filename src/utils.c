@@ -1,11 +1,15 @@
-#include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "utils.h"
 
 const char *ReadFile(const char *path) {
+    if (access(path, F_OK) != 0)
+        return NULL;
+
     char *buffer = NULL;
     long length = 0;
     FILE *f = fopen(path, "rb");
@@ -16,11 +20,11 @@ const char *ReadFile(const char *path) {
         fseek(f, 0, SEEK_SET);
         buffer = malloc(length + 1);
         if (buffer)
-            fread(buffer, 1, length, f);
+            (void)fread(buffer, 1, length, f);
         fclose(f);
-    }
 
-    buffer[length] = '\0'; // ensure EOF
+        buffer[length] = '\0'; // ensure EOF
+    }
 
     Assert(
         buffer != NULL &&
