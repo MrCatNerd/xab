@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+PointerAlignment: Right
+SortIncludes: false
+AccessModifierOffset: 0
+IndentAccessModifiers: true
+UseTab: Never
+BraceWrapping:
+  AfterEnum: false
+  AfterStruct: false
+  AfterClass: false
+  BeforeLambdaBody: false
+
