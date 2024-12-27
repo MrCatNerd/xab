@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "arg_parser.h"
+#include "video_reader_interface.h"
 #include "wallpaper.h"
-#include "logging.h"
-#include "utils.h"
+#include "logger.h"
 
 // spaghetti code go bRRR
 
@@ -25,13 +25,13 @@ static void help(const char *program_name) {
            "and cglm dependencies)                (default: 0)\n"
            "* --vsync=0|1         | synchronize framerate to monitor "
            "framerate                                  (default: 0)\n"
-           "* --max_framerate=0|n | limit framerate to n fps (overrides "
-           "vsync)                                  (default: 0)\n\n"
+           // "* --max_framerate=0|n | limit framerate to n fps (overrides "
+           // "vsync)                                  (default: 0)\n\n"
            "per video/monitor options:\n"
            "* -p, --pixelated     | use bilinear instead of point filtering "
-           "for rendering the background        (default: bilnear)\n"
-           "* --hw_accel=0|1      | use hardware acceleration for video "
-           "decoding (hardware needs to support it) (default: 1)\n",
+           "for rendering the background        (default: bilinear)\n"
+           "* --hw_accel=yes,no,auto      | use hardware acceleration for "
+           "video decoding (hardware needs to support it) (default: auto)\n",
            program_name);
 }
 
@@ -61,7 +61,7 @@ struct argument_options parse_args(int argc, char *argv[]) {
     }
 
     opts.n_wallpaper_options = 0;
-    opts.wallpaper_options = NULL; // IDC IF ITS ALREADY SET TO NULL
+    opts.wallpaper_options = NULL; // sanity check
     for (int i = 1; i < argc; i++) {
         char *token = argv[i];
         const char *key = strtok(token, "=");
@@ -71,7 +71,7 @@ struct argument_options parse_args(int argc, char *argv[]) {
 #ifdef XAB_VERSION
             printf("%s\n", XAB_VERSION);
 #else
-#warning "VERSION macro is not set"
+#warning "XAB_VERSION macro is not set"
             printf("no version was specified while building\n");
 #endif
             exit(EXIT_SUCCESS);
@@ -86,36 +86,49 @@ struct argument_options parse_args(int argc, char *argv[]) {
                                     // perfect solution?, shush
             opts.n_wallpaper_options++;
             if (opts.wallpaper_options != NULL)
-                opts.wallpaper_options = realloc(
-                    opts.wallpaper_options, sizeof(struct wallpaper_options) *
-                                                opts.n_wallpaper_options);
+                opts.wallpaper_options =
+                    realloc( // realloc cuz this is not performancce
+                             // critical code, there is no need to count the
+                             // backgrounds and reserve space, also my
+                             // implementation kinda relies on this to get the
+                             // current background (opts.n_wallpaper_options-1)
+                        opts.wallpaper_options,
+                        sizeof(struct wallpaper_options) *
+                            opts.n_wallpaper_options);
             else
                 opts.wallpaper_options = calloc(
                     opts.n_wallpaper_options, sizeof(struct wallpaper_options));
 
             opts.wallpaper_options[opts.n_wallpaper_options - 1].video_path =
                 strdup(key);
+            opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+                VR_HW_ACCEL_AUTO;
+
+            opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor = -1;
 
         } else if (!strcmp(key, "--monitor") || !strcmp(key, "-M")) {
 #ifdef HAVE_LIBXRANDR
 #ifdef HAVE_LIBCGLM
             opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor =
                 atoi(value);
+#else
+            xab_log(LOG_ERROR,
+                    "'%s' was not compiled with cglm support. "
+                    "'--monitor' is not supported.\n",
+                    argv[0]);
+#endif /* HAVE_LIBCGLM */
+#else
+            xab_log(LOG_ERROR,
+                    "'%s' was not compiled with xcb-randr support. "
+                    "'--monitor' is not supported.\n",
+                    argv[0]);
+#endif /* HAVE_LIBXRANDR */
 
+            // set ever option thats smaller than 0 to -1, for consistency
             if (opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor <
                 0)
                 opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor =
                     -1;
-#else
-            program_error("'%s' was not compiled with cglm support. "
-                          "'--monitor' is not supported.\n",
-                          argv[0]);
-#endif /* HAVE_LIBCGLM */
-#else
-            program_error("'%s' was not compiled with xcb-randr support. "
-                          "'--monitor' is not supported.\n",
-                          argv[0]);
-#endif /* HAVE_LIBXRANDR */
         } else if (!strcmp(key, "--pixelated") || !strcmp(key, "-p")) {
             opts.wallpaper_options[opts.n_wallpaper_options - 1].pixelated =
                 atoi(value) != 0;
@@ -123,16 +136,32 @@ struct argument_options parse_args(int argc, char *argv[]) {
             opts.vsync = atoi(value) != 0;
         } else if (!strcmp(key, "--max_framerate") || !strcmp(key, "-m")) {
             opts.max_framerate = atoi(value) != 0;
+        } else if (!strcmp(key, "--hw_accel")) {
+            // hmmm switch statement of the first character?, nahhhh
+
+            if (!strcmp(value, "no"))
+                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+                    VR_HW_ACCEL_NO;
+            else if (!strcmp(value, "yes"))
+                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+                    VR_HW_ACCEL_YES;
+            else if (!strcmp(value, "auto"))
+                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+                    VR_HW_ACCEL_AUTO;
+            else // use auto
+                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+                    VR_HW_ACCEL_AUTO;
         }
     }
 
-#ifndef NVERBOSE
-    VLOG("[arg_parser] video count: %d\n", opts.n_wallpaper_options);
+    // TODO: if verbose
+    xab_log(LOG_VERBOSE, "[arg_parser] video count: %d\n",
+            opts.n_wallpaper_options);
     for (int i = 0; i < opts.n_wallpaper_options; i++) {
-        VLOG("[arg parser] opts: %s:%d\n", opts.wallpaper_options[i].video_path,
-             opts.wallpaper_options[i].monitor);
+        xab_log(LOG_VERBOSE, "[arg parser] opts: %s:%d\n",
+                opts.wallpaper_options[i].video_path,
+                opts.wallpaper_options[i].monitor);
     }
-#endif /* ifndef NVLOG */
 
     return opts;
 }

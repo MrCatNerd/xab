@@ -1,7 +1,10 @@
 #pragma once
 
-#include "video_renderer.h"
+#include "camera.h"
+#include "shader.h"
+#include "video_reader_interface.h"
 
+// for the arg parser, not the init
 typedef struct wallpaper_options {
         const char *path;
         int width, height;
@@ -9,14 +12,17 @@ typedef struct wallpaper_options {
 } wallpaper_options_t;
 
 typedef struct wallpaper {
-        VideoRenderer_t video;
+        int x, y;
+        VideoReaderState_t video;
 
-        // will be ignored without cglm
-        int width, height;
-        float x, y;
+        Shader_t shader;
 } wallpaper_t;
 
-void wallpaper_init(int width, int height, int x, int y, const char *video_path,
-                    VideoRendererConfig_t video_config, wallpaper_t *dest);
+void wallpaper_init(float scale, int width, int height, int x, int y,
+                    bool pixelated, const char *video_path, wallpaper_t *dest,
+                    int hw_accel);
 
-void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera);
+void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
+                      FrameBuffer_t *fbo_dest);
+
+void wallpaper_close(wallpaper_t *wallpaper);

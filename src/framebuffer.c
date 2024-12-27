@@ -4,11 +4,10 @@
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
-#include <epoxy/gl_generated.h>
-#include <epoxy/egl_generated.h>
 
 #include "framebuffer.h"
-#include "logging.h"
+#include "logger.h"
+#include "shader.h"
 #include "utils.h"
 #include "vertex.h"
 
@@ -23,7 +22,8 @@ static const Vertex_t vertices[] = {
 static const unsigned int indices[] = {0, 1, 2, 0, 3, 2};
 // clang-format on
 
-FrameBuffer_t create_framebuffer(int width, int height) {
+FrameBuffer_t create_framebuffer(int width, int height,
+                                 int gl_internal_format) {
     // create fbo
     FrameBuffer_t fb;
     glGenFramebuffers(1, &fb.fbo_id);
@@ -36,6 +36,7 @@ FrameBuffer_t create_framebuffer(int width, int height) {
 
     fb.width = width;
     fb.height = height;
+    fb.gl_internal_format = gl_internal_format;
 
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width,
                           fb.height);
@@ -48,11 +49,12 @@ FrameBuffer_t create_framebuffer(int width, int height) {
 
     if (fb.texture_color_id == 0) {
         program_error("Failed to generate framebuffer color texture!\n");
+        exit(EXIT_FAILURE);
     }
 
     glBindTexture(GL_TEXTURE_2D, fb.texture_color_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb.width, fb.height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, fb.gl_internal_format, fb.width, fb.height,
+                 0, fb.gl_internal_format, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -63,11 +65,13 @@ FrameBuffer_t create_framebuffer(int width, int height) {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            fb.texture_color_id, 0);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
-        LOG("-- Created framebuffer #%d %dx%dpx\n", fb.fbo_id, fb.width,
-            fb.height);
-    } else
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         program_error("framebuffer #%d not complete\n", fb.fbo_id);
+        exit(EXIT_FAILURE);
+    }
+
+    xab_log(LOG_DEBUG, "Created framebuffer #%d %dx%dpx\n", fb.fbo_id, fb.width,
+            fb.height);
 
     // create quad
     // VBO
@@ -96,62 +100,13 @@ FrameBuffer_t create_framebuffer(int width, int height) {
     glEnableVertexAttribArray(1);
 
     // i don't want color data, or do i?
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex_t),
+                          (void *)offsetof(Vertex_t, color));
+    glEnableVertexAttribArray(2);
 
-    // Shader
-    // totally not copied from video_renderer.c
-    {
-        // error stuff
-        int success;
-        char infoLog[1024];
-
-        // vertex shader
-        unsigned int vshader;
-        const char *vshader_src =
-            ReadFile("res/shaders/framebuffer_vertex.glsl");
-        vshader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vshader, 1, &vshader_src, NULL);
-        glCompileShader(vshader);
-
-        glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vshader, sizeof(infoLog), NULL, infoLog);
-            program_error("Failed to compile vertex shader\n%s\n", infoLog);
-        }
-
-        // fragment shader
-        unsigned int fshader;
-        const char *fshader_src =
-            ReadFile("res/shaders/framebuffer_fragment.glsl");
-        fshader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fshader, 1, &fshader_src, NULL);
-        glCompileShader(fshader);
-
-        glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fshader, sizeof(infoLog), NULL, infoLog);
-            program_error("Failed to compile fragment shader\n%s\n", infoLog);
-        }
-
-        // shader program
-        fb.shader_program = glCreateProgram();
-        glAttachShader(fb.shader_program, vshader);
-        glAttachShader(fb.shader_program, fshader);
-        glLinkProgram(fb.shader_program);
-
-        glGetProgramiv(fb.shader_program, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(fb.shader_program, sizeof(infoLog), NULL,
-                                infoLog);
-            program_error("Failed to link shaders!\n%s\n", infoLog);
-        }
-
-        // cleanup
-        glDeleteShader(vshader);
-        glDeleteShader(fshader);
-
-        free((void *)vshader_src);
-        free((void *)fshader_src);
-    }
+    fb.shader = create_shader("res/shaders/framebuffer_vertex.glsl",
+                              "res/shaders/framebuffer_fragment.glsl");
+    // "res/shaders/mouse_distance_thingy.glsl");
 
     // unbind buffers
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -169,31 +124,57 @@ void render_framebuffer_start_render(FrameBuffer_t *fb) {
     // first pass
     glBindFramebuffer(GL_FRAMEBUFFER, fb->fbo_id);
 
-    glClearColor(0.8f, 0.6f, 0.9f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE); // oopsie square vertices are (sorta) wrong and im
+                             // too lazy to fix them because it doesn't matter
 }
 
-void render_framebuffer_end_render(FrameBuffer_t *fb, float da_time) {
+void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     // second pass
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, dest);
+
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // shader stuff
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
+    use_shader(&fb->shader);
+    glUniform1f(shader_get_uniform_location(&fb->shader, "Time"), da_time);
+
+    // geometry stuff
+    glBindVertexArray(fb->vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fb->ebo);
+
+    // finally render
+    glDrawElements(GL_TRIANGLES,
+                   (unsigned int)(sizeof(indices) / sizeof(*indices)),
+                   GL_UNSIGNED_INT, 0);
+
+    // unbind stuff
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
+                                      Shader_t *shader) {
+    // second pass
+    glBindFramebuffer(GL_FRAMEBUFFER, dest);
 
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     // don't clear anything cuz we wanna preserve the other backgrounds
-    // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT);
 
-    // shader stuff
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
-    glUseProgram(fb->shader_program);
-    glUniform1f(glGetUniformLocation(fb->shader_program, "Time"), da_time);
+    // use the shader
+    use_shader(shader);
 
     // geometry stuff
     glBindVertexArray(fb->vao);
@@ -211,7 +192,7 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, float da_time) {
 }
 
 void delete_framebuffer(FrameBuffer_t *fb) {
-    glDeleteProgram(fb->shader_program);
+    delete_shader(&fb->shader);
     glDeleteTextures(1, &fb->texture_color_id);
     glDeleteBuffers(1, &fb->ebo);
     glDeleteBuffers(1, &fb->vbo);

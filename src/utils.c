@@ -19,17 +19,15 @@ const char *ReadFile(const char *path) {
         length = ftell(f);
         fseek(f, 0, SEEK_SET);
         buffer = malloc(length + 1);
-        if (buffer)
-            (void)fread(buffer, 1, length, f);
-        fclose(f);
+        Assert(buffer != NULL &&
+               "Error allocating memory while reading file: '%s'" STR(
+                   path)); // FIXME: STR(path) not working, i need a new assert
+                           // system
 
+        (void)fread(buffer, 1, length, f);
         buffer[length] = '\0'; // ensure EOF
+        fclose(f);
     }
-
-    Assert(
-        buffer != NULL &&
-        "Could not read file %s" STR(
-            path)); // FIXME: STR(path) not working, i need a new assert system
 
     return buffer;
 }

@@ -14,7 +14,7 @@
 #include <libavutil/pixfmt.h>
 
 #include "video_reader.h"
-#include "logging.h"
+#include "logger.h"
 #include "utils.h"
 
 // todo: smh like that
@@ -42,7 +42,7 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     state->av_packet = NULL;
     state->sws_scaler_ctx = NULL;
 
-    VLOG("-- Reading file: %s\n", path);
+    xab_log(LOG_VERBOSE, "Reading file: %s\n", path);
     // open file
     state->av_format_ctx = avformat_alloc_context();
     if (state->av_format_ctx == NULL) {
@@ -57,8 +57,8 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
 
     avformat_find_stream_info(state->av_format_ctx, NULL);
 
-    VLOG("-- File format long name: %s\n",
-         state->av_format_ctx->iformat->long_name);
+    xab_log(LOG_VERBOSE, "File format long name: %s\n",
+            state->av_format_ctx->iformat->long_name);
 
     AVCodecParameters *av_codec_params = NULL;
     AVCodec *av_codec = NULL;
@@ -72,7 +72,7 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         av_codec = (AVCodec *)avcodec_find_decoder(av_codec_params->codec_id);
 
         if (!av_codec) {
-            LOG("-- Warning: can't find a codec on stream #%d", i);
+            xab_log(LOG_WARN, "can't find a codec on stream #%d", i);
             continue;
         }
 
@@ -114,11 +114,12 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
     }
 
     if (state->av_codec_ctx->hwaccel != NULL) {
-        LOG("-- HW acceleration in use for video reading: %s\n",
-            state->av_codec_ctx->hwaccel->name);
+        xab_log(LOG_DEBUG, "HW acceleration in use for video reading: %s\n",
+                state->av_codec_ctx->hwaccel->name);
     } else {
-        LOG("-- no HW acceleration in use for video decoding :( good luck "
-            "cpu\n");
+        xab_log(LOG_DEBUG,
+                "no HW acceleration in use for video decoding :( good luck "
+                "cpu\n");
     }
 
     state->av_frame = av_frame_alloc();
@@ -136,7 +137,7 @@ bool video_reader_open(VideoReaderState_t *state, const char *path) {
         0xFFFFFFFFFFFFFFFF;
 
     state->frame_size_bytes = state->width * state->height * 3;
-    LOG("-- Frame size %zuMB\n", state->frame_size_bytes / 1048576);
+    xab_log(LOG_DEBUG, "Frame size %zuMB\n", state->frame_size_bytes / 1048576);
 
     return true;
 }
@@ -199,11 +200,11 @@ bool video_reader_read_frame(VideoReaderState_t *state, uint8_t *pbuffer,
               av_frame->linesize, 0, av_frame->height, dest, dest_linesize);
     static int64_t last_pts = -1;
 
-    VLOG("%ld/%ld\n", av_frame->pts,
-         av_format_ctx->streams[video_stream_idx]->duration);
+    xab_log(LOG_VERBOSE, "%ld/%ld\n", av_frame->pts,
+            av_format_ctx->streams[video_stream_idx]->duration);
 
     if (av_frame->pts == last_pts) {
-        VLOG("-- looping video\n");
+        xab_log(LOG_VERBOSE, "looping video\n");
         const int64_t start_time =
             (int64_t)(state->internal_data[0] & 0xFFFFFFFFFFFFFFFF);
         av_seek_frame(av_format_ctx, video_stream_idx,

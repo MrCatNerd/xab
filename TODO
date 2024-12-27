@@ -1,32 +1,68 @@
 -- TODO LIST --
 will be implemented (probably)
 
-- loop over video correctly
-- proper hardware acceleration for video decoding
-- video frame dropping (can be turned off as an option/flag)
+todo until next commit:
+- make xab reader work with the video reader interface
+
+* general
+- VERSION file specifying the version
+- --monitor flag before video segfault issue
+- 'u_' prefix in shader uniforms
+- trace logs
+- stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
+- max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
+- meson feature selection in meson options, so i can disable features (like multi monitor support)
+- make a better error system cuz currently its just a mess
 - load default shaders as strings (in build system or smh), so i don't have to have the 'res' directory near the xab executable, i wanna do that in the build system
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
 - scaling, fitting, centering, tiling and other background stuff
-- make a better error system cuz currently its just a mess (and warnings and stuff)
+- better clean ups so i can clean up something even though its initalizing
 - clean up my bad code lol
 - man page
+- add a clang format thingy
+- ansii logger colors with a meson build option for toggeling it
+- try to optimized the hell out of xab
+- if there are two videos assigned to the same monitor, play only one of them
+- dummy video player or smh
+- optimize the hell out of xab and decrease cpu usage as much as i can
+- pause rendering: https://github.com/glouw/paperview/issues/7
+
+* readme
+- Contributing
+- License in readme (mentions the license)
+
+* mpv video reader
+- look into mpv specific video reader bug thingy for specific gpus
+- fullscreen monitor (--monitor=-1) doesn't work with libmpv specifically
+
+* xab video reader
+- fix my bad ffmpeg reader implementation with a new shiny one
+- good frame timing and stuff
+- proper hardware acceleration for video decoding
+- libavdevice stuff ^
+- multithreading
+- video frame dropping (can be turned off as an option/flag, on by default)
+- find if there a way to not use PBOs, and just write to the gpu texture directly
 
 
 --- IDEA LIST ---
 may or may not be implemented
 
-- a framebuffer for each background
-- maybe use mpv library for video decoding cuz they use ffmpeg too but they know what they're doing, unlike me
-- find a way to only change 1 monitor/part of the screen without cleaning everything else (maybe save pixmap to a texture?)
-- very simple toml config that will become super complicated after a week
-- stb_image for normal backgrounds (as a compile option cuz ppl don't like bloat)
+- add vlc support
+- shader pool/cache (for example if i have multiple framebuffers, i can compile res/shaders/framebuffer_vertex.glsl only once)
+- find a way to only change 1 monitor/part of the screen without cleaning everything else (maybe save a part of the pixmap to a texture?)
+- a very simple toml config that will become super complicated after a week
 - daemon and client thingy (like swww), so i can change the background on the fly and other cool things
 - an optional gui (with rust and iced or smh), as a seperate repo, but i think i have to make the daemon thingy first
-- somehow cache the frames?
-- slideshow
-- tests with a dummy root window and stuff (and delete my garbage build testing thingy)
+- slideshow for video and images (i think this is already implemented in the libmpv videa reader, but i havn't included it into xab)
+- video filters and stuff
+- tests with a dummy root window and stuff
+- somehow cache the frames? (xab reader)
+- error trace with a txt file for errors and stuff
+- multithreading
 
 -- GIT STUFF --
 - when things get stable, make a stable branch
 - make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
-- use github actions to bulid releases
+- use github actions to build releases
+- git gud

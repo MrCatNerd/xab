@@ -7,7 +7,7 @@
 
 #include "atom.h"
 #include "context.h"
-#include "logging.h"
+#include "logger.h"
 
 #define X(atom_name) xcb_atom_t atom_name = XCB_ATOM_NONE;
 ATOMS(X)
@@ -41,7 +41,6 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
         bool should_continue = false;
         if (config->filter_len) {
             for (unsigned int j = 0; j < config->filter_len; j++) {
-                VLOG("skipping atom: %s\n", ATOM_LIST[i].name);
                 if ((!strcmp(ATOM_LIST[i].name, config->filters[j]) ||
                      (!config->override &&
                       ATOM_LIST[i].atom != XCB_ATOM_NONE))) {
@@ -49,8 +48,10 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
                 }
             }
         }
-        if (should_continue)
+        if (should_continue) {
+            xab_log(LOG_VERBOSE, "skipping atom: %s\n", ATOM_LIST[i].name);
             continue;
+        }
 
         index_map[atom_count++] = i;
 
@@ -70,8 +71,8 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
         }
 
         *ATOM_LIST[index].atom = reply->atom;
-        VLOG("-- atom: %s - 0x%08x\n", ATOM_LIST[index].name,
-             *ATOM_LIST[index].atom);
+        xab_log(LOG_VERBOSE, "atom: %s - 0x%08x\n", ATOM_LIST[index].name,
+                *ATOM_LIST[index].atom);
 
         free((void *)reply);
     }

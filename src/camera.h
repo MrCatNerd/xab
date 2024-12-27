@@ -33,6 +33,7 @@ void camera_move_and_rotate(camera_t *camera, float x, float y, float angle);
 void camera_move(camera_t *camera, float x, float y);
 void camera_rotate(camera_t *camera, float angle);
 
+void camera_reset_gl_viewport(camera_t *camera);
 void camera_change_viewport_config(camera_t *camera, ViewPortConfig_t vpc);
 
 void recalculate_view_matrix(camera_t *camera);

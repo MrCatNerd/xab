@@ -6,7 +6,6 @@
 #include <inttypes.h>
 
 #include <epoxy/gl.h>
-#include <epoxy/gl_generated.h>
 
 #include <libavformat/avformat.h>
 #include <libavutil/mathematics.h>
@@ -17,7 +16,7 @@
 #include "video_renderer.h"
 #include "vertex.h"
 #include "utils.h"
-#include "logging.h"
+#include "logger.h"
 #include "egl_stuff.h"
 
 #ifdef HAVE_LIBCGLM
@@ -40,9 +39,9 @@ static const Vertex_t vertices[] = {
 static const unsigned int indices[] = {0, 1, 2, 0, 3, 2};
 // clang-format on
 
-double get_time_since_start() { // i should probably make a better system for
-                                // this because im currently calculating time
-                                // twice (delta time and this)
+double get_time_since_start(void) { // i should probably make a better system
+                                    // for this because im currently calculating
+                                    // time twice (delta time and this)
     static double start_time = 0.0;
     if (start_time == 0.0) {
         // Initialize start_time if it hasn't been set yet
@@ -162,15 +161,11 @@ VideoRenderer_t video_from_file(const char *path,
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid.pbos[i]);
         glBufferData(GL_PIXEL_UNPACK_BUFFER, vid.vr_state.frame_size_bytes, 0,
                      GL_STREAM_DRAW);
-
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid.pbos[i]);
-        glBufferData(GL_PIXEL_UNPACK_BUFFER, vid.vr_state.frame_size_bytes, 0,
-                     GL_STREAM_DRAW);
     }
 
     // Texture
-    LOG("-- Video dimensions: %dx%dpx\n", vid.vr_state.width,
-        vid.vr_state.height);
+    xab_log(LOG_DEBUG, "Video dimensions: %dx%dpx\n", vid.vr_state.width,
+            vid.vr_state.height);
     glGenTextures(1, &vid.texture_id);
     glBindTexture(GL_TEXTURE_2D, vid.texture_id);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -197,7 +192,7 @@ void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
     bool skip_decode = false;
     if (pt_sec > tss) { // wait for time to catch up
         skip_decode = true;
-        LOG("skipped\n");
+        xab_log(LOG_DEBUG, "skipped\n");
     } else if (pt_sec - tss <
                0) { // catch up frame to time
                     // todo (i think this is supposed to be framedropping)
@@ -211,6 +206,7 @@ void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
     const unsigned int next_frame_idx = 1;
 
     // upload to texture
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, vid->texture_id);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[frame_idx]);
 
@@ -220,6 +216,8 @@ void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
     // decode next frame
     if (!skip_decode) {
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vid->pbos[next_frame_idx]);
+
+        // TODO: map on setup, unmap on cleanup
 
         // Note that glMapBuffer() causes sync issue. If GPU is working with
         // this buffer, glMapBuffer() will wait until GPU to finish its job. To
@@ -232,7 +230,7 @@ void video_render(VideoRenderer_t *vid, int x, int y, int width, int height,
         GLubyte *ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
         if (ptr) {
             if (!video_reader_read_frame(&vid->vr_state, ptr, &pts)) {
-                program_error("Couldn't load video frame\n");
+                program_error("Couldn't louad video frame\n");
                 exit(EXIT_FAILURE);
 
                 pt_sec = pts * av_q2d(vid->vr_state.time_base);

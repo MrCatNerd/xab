@@ -20,7 +20,8 @@ typedef struct atom_item {
     X(_XROOTPMAP_ID)                                                           \
     X(ESETROOT_PMAP_ID)                                                        \
     X(_NET_WM_WINDOW_TYPE)                                                     \
-    X(_NET_WM_WINDOW_TYPE_DESKTOP)
+    X(_NET_WM_WINDOW_TYPE_DESKTOP)                                             \
+    X(_NET_WM_DESKTOP)
 
 #define X(atom_name) extern xcb_atom_t atom_name;
 ATOMS(X)

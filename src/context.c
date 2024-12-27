@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
@@ -13,8 +14,6 @@
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
-#include <epoxy/gl_generated.h>
-#include <epoxy/egl_generated.h>
 
 // libepoxy havn't updated their khoronos registry yet, there is an unmerged
 // pull request about it and I got nothing to about it until it gets merged :(
@@ -26,7 +25,7 @@
 
 #include "context.h"
 #include "egl_stuff.h"
-#include "logging.h"
+#include "logger.h"
 #include "atom.h"
 #include "wallpaper.h"
 #include "framebuffer.h"
@@ -38,61 +37,65 @@
 context_t context_create(struct argument_options *opts) {
     context_t context;
 
-    LOG("-- Checking EGL extensions...\n");
+    xab_log(LOG_DEBUG, "Checking EGL extensions...\n");
     {
         const char *egl_extensions =
             eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
 
         Assert(egl_extensions != NULL && "no EGL extensions found");
 
-        VLOG("-- EGL extensions: %s\n", egl_extensions);
+        xab_log(LOG_VERBOSE, "EGL extensions: %s\n", egl_extensions);
 
-        char *ext;
-
-        ext = "EGL_EXT_platform_xcb";
+        char *ext = "EGL_EXT_platform_xcb";
         if (!strstr(egl_extensions, ext)) {
-            program_error("%s is not supported.\n", ext);
+            xab_log(LOG_FATAL, "%s extension is not supported.\n", ext);
             exit(EXIT_FAILURE);
-        } else
-            LOG("-- %s supported.\n", ext);
+        } else {
+            xab_log(LOG_DEBUG, "%s supported.\n", ext);
+        }
     }
 
-    LOG("-- Connecting to the X server\n");
+    xab_log(LOG_DEBUG, "Connecting to the X server\n");
     // open the connection to the X server
     context.connection = xcb_connect(NULL, &context.screen_nbr);
 
     if (context.connection == NULL ||
-        xcb_connection_has_error(context.connection))
-        program_error("Error opening display.\n");
+        xcb_connection_has_error(context.connection)) {
+        xab_log(LOG_FATAL, "Unable to connect to the X server.\n");
+        exit(EXIT_FAILURE);
+    }
 
     Assert(0 >= context.screen_nbr && "Invalid screen number.");
 
-    LOG("-- Getting the first screen\n");
+    xab_log(LOG_DEBUG, "Getting the first xcb screen\n");
     // get the first screen
     context.screen =
         xcb_setup_roots_iterator(xcb_get_setup(context.connection)).data;
 
-    if (context.screen == NULL)
-        program_error("Unable to get the screen.\n");
+    if (context.screen == NULL) {
+        xab_log(LOG_FATAL, "Unable to get the screen.\n");
+        // TODO: error handling
+    }
 
-    VLOG("\n");
-    VLOG("Information of screen %" PRIu32 ":\n", context.screen->root);
-    VLOG("  screen number.: %u\n", context.screen_nbr);
-    VLOG("  width.........: %" PRIu16 "px\n", context.screen->width_in_pixels);
-    VLOG("  height........: %" PRIu16 "px\n", context.screen->height_in_pixels);
-    VLOG("  depth.........: %" PRIu8 " bits\n", context.screen->root_depth);
-    VLOG("\n");
+    xab_log(LOG_VERBOSE,
+            "\nInformation of xcb screen %" PRIu32
+            ":\n  screen number.: %u\n  width.........: %" PRIu16 "px\n"
+            "  height........: %" PRIu16 "px\n"
+            "  depth.........: %" PRIu8 " bits\n\n",
+            context.screen->root, context.screen_nbr,
+            context.screen->width_in_pixels, context.screen->height_in_pixels,
+            context.screen->root_depth);
 
     // create a pixmap than turn it into the root's pixmap
-    LOG("-- Setting up background...\n");
+    xab_log(LOG_DEBUG, "Setting up background...\n");
     setup_background(&context);
 
-    LOG("-- Getting unloaded X server atoms\n");
+    xab_log(LOG_DEBUG, "Getting unloaded X server atoms\n");
     load_atoms(&context,
                NULL); // loads the rest of the unloaded atoms (if there are any)
                       // or creates atoms with XCB_ATOM_NONE
 
-    LOG("-- Initializing EGL\n");
+    xab_log(LOG_DEBUG, "Initializing EGL\n");
     // initialize EGL
     context.display =
         eglGetPlatformDisplayEXT(EGL_PLATFORM_XCB_EXT, context.connection,
@@ -107,18 +110,20 @@ context_t context_create(struct argument_options *opts) {
     {
         EGLint major = 0, minor = 0;
         if (!eglInitialize(context.display, &major, &minor)) {
-            program_error("Cannot initialize EGL display.\n");
+            xab_log(LOG_FATAL, "Cannot initialize EGL display.\n");
             exit(EXIT_FAILURE);
         }
         if (major < 1 || minor < 5) {
-            program_error("EGL version 1.5 or higher required. you are "
-                          "currently on version: %d.%d\n",
-                          major, minor);
-        } else
-            LOG("-- EGL version %d.%d\n", major, minor);
+            xab_log(LOG_FATAL,
+                    "EGL version 1.5 or higher required. you are "
+                    "currently on version: %d.%d\n",
+                    major, minor);
+        } else {
+            xab_log(LOG_DEBUG, "EGL version %d.%d\n", major, minor);
+        }
 
-        LOG("-- libepoxy EGL version: %0.1f\n",
-            (float)epoxy_egl_version(context.display) / 10);
+        xab_log(LOG_DEBUG, "libepoxy EGL version: %0.1f\n",
+                (float)epoxy_egl_version(context.display) / 10);
 
 #ifdef HAVE_LIBXRANDR
         // idk why i chose to do it this way instead of just use the values
@@ -131,22 +136,23 @@ context_t context_create(struct argument_options *opts) {
                                         XCB_RANDR_MINOR_VERSION),
                 NULL);
         if (!ver_reply) {
-            program_error("Failed to get RandR version\n");
+            // TODO: make the error not fatal, and just not use xcb_randr
+            xab_log(LOG_FATAL, "Failed to get RandR version\n");
             xcb_disconnect(context.connection);
             exit(EXIT_FAILURE);
         }
 
-        LOG("-- xcb-randr version: %d.%d\n", ver_reply->major_version,
-            ver_reply->minor_version);
+        xab_log(LOG_DEBUG, "xcb-randr version: %d.%d\n",
+                ver_reply->major_version, ver_reply->minor_version);
 
         free(ver_reply);
 #endif /* HAVE_LIBXRANDR */
 
         // don't assert on debug mode
 #ifndef NDEBUG
-        pretty_print_egl_check(false, "-- eglInitialize call");
+        pretty_print_egl_check(false, "eglInitialize call");
 #else
-        pretty_print_egl_check(true, "-- eglInitialize call");
+        pretty_print_egl_check(true, "eglInitialize call");
 #endif
     }
 
@@ -157,9 +163,6 @@ context_t context_create(struct argument_options *opts) {
     // choose EGL configuration
     EGLConfig config;
     {
-        // todo: framebuffer and to check the depth and color and stencil stuff
-        // with the screen->root_depth thingy
-
         // clang-format off
         EGLint attr[] = {
             EGL_SURFACE_TYPE,      EGL_WINDOW_BIT,
@@ -167,10 +170,10 @@ context_t context_create(struct argument_options *opts) {
             EGL_RENDERABLE_TYPE,   EGL_OPENGL_BIT,
             EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
 
-            // todo: get this automatically (from the root visual)
             EGL_RED_SIZE,      8,
             EGL_GREEN_SIZE,    8,
             EGL_BLUE_SIZE,     8,
+            EGL_ALPHA_SIZE,    0,
             EGL_DEPTH_SIZE,   context.screen->root_depth,
 
             EGL_ALPHA_SIZE,    8,
@@ -189,7 +192,7 @@ context_t context_create(struct argument_options *opts) {
         if (eglChooseConfig(context.display, attr, &config, 1, &count) !=
                 EGL_TRUE ||
             count != 1) {
-            program_error("Cannot choose EGL config\n");
+            xab_log(LOG_FATAL, "Cannot choose EGL config\n");
         }
     }
 
@@ -208,7 +211,7 @@ context_t context_create(struct argument_options *opts) {
         context.surface = eglCreateWindowSurface(
             context.display, config, context.background_pixmap, attr);
         if (context.surface == EGL_NO_SURFACE)
-            program_error("Cannot create EGL surface\n");
+            xab_log(LOG_FATAL, "Cannot create EGL surface\n");
     }
 
     // create EGL context
@@ -230,8 +233,8 @@ context_t context_create(struct argument_options *opts) {
         context.context =
             eglCreateContext(context.display, config, EGL_NO_CONTEXT, attr);
         if (context.context == EGL_NO_CONTEXT) {
-            program_error(
-                "Cannot create EGL context, OpenGL 3.3 not supported?\n");
+            xab_log(LOG_FATAL,
+                    "Cannot create EGL context, OpenGL 3.3 not supported?\n");
         }
     }
 
@@ -249,7 +252,7 @@ context_t context_create(struct argument_options *opts) {
     ok = eglSwapInterval(context.display, (int)opts->vsync);
     Assert(ok && "Failed to set VSync for EGL");
 
-    LOG("-- Creating camera\n");
+    xab_log(LOG_DEBUG, "Creating camera\n");
     ViewPortConfig_t vpc = {.left = 0,
                             .right = (float)context.screen->width_in_pixels,
                             .top = 0,
@@ -264,8 +267,7 @@ context_t context_create(struct argument_options *opts) {
     context.monitor_count = 0;
     // get monitors if randr
 #ifdef HAVE_LIBXRANDR
-    // TODO: ignore get monitors if there are no monitors
-    LOG("-- Getting monitors\n");
+    xab_log(LOG_DEBUG, "Getting monitors\n");
     get_monitors_t monitors_ret =
         get_monitors(context.connection, context.screen);
     context.monitors = monitors_ret.monitors;
@@ -273,42 +275,58 @@ context_t context_create(struct argument_options *opts) {
 #endif /* HAVE_LIBXRANDR */
 
     // if no monitors/randr, use default monitor
-    if (context.monitors == NULL) {
+    if (context.monitors == NULL || context.monitor_count <= 0) {
         context.monitor_count = 1;
         context.monitors = malloc(sizeof(monitor_t **));
-        *context.monitors =
-            create_monitor("monitor", 0, true, context.screen->width_in_pixels,
-                           context.screen->height_in_pixels, 0, 0);
+        *context.monitors = create_monitor("fullscreen-monitor", 0, true, 0, 0,
+                                           context.screen->width_in_pixels,
+                                           context.screen->height_in_pixels);
     }
 
-#ifndef NVERBOSE
+    // TODO: verbose macro ifdef thingy
     for (int i = 0; i < context.monitor_count; i++)
-        VLOG("[%d] x: %d, y: %d, w: %d, h: %d\n", i, (context.monitors[i])->x,
-             (context.monitors[i])->y, (context.monitors[i])->width,
-             (context.monitors[i])->height);
-#endif /* ifndef NVERBOSE */
+        xab_log(LOG_VERBOSE, "[%d] x: %d, y: %d, w: %d, h: %d\n", i,
+                (context.monitors[i])->x, (context.monitors[i])->y,
+                (context.monitors[i])->width, (context.monitors[i])->height);
 
-    // create framebuffer
-    context.framebuffer = create_framebuffer(context.screen->width_in_pixels,
-                                             context.screen->height_in_pixels);
+    // create main framebuffer
+    context.framebuffer =
+        create_framebuffer(context.screen->width_in_pixels,
+                           context.screen->height_in_pixels, GL_RGBA);
 
     // load the videos
     context.wallpaper_count = opts->n_wallpaper_options;
     context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
 
-    for (int i = 0; i < context.wallpaper_count; i++) {
-        VideoRendererConfig_t config = {
-            .pixelated = opts->wallpaper_options[i].pixelated,
-            .hw_accel = opts->wallpaper_options[i].hw_accel};
-        // todo: offset in opts
-        const int idx = opts->wallpaper_options[i].monitor;
+    monitor_t *fullscreen_monitor = create_monitor(
+        "fullscreen-monitor", 0, true, 0, 0, context.screen->width_in_pixels,
+        context.screen->height_in_pixels);
 
-        wallpaper_init(context.monitors[idx]->width,
-                       context.monitors[idx]->height, context.monitors[idx]->x,
-                       context.monitors[idx]->y,
-                       opts->wallpaper_options[i].video_path, config,
-                       &context.wallpapers[i]);
+    for (int i = 0; i < context.wallpaper_count; i++) {
+        int idx = opts->wallpaper_options[i].monitor;
+
+        if (idx > context.monitor_count || idx == 0) {
+            xab_log(LOG_WARN,
+                    "Invalid monitor index: %d, defaulting to max (%d)\n", idx,
+                    context.monitor_count);
+            idx = context.monitor_count;
+        }
+        monitor_t *monitor = NULL;
+        if (idx < 0)
+            monitor = fullscreen_monitor;
+        else {
+            monitor = context.monitors[idx - 1];
+        }
+
+        wallpaper_init(1.0f, monitor->width, monitor->height, monitor->x,
+                       monitor->y, opts->wallpaper_options[i].pixelated,
+                       opts->wallpaper_options[i].video_path,
+                       &context.wallpapers[i],
+                       opts->wallpaper_options[i].hw_accel);
     }
+
+    free(fullscreen_monitor); // TODO: remove malloc from the init
+                              // function
 
     return context;
 }

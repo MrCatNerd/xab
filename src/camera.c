@@ -3,7 +3,9 @@
 #include <cglm/cam.h>
 #include <cglm/version.h>
 #include <cglm/mat4.h>
+#include <cglm/util.h>
 #endif
+#include <epoxy/gl.h>
 
 #include "camera.h"
 
@@ -39,6 +41,13 @@ void camera_rotate(camera_t *camera, float angle) {
     recalculate_view_matrix(camera);
 }
 
+void camera_reset_gl_viewport(camera_t *camera) {
+    // im not sure if this is accurate but it gets the job done
+    glViewport(camera->vpc.left, camera->vpc.top,
+               camera->vpc.right - camera->vpc.left,
+               camera->vpc.bottom - camera->vpc.top);
+}
+
 void camera_change_viewport_config(camera_t *camera, ViewPortConfig_t vpc) {
     camera->vpc = vpc;
     recalculate_ortho_matrix(camera);
@@ -67,7 +76,7 @@ void recalculate_view_matrix(camera_t *camera) {
 
     // rotation
     mat4 rotation_mat = GLM_MAT4_IDENTITY_INIT;
-    glm_rotate(rotation_mat, camera->rotation, axis);
+    glm_rotate(rotation_mat, glm_rad(camera->rotation), axis);
 
     // multiply both
     glm_mul(position_mat, rotation_mat, transform);

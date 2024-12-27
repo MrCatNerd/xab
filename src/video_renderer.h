@@ -20,10 +20,10 @@ typedef struct VideoRenderer {
         unsigned int vbo, vao, ebo;
         unsigned int texture_id;
 
-        unsigned int pbos[2]; // for rendering frame, and one for uploading next
-                              // frame
+        unsigned int
+            pbos[2]; // for rendering frame, and one for uploading next frame
 
-        struct VideoReaderState vr_state;
+        VideoReaderState_t vr_state;
 } VideoRenderer_t;
 
 VideoRenderer_t video_from_file(const char *path, VideoRendererConfig_t config);

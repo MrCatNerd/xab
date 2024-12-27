@@ -4,10 +4,10 @@
 #include <epoxy/egl.h>
 
 #include "utils.h"
-#include "logging.h"
+#include "logger.h"
 #include "egl_stuff.h"
 
-void clear_error() {
+void clear_error(void) {
     while (glGetError() != GL_NO_ERROR)
         ;
 }
@@ -47,15 +47,17 @@ GLenum glCheckError_(const char *file, int line) {
 
         errorCount++;
         if (errorCount <= 10)
-            LOG("[OpenGL Error] %s | %s:%d (error count: %lu | error "
-                "code:%d)\n",
-                error, file, line, errorCount, errorCode);
+            xab_log(LOG_DEBUG,
+                    "[OpenGL Error] %s | %s:%d (error count: %lu | error "
+                    "code:%d)\n",
+                    error, file, line, errorCount, errorCode);
     }
     return errorCode;
 }
 
 void pretty_print_egl_check(int do_assert_on_failure, const char *message) {
     int error = eglGetError();
+#ifndef NLOG_DEBUG
     const char *egl_success_string =
         "The last function succeeded without error.";
     const char *egl_not_initialized_string =
@@ -96,58 +98,59 @@ void pretty_print_egl_check(int do_assert_on_failure, const char *message) {
         "all contexts and reinitialise OpenGL ES state and objects to continue "
         "rendering. ";
 
-    switch (error) {
-
+    switch (error) { // there is a better way to do this but idc i just copied
+                     // it from the internet lol
     case EGL_SUCCESS:
-        LOG("%s: %s", message, egl_success_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_success_string);
         break;
     case EGL_NOT_INITIALIZED:
-        LOG("%s: %s", message, egl_not_initialized_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_not_initialized_string);
         break;
     case EGL_BAD_ACCESS:
-        LOG("%s: %s", message, egl_bad_access_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_access_string);
         break;
     case EGL_BAD_ALLOC:
-        LOG("%s: %s", message, egl_bad_alloc_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_alloc_string);
         break;
     case EGL_BAD_ATTRIBUTE:
-        LOG("%s: %s", message, egl_bad_attribute_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_attribute_string);
         break;
     case EGL_BAD_CONTEXT:
-        LOG("%s: %s", message, egl_bad_context_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_context_string);
         break;
     case EGL_BAD_CONFIG:
-        LOG("%s: %s", message, egl_bad_config_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_config_string);
         break;
     case EGL_BAD_CURRENT_SURFACE:
-        LOG("%s: %s", message, egl_bad_current_surface_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_current_surface_string);
         break;
     case EGL_BAD_DISPLAY:
-        LOG("%s: %s", message, egl_bad_display_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_display_string);
         break;
     case EGL_BAD_SURFACE:
-        LOG("%s: %s", message, egl_bad_surface_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_surface_string);
         break;
     case EGL_BAD_MATCH:
-        LOG("%s: %s", message, egl_bad_match_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_match_string);
         break;
     case EGL_BAD_PARAMETER:
-        LOG("%s: %s", message, egl_bad_parameter_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_parameter_string);
         break;
     case EGL_BAD_NATIVE_PIXMAP:
-        LOG("%s: %s", message, egl_bad_native_pixmap_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_native_pixmap_string);
         break;
     case EGL_BAD_NATIVE_WINDOW:
-        LOG("%s: %s", message, egl_bad_native_window_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_bad_native_window_string);
         break;
     case EGL_CONTEXT_LOST:
-        LOG("%s: %s", message, egl_context_lost_string);
+        xab_log(LOG_DEBUG, "%s: %s\n", message, egl_context_lost_string);
         break;
     default:
-        LOG("%s: %s", message, "Unknown EGL error");
+        xab_log(LOG_DEBUG, "%s: %s\n", message, "Unknown EGL error");
         break;
     }
-    LOG("\n");
+#endif
+
     if (do_assert_on_failure) {
         Assert(error == EGL_SUCCESS);
     }

@@ -1,13 +1,13 @@
+#include <inttypes.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
@@ -17,8 +17,6 @@
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
 #include <epoxy/common.h>
-#include <epoxy/gl_generated.h>
-#include <epoxy/egl_generated.h>
 
 // libepoxy havn't updated their khoronos registry yet, there is an unmerged
 // pull request about it and I got nothing to about it until it gets merged :(
@@ -33,34 +31,33 @@
 #endif /* EGL_PLATFORM_XCB_SCREEN_EXT */
 
 #include "context.h"
-#include "video_renderer.h"
-#include "logging.h"
+#include "video_reader_interface.h"
+#include "logger.h"
 #include "framebuffer.h"
-#include "utils.h"
 #include "setbg.h"
 #include "monitor.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
 
 static context_t context;
-
 static bool keep_running = true;
 static void handle_sigint(int sig);
 
 static void setup(struct argument_options *opts) {
-    LOG("-- Initializing...\n");
+    xab_log(LOG_DEBUG, "Initializing...\n");
 
 #ifndef NEDBUG
-    LOG("-- Currently in debug mode\n");
+    xab_log(LOG_DEBUG, "Currently in debug mode\n");
 #else
-    LOG("-- Currently in release mode\n"); // idk why i did that lol
+    xab_log(LOG_DEBUG,
+            "Currently in release mode\n"); // idk why i did that lol
 #endif
 
     context = context_create(opts);
 }
 
-static void mainloop() {
-    LOG("-- Runninng main loop...\n");
+static void mainloop(void) {
+    xab_log(LOG_DEBUG, "Runninng main loop...\n");
 
     // set up the signal handler (so the program would gracefully exit on
     // Ctrl+c)
@@ -94,17 +91,17 @@ static void mainloop() {
 
     float da_time = 0.0f;
 
-    while (true) {
-        xcb_get_geometry_cookie_t geometry_cookie =
-            xcb_get_geometry(context.connection, context.screen->root);
-
+    while (keep_running) {
         // delta time
         struct timespec c2;
         clock_gettime(CLOCK_MONOTONIC, &c2);
         float delta =
             (float)(c2.tv_sec - c1.tv_sec) + 1e-9f * (c2.tv_nsec - c1.tv_nsec);
         c1 = c2;
+        da_time += delta;
 
+        xcb_get_geometry_cookie_t geometry_cookie =
+            xcb_get_geometry(context.connection, context.screen->root);
         xcb_get_geometry_reply_t *geometry =
             xcb_get_geometry_reply(context.connection, geometry_cookie, NULL);
         const int width = (int)geometry->width;
@@ -113,7 +110,8 @@ static void mainloop() {
         // render only if window size is non-zero (minimized)
         if (width != 0 && height != 0) {
             // setup output size covering all client area of window
-            glViewport(0, 0, width, height);
+            glViewport(0, 0, width,
+                       height); // we have to set the Viewport on every cycle
 
             // clear screen
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -123,17 +121,26 @@ static void mainloop() {
             // framebuffer start
             render_framebuffer_start_render(&context.framebuffer);
 
-            // render
-            for (int i = 0; i < context.wallpaper_count; i++)
-                wallpaper_render(&context.wallpapers[i], &context.camera);
+            // render video/s to framebuffer
+            for (int i = 0; i < context.wallpaper_count; i++) {
+                wallpaper_render(&context.wallpapers[i], &context.camera,
+                                 &context.framebuffer);
+            }
 
-            glViewport(0, 0, width, height);
+            camera_reset_gl_viewport(
+                &context.camera); // we have to set the viewport cuz the
+                                  // video renderer will change it
+
             // framebuffer end
-            render_framebuffer_end_render(&context.framebuffer, da_time);
+            render_framebuffer_end_render(&context.framebuffer, 0, da_time);
+
+            // don't ask
+            for (int i = 0; i < context.wallpaper_count; i++)
+                report_swap_video(&context.wallpapers[i].video);
 
             // swap the buffers to show output
             if (!eglSwapBuffers(context.display, context.surface)) {
-                program_error("Failed to swap OpenGL buffers!\n");
+                xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
             }
 
             update_background(&context);
@@ -141,19 +148,17 @@ static void mainloop() {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
         }
-        if (!keep_running)
-            break;
     }
 }
 
-static void
-cleanup(struct argument_options
-            *opts) { // maybe i should make the context do some of the cleaning
-    LOG("-- Cleaning up...\n");
+static void cleanup(
+    struct argument_options
+        *opts) { // maybe i should make the context do some of the cleaning...
+    xab_log(LOG_DEBUG, "Cleaning up...\n");
 
     // close and clean up the videos
     for (int i = 0; i < context.wallpaper_count; i++)
-        video_clean(&(context.wallpapers[i].video));
+        wallpaper_close(&context.wallpapers[i]);
     free(context.wallpapers);
 
     // clean up framebuffer
@@ -161,6 +166,7 @@ cleanup(struct argument_options
 
     cleanup_monitors(context.monitor_count, context.monitors);
 
+    // todo: maybe i can free some of the memory earlier
     clean_opts(opts);
 
     // destroy the EGL context, surface, and display
@@ -186,7 +192,7 @@ cleanup(struct argument_options
     if (context.connection)
         xcb_disconnect(context.connection);
 
-    LOG("-- Cleanup complete.\n");
+    printf("xab has shut down gracefully\n");
 }
 
 int main(int argc, char *argv[]) {

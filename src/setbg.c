@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
+#include <xcb/xcb_aux.h>
+#include <stdlib.h>
 
 #include "setbg.h"
 
 #include "context.h"
 #include "atom.h"
-#include "logging.h"
+#include "logger.h"
 #include "utils.h"
+
+// i still need to test these on other wms than awesomewm
 
 static xcb_window_t *find_desktop(context_t *context);
 static xcb_window_t *find_desktop_recursive(context_t *context,
@@ -15,8 +19,21 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
                                             xcb_atom_t *prop_desktop);
 static void set_background_pixmap(context_t *context);
 
+void update_background(context_t *context) {
+    xcb_change_property(context->connection, XCB_PROP_MODE_REPLACE,
+                        *context->desktop_window, ESETROOT_PMAP_ID,
+                        XCB_ATOM_PIXMAP, 32, 1, &context->background_pixmap);
+    xcb_change_window_attributes(context->connection, *context->desktop_window,
+                                 XCB_CW_BACK_PIXMAP,
+                                 &context->background_pixmap);
+    xcb_clear_area(context->connection, 0, context->screen->root, 0, 0,
+                   context->screen->width_in_pixels,
+                   context->screen->height_in_pixels);
+    xcb_flush(context->connection);
+}
+
 void setup_background(context_t *context) {
-    VLOG("-- Creating background pixmap\n");
+    xab_log(LOG_VERBOSE, "Creating background pixmap\n");
     // create pixmap
     context->background_pixmap = xcb_generate_id(context->connection);
 
@@ -24,13 +41,16 @@ void setup_background(context_t *context) {
                       context->background_pixmap, context->screen->root,
                       context->screen->width_in_pixels,
                       context->screen->height_in_pixels);
+    xcb_clear_area(context->connection, 0, context->background_pixmap, 0, 0,
+                   context->screen->width_in_pixels,
+                   context->screen->height_in_pixels);
 
-    context->dekstop_window = find_desktop(context);
-    if (context->dekstop_window == NULL) {
-        context->dekstop_window = &context->screen->root;
-    }
+    // find the desktop pixmap
+    context->desktop_window = find_desktop(context);
+    if (context->desktop_window == NULL)
+        context->desktop_window = &context->screen->root;
 
-    VLOG("-- Setting background atoms\n");
+    xab_log(LOG_VERBOSE, "Setting background atoms\n");
     // free the old background if exists
     const char *atom_filters[] = {"_XROOTPMAP", "ESETROOT_PMAP_ID"};
     load_atoms_config_t config = {.only_if_exists = true,
@@ -39,7 +59,7 @@ void setup_background(context_t *context) {
                                   .override = true};
     load_atoms(context, &config);
 
-    if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
+    /* if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
         (_XROOTPMAP_ID != XCB_ATOM_NONE)) {
         xcb_get_property_reply_t *reply_xroot = xcb_get_property_reply(
             context->connection,
@@ -49,6 +69,7 @@ void setup_background(context_t *context) {
 
         void *data_xroot = xcb_get_property_value(reply_xroot);
 
+        // kill background
         if (reply_xroot->type == XCB_ATOM) {
             xcb_get_property_reply_t *reply_esetroot = xcb_get_property_reply(
                 context->connection,
@@ -71,34 +92,41 @@ void setup_background(context_t *context) {
 
         if (reply_xroot)
             free(reply_xroot);
-    }
+    } */
 
     config.only_if_exists = false;
     load_atoms(context, &config);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
-        program_error("Creation of pixmap property failed!\n");
-        exit(1);
+        program_error("Creation of background pixmap property failed!\n");
+        exit(EXIT_FAILURE);
     }
 
     // set background pixmap
     set_background_pixmap(context);
 }
 
-void update_background(context_t *context) {
-    xcb_change_property(context->connection, XCB_PROP_MODE_REPLACE,
-                        *context->dekstop_window, ESETROOT_PMAP_ID,
-                        XCB_ATOM_PIXMAP, 32, 1, &context->background_pixmap);
-}
-
 static void set_background_pixmap(context_t *context) {
+    const uint32_t *ROOT_WINDOW_EVENT_MASK = (const uint32_t[]){
+        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
+        XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |
+        XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+        XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_PROPERTY_CHANGE};
+
+    xcb_change_window_attributes(context->connection, context->screen->root,
+                                 XCB_CW_EVENT_MASK, (uint32_t[]){0});
+
+    // fetch the background property before we change it, so we can close it
+    // later
     xcb_get_property_cookie_t property_cookie = xcb_get_property_unchecked(
         context->connection, false, context->screen->root, ESETROOT_PMAP_ID,
         XCB_ATOM_PIXMAP, 0, 1);
 
-    xcb_change_window_attributes(context->connection, *context->dekstop_window,
-                                 XCB_CW_BACK_PIXMAP,
-                                 &context->background_pixmap);
+    // set the background's pixmap
+    xcb_change_window_attributes(
+        context->connection, context->screen->root, XCB_CW_BACK_PIXMAP,
+        (const uint32_t[]){context->background_pixmap});
     xcb_clear_area(context->connection, 0, context->screen->root, 0, 0, 0, 0);
 
     // make pseudo-transparency work by setting the atoms
@@ -108,28 +136,31 @@ static void set_background_pixmap(context_t *context) {
     xcb_change_property(context->connection, XCB_PROP_MODE_REPLACE,
                         context->screen->root, ESETROOT_PMAP_ID,
                         XCB_ATOM_PIXMAP, 32, 1, &context->background_pixmap);
-    xcb_flush(context->connection);
 
     // make sure the old wallpaper is freed (only do this for ESETROOT_PMAP_ID)
     xcb_get_property_reply_t *property_reply =
         xcb_get_property_reply(context->connection, property_cookie, NULL);
     if (property_reply && property_reply->value_len) {
         xcb_pixmap_t *root_pixmap = xcb_get_property_value(property_reply);
-        if (root_pixmap) {
-        }
-        xcb_kill_client(context->connection, *root_pixmap);
+        if (root_pixmap)
+            xcb_kill_client(context->connection, *root_pixmap);
     }
     free((void *)property_reply);
 
     // make sure our pixmap is not destroyed when we disconnect
     xcb_set_close_down_mode(context->connection,
                             XCB_CLOSE_DOWN_RETAIN_PERMANENT);
+    xcb_flush(context->connection);
+
+    xcb_change_window_attributes(context->connection, context->screen->root,
+                                 XCB_CW_EVENT_MASK, ROOT_WINDOW_EVENT_MASK);
 }
 
 static xcb_window_t *find_desktop(context_t *context) {
-    VLOG("-- Finding desktop background window\n");
+    xab_log(LOG_VERBOSE, "Finding desktop background window\n");
     const char *atom_filters[] = {"_NET_WM_WINDOW_TYPE",
                                   "_NET_WM_WINDOW_TYPE_DESKTOP"};
+
     load_atoms_config_t config = {.only_if_exists = true,
                                   .filters = atom_filters,
                                   .filter_len = 2,
@@ -137,8 +168,9 @@ static xcb_window_t *find_desktop(context_t *context) {
     load_atoms(context, &config);
 
     if (!_NET_WM_WINDOW_TYPE) {
-        LOG("-- Could not find window with _NET_WM_WINDOW_TYPE type "
-            "set, defaulting to root window\n");
+        xab_log(LOG_DEBUG,
+                "Could not find window with _NET_WM_WINDOW_TYPE type "
+                "set, defaulting to root window\n");
         return NULL;
     }
 
@@ -187,8 +219,8 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
         context->connection, xcb_query_tree(context->connection, *window),
         NULL);
     if (!reply) {
-        program_error("XQueryTree failed!\n");
-        exit(1);
+        program_error("xcb_query_tree failed!\n");
+        exit(EXIT_FAILURE);
     }
 
     xcb_window_t *children = xcb_query_tree_children(reply);
@@ -197,7 +229,7 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
 
     for (unsigned int i = 0; i < n_children; i++) {
         xcb_window_t *child =
-            find_desktop_recursive(context, children, prop_desktop);
+            find_desktop_recursive(context, &children[i], prop_desktop);
         if (child == NULL)
             continue;
 

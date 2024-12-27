@@ -1,76 +1,143 @@
-<!-- xab temporary name, probably -->
+<img src="res/logo.webp" alt="logo" style="width:25em;"/>
 
-<!-- TODO: -->
-<!-- TOC -->
-
-<img src="res/logo.webp" alt="logo" style="width:30em;"/>
-
-__X11 Animated Background__
+# __X11 Animated Background__
 
 > [!WARNING]
-> THIS PROJECT NOT FULLY BAKED YET AND MANY OF THE FEATURES ARE NOT IMPLEMENTED YET
+> THIS PROJECT IS HIGHLY EXPERIMENTAL
+
+> [!WARNING]
+> If you are using a picom compositor, using the `egl` backend is *highly* recommended
 
 ---
 
-### Run
-xab \<path/to/file.mp4> \[options] \<path/to/another_file.gif> \[options]
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Requirements](#requirements)
+   - [Hardware](#hardware-requirements)
+   - [Dependencies](#dependencies)
+4. [Usage](#usage)
+5. [Build](#build)
+   - [Dependencies](#dependencies)
+   - [Setup](#setup)
+   - [Build Instructions](#to-build)
+   - [Installation](#to-install)
+   - [Meson Options](#meson-options)
+6. [Video Readers](#video-readers)
+7. [Optional Dependencies](#optional-dependencies)
+<!-- ill do them later -->
+<!-- 8. [Contributing](#contributing) -->
+<!-- 9. [License](#license) -->
+
+---
+
+## Introduction
+xab (X11 Animated Background) is an animated wallpaper setter for X11 that
+strives to be as feature complete as possible while maintaining reasonable resource usage
+<!-- TODO: video -->
+
+#### Hardware requirements
+Anything that supports OpenGL 3.3
+
+#### Supported file formats
+Any format supported by ffmpeg
+
+### Features
+- Compatible with modern compositors (e.g. picom)
+- Multimonitor support (optional dependencies required)
+- Can render lowres pixel art videos without them being blurry
+- Custom shader support
+
+## Usage
+xab \<path/to/file.mp4> \[options]
 
 example:
 xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
 
-options:
-* -M, --monitor=n     | which monitor to use (requires xrandr and cglm dependencies)                (default: 0)
-* -v, --vsync=0|1     | synchronize framerate to monitor framerate                                  (default: 1)
-* --max_framerate=0|n | limit framerate to n fps (overrides vsync)                                  (default: 0)
+global options:
+| Option | Description | default |
+|--------|-------------|---------|
+| `-M=n`, `--monitor=n` | which monitor to use (requires xrandr and cglm dependencies) | 0 |
+| `-v=0\|1`, `--vsync=0\|1` | synchronize framerate to monitor framerate | 1 |
+<!-- | `--max_framerate=0\|n` | limit framerate to n fps (overrides vsync) | 0 | -->
 
 per video/monitor options:
-* -p, --pixelated=0|1 | use bilinear instead of point filtering for rendering the background        (default: bilnear)
-* --hw_accel=0|1      | use hardware acceleration for video decoding (hardware needs to support it) (default: 1)
-<!-- TODO -->
+| Option | Description | default |
+|--------|-------------|---------|
+| `-p=0\|1`, `--pixelated=0\|1` | use point instead of bilinear filtering for rendering the background | 0 (bilinear) |
+| `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
+<!-- TODO (not implemented yet)-->
 <!-- * -x, --offset_x=n    | offset wallpaper x coordinate (default: 0) -->
 <!-- * -y, --offset_y=n    | offset wallpaper y coordinate (default: 0) -->
-
-> [!NOTE]
-> hardware accelerated video decoding and max framerate are not implemented yet
-
-<!-- readme totally not similar to picom lol -->
-
-#### Hardware requirements
-Anything that supports OpenGL 3.3.
-
-#### Supported file formats
-Anything that ffmpeg (libav) supports
 
 ## Build
 
 ### Dependencies
 
-Assuming you already have the building tools installed (e.g. gcc, meson, etc.), you still need:
+Assuming you already have the building tools installed (e.g. gcc, meson, ninja, etc.), you still need:
 * xcb
 * xcb-util
 * xproto
 * libepoxy
-* xcb-randr version >= 1.5 recommended (optional but required for multi monitor support)
-* cglm version >= 0.8.4 (optional but required for multi monitor support)
 * libGL
 * libEGL
-* libavutil
-* libavcodec
-* libavformat
-* libavfilter
-* libswscale
+* video reader dependencies
 
-On Debian distributions (e.g. Ubuntu), the needed packages are
+for video reading, you must have one of the following:
+- mpv video reader (default):
+    * mpv (libmpv)
+- ffmpeg video reader:
+    * libavutil
+    * libavcodec
+    * libavformat
+    * libavfilter
+    * libswscale
+
+<details>
+<summary>Debian distributions (e.g. Ubuntu) with apt</summary>
+
 ```sh
-sudo apt-get install \
-    libepoxy-dev \
-    libxcb1-dev libxcb-util0-dev \
-    libavcodec-dev libavformat-dev libavfilter-dev libavutil-dev libswresample-dev libswscale-dev
+sudo apt-get install libepoxy-dev libxcb1-dev libxcb-util0-dev x11proto-dev \
+    libgl1-mesa-dev libegl1-mesa-dev
+
+# mpv video reader:
+sudo apt-get install libmpv-dev
+
+# ffmpeg video reader:
+sudo apt-get install libavcodec-dev libavformat-dev libavfilter-dev \
+    libavutil-dev libswresample-dev libswscale-dev
 ```
+
+</details>
+
+
+### Video readers
+
+if you use any video reader other than the default one (mpv), you need to change the meson option 'video_reader' to the options see [meson options](###meson-options)
+
+currently there are two options:
+
+* \[default] libmpv (mpv) - recommended
+this is the recommended video reader, it uses libmpv to read the video
+
+* ffmpeg (xab_custom) -
+i made this video reader for educational purposes,
+ffmpeg-based video reader, it is way less performant compared to the the other options,
+this is my fault because i suck at ffmpeg,
+also many of the features are not implemented (yet?) like frame timing,
+frame dropping and hardware acceleration
+
+i am also planning to add libVLC support
+
+## Optional dependencies
+
+if you want multi-monitor support you must have:
+* cglm version >= 0.8.4
+* xcb-randr version >= 1.5
 
 
 <details>
-<summary>Optional dependencies on Debian distributions</summary>
+<summary>Optional dependencies on Debian distributions with apt</summary>
 
 ```sh
 # xcb-randr
@@ -79,6 +146,7 @@ sudo apt-get install libxcb-randr-dev
 # cglm
 sudo apt-get install libcglm-dev
 ```
+
 
 </details>
 
@@ -93,7 +161,7 @@ meson setup build --buildtype=release
 
 ### To build
 ```sh
-meson -C build
+meson compile -C build
 ```
 Built binary can be found in `build/xab`
 
@@ -101,26 +169,20 @@ Built binary can be found in `build/xab`
 
 ### To install
 ```sh
-ninja -C build install
+meson install -C build
 ```
-this will install xab at `/usr/local/bin` (probably)
+This will install xab at `/usr/local/bin` (probably)
 
 
 ---
 
-### Compilation databases
-
-```sh
-cp build/compile_commands.json .
-```
-
----
-
-<details>
-<summary>meson options</summary>
+### Meson options
+To see the full list of the meson options, run `meson configure` in your build directory
 
 ```sh
 # enable verbose logging
-meson setup build -Dverbose=true
+meson configure build -Dverbose=true
+
+# change video reader
+meson configure build -Dvideo_reader=xab_custom
 ```
-</details>

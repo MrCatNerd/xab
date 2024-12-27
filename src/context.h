@@ -16,7 +16,7 @@ typedef struct context {
         xcb_screen_t *screen;
         int screen_nbr;
 
-        xcb_window_t *dekstop_window;
+        xcb_window_t *desktop_window;
         xcb_pixmap_t background_pixmap;
 
         EGLSurface *surface;

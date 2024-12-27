@@ -6,16 +6,17 @@
 #include <xcb/randr.h>
 
 #include "monitor.h"
-#include "logging.h"
-#include "utils.h"
+#include "logger.h"
 
 monitor_t *create_monitor(char *name, int id, bool primary, int x, int y,
                           int width, int height) {
-    LOG("-- Creating monitor %s size %dx%dpx\n", name, width, height);
+    xab_log(LOG_DEBUG, "Creating monitor %s size %dx%dpx\n", name, width,
+            height);
+    // TODO: remove malloc from the init function
     monitor_t *monitor = malloc(sizeof(monitor_t));
     if (!monitor) {
-        program_error("Failed to allocate memory for monitor\n");
-        exit(1);
+        xab_log(LOG_FATAL, "Failed to allocate memory for monitor\n");
+        exit(EXIT_FAILURE);
     }
 
     monitor->name = name;

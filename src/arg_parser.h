@@ -7,7 +7,7 @@ struct wallpaper_argument_options {
         int monitor;
 
         bool pixelated;
-        bool hw_accel; // unfinished
+        int hw_accel;
 };
 
 struct argument_options {

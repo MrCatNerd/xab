@@ -9,8 +9,13 @@ layout(location = 1) in vec2 aTexCoords;
 
 out vec2 uv;
 
+uniform mat4 ortho_proj;
+uniform mat4 model;
+uniform mat4 view;
+
 void main()
 {
-    gl_Position = vec4(aPos.x, aPos.y, 0.0f, 1.0f);
+    vec4 pos = vec4(aPos.xy, 0.0f, 1.0f);
+    gl_Position = ortho_proj * view * model * pos;
     uv = aTexCoords;
 }

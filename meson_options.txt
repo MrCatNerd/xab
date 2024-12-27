@@ -1,12 +1,22 @@
 option(
-  'verbose',
-  type: 'boolean',
-  value: false,
-  description: 'Enable verbose logging',
+  'video_reader',
+  type: 'combo',
+  # todo: vlc
+  choices: ['mpv', 'xab_custom'],
+  value: 'mpv',
+  description: 'Which video library to use',
 )
 
 option(
-  # TODO
+  'log',
+  type: 'combo',
+  # todo: warn
+  choices: ['trace', 'verbose', 'debug', 'info', 'warn', 'error', 'fatal', 'auto'],
+  value: 'auto', # auto is by compile mode, so on release mode there will be no debug logs, but on debug mode, there will be debug loggs
+  description: 'Log level',
+)
+
+option(
   'static_build',
   type: 'boolean',
   value: false,
