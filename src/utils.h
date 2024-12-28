@@ -16,5 +16,3 @@
  * @param buffer
  */
 const char *ReadFile(const char *path);
-
-void program_error(const char *format, ...);

@@ -48,7 +48,7 @@ FrameBuffer_t create_framebuffer(int width, int height,
     glGenTextures(1, &fb.texture_color_id);
 
     if (fb.texture_color_id == 0) {
-        program_error("Failed to generate framebuffer color texture!\n");
+        xab_log(LOG_ERROR, "Failed to generate framebuffer color texture!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -66,7 +66,7 @@ FrameBuffer_t create_framebuffer(int width, int height,
                            fb.texture_color_id, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        program_error("framebuffer #%d not complete\n", fb.fbo_id);
+        xab_log(LOG_ERROR, "framebuffer #%d not complete\n", fb.fbo_id);
         exit(EXIT_FAILURE);
     }
 

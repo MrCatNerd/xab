@@ -9,7 +9,6 @@
 #include "context.h"
 #include "atom.h"
 #include "logger.h"
-#include "utils.h"
 
 // i still need to test these on other wms than awesomewm
 
@@ -98,7 +97,7 @@ void setup_background(context_t *context) {
     load_atoms(context, &config);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
-        program_error("Creation of background pixmap property failed!\n");
+        xab_log(LOG_ERROR, "Creation of background pixmap property failed!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -219,7 +218,7 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
         context->connection, xcb_query_tree(context->connection, *window),
         NULL);
     if (!reply) {
-        program_error("xcb_query_tree failed!\n");
+        xab_log(LOG_FATAL, "xcb_query_tree failed!\n");
         exit(EXIT_FAILURE);
     }
 
