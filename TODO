@@ -2,7 +2,6 @@
 will be implemented (probably)
 
 * general
-- --monitor flag before video segfault issue
 - 'u_' prefix in shader uniforms
 - trace logs
 - stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
@@ -23,6 +22,7 @@ will be implemented (probably)
 - optimize the hell out of xab and decrease cpu usage as much as i can
 - pause rendering: https://github.com/glouw/paperview/issues/7
 - remake atom system
+- (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
 
 * readme
 - Contributing
@@ -33,13 +33,14 @@ will be implemented (probably)
 - fullscreen monitor (--monitor=-1) doesn't work with libmpv specifically
 
 * xab video reader
-- fix my bad ffmpeg reader implementation with a new shiny one
-- good frame timing and stuff
+- video looping
 - proper hardware acceleration for video decoding
 - libavdevice stuff ^
+- fix my bad ffmpeg reader implementation with a new shiny one
+- good frame timing and stuff
 - multithreading
 - video frame dropping (can be turned off as an option/flag, on by default)
-- find if there a way to not use PBOs, and just write to the gpu texture directly
+- find if there a way to not use PBOs, and just write to the gpu texture directly (probably requires gpu hardware acceleration?)
 
 
 --- IDEA LIST ---

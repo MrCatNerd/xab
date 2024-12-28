@@ -60,7 +60,7 @@ elif log_level == 'fatal'
   log_num = 6
 elif log_level == 'auto'
   warning('automatic buildtype didn\'t work for some reason, defaulting to info...')
-  log_level = 3
+  log_num = 3
 endif
 assert(log_num >= 0)
 add_global_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')

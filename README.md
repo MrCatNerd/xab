@@ -116,12 +116,11 @@ if you use any video reader other than the default one (mpv), you need to change
 
 currently there are two options:
 
-* \[default] libmpv (mpv) - recommended
-this is the recommended video reader, it uses libmpv to read the video
+* \[default] libmpv (mpv) - this is the recommended video reader, it uses libmpv to read the video
 
 * ffmpeg (xab_custom) -
 i made this video reader for educational purposes,
-ffmpeg-based video reader, it is way less performant compared to the the other options,
+this is an ffmpeg-based video reader, it is way less performant compared to the the other options,
 this is my fault because i suck at ffmpeg,
 also many of the features are not implemented (yet?) like frame timing,
 frame dropping and hardware acceleration

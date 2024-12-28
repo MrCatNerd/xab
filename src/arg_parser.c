@@ -15,24 +15,25 @@ static void usage(const char *program_name) {
 }
 
 static void help(const char *program_name) {
-    printf("xab - X11 Animated Background\n\n"
-           "Usage: %s <path/to/file.mp4> [options]\n\n"
-           "--monitor=n         | which monitor to use                       "
-           "                                 "
-           "options:\n"
-           "* -V, --version       | print version\n"
-           "* -M, --monitor=n     | which monitor to use (requires xrandr "
-           "and cglm dependencies)                (default: 0)\n"
-           "* --vsync=0|1         | synchronize framerate to monitor "
-           "framerate                                  (default: 0)\n"
-           // "* --max_framerate=0|n | limit framerate to n fps (overrides "
-           // "vsync)                                  (default: 0)\n\n"
-           "per video/monitor options:\n"
-           "* -p, --pixelated     | use bilinear instead of point filtering "
-           "for rendering the background        (default: bilinear)\n"
-           "* --hw_accel=yes,no,auto      | use hardware acceleration for "
-           "video decoding (hardware needs to support it) (default: auto)\n",
-           program_name);
+    printf(
+        "xab - X11 Animated Background\n\n"
+        "Usage: %s <path/to/file.mp4> [options]\n\n"
+        "options:\n"
+        "--monitor=n                   | which monitor to use                  "
+        "* -V, --version               | print version\n"
+        "* -M, --monitor=n             | which monitor to use (requires xrandr "
+        "and cglm dependencies)                (default: 0)\n"
+        "* --vsync=0|1                 | synchronize framerate to monitor "
+        "framerate                                  (default: 0)\n"
+        "* --max_framerate=0|n         | limit framerate to n fps (overrides "
+        "vsync)                                  (default: 0)\n"
+        "\nper video/monitor options:\n"
+        "* -p=0|1, --pixelated=0|1     | use point instead of bilinear "
+        "filtering for rendering the background        (default: 0 - "
+        "bilinear)\n"
+        "* --hw_accel=yes,no,auto      | use hardware acceleration for "
+        "video decoding (hardware needs to support it) (default: auto)\n",
+        program_name);
 }
 
 void clean_opts(struct argument_options *opts) {
@@ -99,18 +100,47 @@ struct argument_options parse_args(int argc, char *argv[]) {
                 opts.wallpaper_options = calloc(
                     opts.n_wallpaper_options, sizeof(struct wallpaper_options));
 
-            opts.wallpaper_options[opts.n_wallpaper_options - 1].video_path =
-                strdup(key);
-            opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
+            const int current_background = opts.n_wallpaper_options - 1;
+            opts.wallpaper_options[current_background].video_path = strdup(key);
+            opts.wallpaper_options[current_background].hw_accel =
                 VR_HW_ACCEL_AUTO;
 
-            opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor = -1;
+            opts.wallpaper_options[current_background].monitor = -1;
 
+        } else if (!strcmp(key, "--vsync") || !strcmp(key, "-v")) {
+            opts.vsync = atoi(value) != 0;
+        } else if (!strcmp(key, "--max_framerate") || !strcmp(key, "-m")) {
+            opts.max_framerate = atoi(value) != 0;
+            // NOTE: any if statement below is a per-video statement, if there
+            // is no video assigned, the option will be ignored
+        } else if (opts.n_wallpaper_options < 1) {
+            xab_log(LOG_WARN,
+                    "ignoring option '%s' since there is no video assigned\n",
+                    key);
+        } else if (!strcmp(key, "--hw_accel")) {
+            // hmmm switch statement of the first character?, nahhhh
+
+            // TODO: decide if i want hw_accel global or per video
+
+            const int current_background = opts.n_wallpaper_options - 1;
+
+            if (!strcmp(value, "no"))
+                opts.wallpaper_options[current_background].hw_accel =
+                    VR_HW_ACCEL_NO;
+            else if (!strcmp(value, "yes"))
+                opts.wallpaper_options[current_background].hw_accel =
+                    VR_HW_ACCEL_YES;
+            else if (!strcmp(value, "auto"))
+                opts.wallpaper_options[current_background].hw_accel =
+                    VR_HW_ACCEL_AUTO;
+            else // use auto
+                opts.wallpaper_options[current_background].hw_accel =
+                    VR_HW_ACCEL_AUTO;
         } else if (!strcmp(key, "--monitor") || !strcmp(key, "-M")) {
+            const int current_background = opts.n_wallpaper_options - 1;
 #ifdef HAVE_LIBXRANDR
 #ifdef HAVE_LIBCGLM
-            opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor =
-                atoi(value);
+            opts.wallpaper_options[current_background].monitor = atoi(value);
 #else
             xab_log(LOG_ERROR,
                     "'%s' was not compiled with cglm support. "
@@ -124,33 +154,12 @@ struct argument_options parse_args(int argc, char *argv[]) {
                     argv[0]);
 #endif /* HAVE_LIBXRANDR */
 
-            // set ever option thats smaller than 0 to -1, for consistency
-            if (opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor <
-                0)
-                opts.wallpaper_options[opts.n_wallpaper_options - 1].monitor =
-                    -1;
+            // set every option thats smaller than 0 to -1, for consistency
+            if (opts.wallpaper_options[current_background].monitor < 0)
+                opts.wallpaper_options[current_background].monitor = -1;
         } else if (!strcmp(key, "--pixelated") || !strcmp(key, "-p")) {
             opts.wallpaper_options[opts.n_wallpaper_options - 1].pixelated =
                 atoi(value) != 0;
-        } else if (!strcmp(key, "--vsync") || !strcmp(key, "-v")) {
-            opts.vsync = atoi(value) != 0;
-        } else if (!strcmp(key, "--max_framerate") || !strcmp(key, "-m")) {
-            opts.max_framerate = atoi(value) != 0;
-        } else if (!strcmp(key, "--hw_accel")) {
-            // hmmm switch statement of the first character?, nahhhh
-
-            if (!strcmp(value, "no"))
-                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
-                    VR_HW_ACCEL_NO;
-            else if (!strcmp(value, "yes"))
-                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
-                    VR_HW_ACCEL_YES;
-            else if (!strcmp(value, "auto"))
-                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
-                    VR_HW_ACCEL_AUTO;
-            else // use auto
-                opts.wallpaper_options[opts.n_wallpaper_options - 1].hw_accel =
-                    VR_HW_ACCEL_AUTO;
         }
     }
 
