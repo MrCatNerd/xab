@@ -18,7 +18,7 @@
    - [Hardware](#hardware-requirements)
    - [Dependencies](#dependencies)
    - [Video Readers](#video-readers)
-   - [Optional Dependencies](#dependencies)
+   - [Optional Dependencies](#optional-dependencies)
 5. [Build](#build)
    - [Setup](#setup)
    - [Build Instructions](#to-build)
@@ -40,7 +40,7 @@ Any format supported by ffmpeg
 
 ### Features
 - Compatible with modern compositors (e.g. picom)
-- Multimonitor support (optional dependencies required)
+- Multimonitor support ([optional dependencies](#optional-dependencies) required)
 - Can render lowres pixel art videos without them being blurry
 - Custom shader support
 
@@ -130,7 +130,7 @@ i am also planning to add libVLC support
 
 ## Optional dependencies
 
-if you want multi-monitor support you must have:
+for multi-monitor support you must have:
 * cglm version >= 0.8.4
 * xcb-randr version >= 1.5
 
