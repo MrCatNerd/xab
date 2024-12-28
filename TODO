@@ -1,9 +1,6 @@
 -- TODO LIST --
 will be implemented (probably)
 
-todo until next commit:
-- make xab reader work with the video reader interface
-
 * general
 - VERSION file specifying the version
 - --monitor flag before video segfault issue
@@ -26,6 +23,7 @@ todo until next commit:
 - dummy video player or smh
 - optimize the hell out of xab and decrease cpu usage as much as i can
 - pause rendering: https://github.com/glouw/paperview/issues/7
+- remake atom system
 
 * readme
 - Contributing
