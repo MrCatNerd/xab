@@ -2,7 +2,6 @@
 will be implemented (probably)
 
 * general
-- VERSION file specifying the version
 - --monitor flag before video segfault issue
 - 'u_' prefix in shader uniforms
 - trace logs

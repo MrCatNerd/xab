@@ -1,7 +1,7 @@
 project(
   'xab',
   'c',
-  version: '0.0.2',
+  version: run_command('cat', join_paths(meson.project_source_root(), 'VERSION'), check: true).stdout().strip(), # thx hyprland
   default_options: ['warning_level=3', 'b_ndebug=if-release'],
 )
 
