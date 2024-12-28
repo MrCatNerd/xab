@@ -112,7 +112,7 @@ sudo apt-get install libavcodec-dev libavformat-dev libavfilter-dev \
 
 ### Video readers
 
-if you use any video reader other than the default one (mpv), you need to change the meson option 'video_reader' to the options see [meson options](#meson-options)
+If you use a video reader other than the default (mpv), you need to change the 'video_reader' option in Meson to match the chosen video reader's option. see [meson options](#meson-options) for more details
 
 currently there are two options:
 
@@ -177,7 +177,7 @@ This will install xab at `/usr/local/bin` (probably)
 ---
 
 ### Meson options
-To see the full list of the meson options, run `meson configure` in your build directory
+To see the full list of the meson options, run `meson configure build`
 
 ```sh
 # enable verbose logging
