@@ -3,10 +3,10 @@ will be implemented (probably)
 
 * general
 - 'u_' prefix in shader uniforms
-- trace logs
-- stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
-- max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
 - meson feature selection in meson options, so i can disable features (like multi monitor support)
+- stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
+- same video on multiple monitors
+- max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
 - make a better error system cuz currently its just a mess
 - load default shaders as strings (in build system or smh), so i don't have to have the 'res' directory near the xab executable, i wanna do that in the build system
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
@@ -22,6 +22,7 @@ will be implemented (probably)
 - optimize the hell out of xab and decrease cpu usage as much as i can
 - pause rendering: https://github.com/glouw/paperview/issues/7
 - remake atom system
+- trace logs
 - (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
 
 * readme
@@ -61,6 +62,7 @@ may or may not be implemented
 
 -- GIT STUFF --
 - when things get stable, make a stable branch
+- github issue template
 - make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
 - use github actions to build releases
 - git gud

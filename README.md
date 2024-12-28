@@ -53,7 +53,7 @@ xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
 global options:
 | Option | Description | default |
 |--------|-------------|---------|
-| `-M=n`, `--monitor=n` | which monitor to use (requires xrandr and cglm dependencies) | 0 |
+| `-M=n`, `--monitor=n` | which monitor to use ([optional dependencies](#optional-dependencies) required) | -1 (fullscreen) |
 | `-v=0\|1`, `--vsync=0\|1` | synchronize framerate to monitor framerate | 1 |
 <!-- | `--max_framerate=0\|n` | limit framerate to n fps (overrides vsync) | 0 | -->
 
