@@ -8,9 +8,15 @@ option(
 )
 
 option(
+  'multimonitor',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable support for multi-monitor support',
+)
+
+option(
   'log',
   type: 'combo',
-  # todo: warn
   choices: ['trace', 'verbose', 'debug', 'info', 'warn', 'error', 'fatal', 'auto'],
   value: 'auto', # auto is by compile mode, so on release mode there will be no debug logs, but on debug mode, there will be debug loggs
   description: 'Log level',

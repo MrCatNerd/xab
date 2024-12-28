@@ -1,17 +1,16 @@
 #include <stdlib.h>
+#include <xcb/xcb.h>
 
 #include "mouse.h"
-#include "context.h"
 #include "logger.h"
 
-MousePosition_t get_mouse_position(context_t *context) {
+MousePosition_t get_mouse_position(xcb_connection_t *connection,
+                                   xcb_window_t *root) {
     xcb_query_pointer_cookie_t pointer_cookie;
     xcb_query_pointer_reply_t *pointer_reply;
 
-    pointer_cookie =
-        xcb_query_pointer(context->connection, context->screen->root);
-    pointer_reply =
-        xcb_query_pointer_reply(context->connection, pointer_cookie, NULL);
+    pointer_cookie = xcb_query_pointer(connection, *root);
+    pointer_reply = xcb_query_pointer_reply(connection, pointer_cookie, NULL);
 
     if (pointer_reply) {
         xab_log(LOG_VERBOSE, "Mouse Position: (%d, %d)\n",

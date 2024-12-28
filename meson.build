@@ -2,7 +2,11 @@ project(
   'xab',
   'c',
   version: run_command('cat', join_paths(meson.project_source_root(), 'VERSION'), check: true).stdout().strip(), # thx hyprland
-  default_options: ['warning_level=3', 'b_ndebug=if-release'],
+  default_options: [
+    'warning_level=3',
+    'b_ndebug=if-release',
+    'buildtype=debugoptimized',
+  ],
 )
 
 # --- general ---
@@ -96,12 +100,14 @@ epoxy_dep = dependency('epoxy')
 egl_dep = dependency('egl')
 
 # --- optional dependencies ---
-cglm_dep = dependency('cglm', version: '>= 0.8.4', required: false)
+multimonitor_feature = get_option('multimonitor')
+
+cglm_dep = dependency('cglm', version: '>= 0.8.4', required: multimonitor_feature)
 if cglm_dep.found()
   add_project_arguments('-DHAVE_LIBCGLM', language: 'c')
 endif
 
-xrandr_dep = dependency('xcb-randr', version: '>= 1.5', required: false)
+xrandr_dep = dependency('xcb-randr', version: '>= 1.5', required: multimonitor_feature)
 if xrandr_dep.found()
   add_project_arguments('-DHAVE_LIBXRANDR', language: 'c')
 endif

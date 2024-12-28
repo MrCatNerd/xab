@@ -2,7 +2,6 @@
 will be implemented (probably)
 
 * general
-- meson feature selection in meson options, so i can disable features (like multi monitor support)
 - stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
 - same video on multiple monitors
 - max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
@@ -22,6 +21,7 @@ will be implemented (probably)
 - remake atom system
 - trace logs
 - (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
+- offset videos by x,y
 
 * readme
 - Contributing
