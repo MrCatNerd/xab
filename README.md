@@ -13,18 +13,17 @@
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Features](#features)
-3. [Requirements](#requirements)
+3. [Usage](#usage)
+4. [Prerequisites](#prerequisites)
    - [Hardware](#hardware-requirements)
    - [Dependencies](#dependencies)
-4. [Usage](#usage)
+   - [Video Readers](#video-readers)
+   - [Optional Dependencies](#dependencies)
 5. [Build](#build)
-   - [Dependencies](#dependencies)
    - [Setup](#setup)
    - [Build Instructions](#to-build)
    - [Installation](#to-install)
-   - [Meson Options](#meson-options)
-6. [Video Readers](#video-readers)
-7. [Optional Dependencies](#optional-dependencies)
+7. [Meson Options](#meson-options)
 <!-- ill do them later -->
 <!-- 8. [Contributing](#contributing) -->
 <!-- 9. [License](#license) -->
@@ -35,9 +34,6 @@
 xab (X11 Animated Background) is an animated wallpaper setter for X11 that
 strives to be as feature complete as possible while maintaining reasonable resource usage
 <!-- TODO: video -->
-
-#### Hardware requirements
-Anything that supports OpenGL 3.3
 
 #### Supported file formats
 Any format supported by ffmpeg
@@ -70,7 +66,10 @@ per video/monitor options:
 <!-- * -x, --offset_x=n    | offset wallpaper x coordinate (default: 0) -->
 <!-- * -y, --offset_y=n    | offset wallpaper y coordinate (default: 0) -->
 
-## Build
+## Prerequisites
+
+### Hardware requirements
+Anything that supports OpenGL 3.3
 
 ### Dependencies
 
@@ -113,7 +112,7 @@ sudo apt-get install libavcodec-dev libavformat-dev libavfilter-dev \
 
 ### Video readers
 
-if you use any video reader other than the default one (mpv), you need to change the meson option 'video_reader' to the options see [meson options](###meson-options)
+if you use any video reader other than the default one (mpv), you need to change the meson option 'video_reader' to the options see [meson options](#meson-options)
 
 currently there are two options:
 
@@ -153,6 +152,8 @@ sudo apt-get install libcglm-dev
 <br>
 
 TODO: fedora and arch <!-- maybe -->
+
+## Build
 
 ### Setup
 ```sh
