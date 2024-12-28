@@ -188,15 +188,26 @@ void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
     // unbind stuff
     glUseProgram(0);
     glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void delete_framebuffer(FrameBuffer_t *fb) {
+    // unbind stuff
+    glUseProgram(0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    // delet stuff
     delete_shader(&fb->shader);
     glDeleteTextures(1, &fb->texture_color_id);
     glDeleteBuffers(1, &fb->ebo);
     glDeleteBuffers(1, &fb->vbo);
     glDeleteVertexArrays(1, &fb->vao);
-    glDeleteRenderbuffers(GL_RENDERBUFFER, &fb->rbo_id);
+    glDeleteRenderbuffers(1, &fb->rbo_id);
     glDeleteFramebuffers(1, &fb->fbo_id);
 }
