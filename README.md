@@ -182,7 +182,7 @@ To see the full list of the meson options, run `meson configure` in your build d
 
 ```sh
 # enable verbose logging
-meson configure build -Dverbose=true
+meson configure build -Dlog=verbose
 
 # change video reader
 meson configure build -Dvideo_reader=xab_custom
