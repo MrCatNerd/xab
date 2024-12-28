@@ -67,7 +67,8 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, get_video_ogl_texture(&wallpaper->video));
     glUniform1i(
-        shader_get_uniform_location(&wallpaper->shader, "wallpaperTexture"), 0);
+        shader_get_uniform_location(&wallpaper->shader, "u_wallpaperTexture"),
+        0);
 
 #ifdef HAVE_LIBCGLM
     bool all_identity = false;
@@ -77,12 +78,12 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
     if (!all_identity) {
         // projection matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "ortho_proj"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_ortho_proj"), 1,
             GL_FALSE, (const GLfloat *)camera->ortho);
 
         // view matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "view"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_view"), 1,
             GL_FALSE, (const GLfloat *)camera->view);
 
         // model matrix
@@ -102,11 +103,11 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
         glm_scale(model, da_scaler);
 
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "model"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_model"), 1,
             GL_FALSE, (const GLfloat *)model);
 
         // the projection flips it up
-        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "flip_y"),
+        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "u_flip_y"),
                     0);
     }
 #else
@@ -120,21 +121,21 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
 
         // projection matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "ortho_proj"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_ortho_proj"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // view matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "view"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_view"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // model matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "model"), 1,
+            shader_get_uniform_location(&wallpaper->shader, "u_model"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // video reader flips once
-        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "flip_y"),
+        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "u_flip_y"),
                     1);
     }
 

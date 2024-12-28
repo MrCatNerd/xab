@@ -122,10 +122,9 @@ static void mainloop(void) {
             render_framebuffer_start_render(&context.framebuffer);
 
             // render video/s to framebuffer
-            for (int i = 0; i < context.wallpaper_count; i++) {
+            for (int i = 0; i < context.wallpaper_count; i++)
                 wallpaper_render(&context.wallpapers[i], &context.camera,
                                  &context.framebuffer);
-            }
 
             camera_reset_gl_viewport(
                 &context.camera); // we have to set the viewport cuz the
@@ -139,9 +138,8 @@ static void mainloop(void) {
                 report_swap_video(&context.wallpapers[i].video);
 
             // swap the buffers to show output
-            if (!eglSwapBuffers(context.display, context.surface)) {
+            if (!eglSwapBuffers(context.display, context.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
-            }
 
             update_background(&context);
         } else {

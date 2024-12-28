@@ -8,12 +8,12 @@ in vec2 uv;
 
 out vec4 FragColor;
 
-uniform sampler2D wallpaperTexture;
-uniform int flip_y;
+uniform sampler2D u_wallpaperTexture;
+uniform int u_flip_y;
 
 void main()
 {
-    vec3 color = vec3(texture(wallpaperTexture, vec2(uv.x, flip_y - uv.y)));
+    vec3 color = vec3(texture(u_wallpaperTexture, vec2(uv.x, u_flip_y - uv.y)));
 
     FragColor = vec4(color.rgb, 1.0f);
 }

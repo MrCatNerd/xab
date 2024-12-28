@@ -146,7 +146,7 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
     use_shader(&fb->shader);
-    glUniform1f(shader_get_uniform_location(&fb->shader, "Time"), da_time);
+    glUniform1f(shader_get_uniform_location(&fb->shader, "u_Time"), da_time);
 
     // geometry stuff
     glBindVertexArray(fb->vao);
@@ -194,15 +194,7 @@ void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
 }
 
 void delete_framebuffer(FrameBuffer_t *fb) {
-    // unbind stuff
-    glUseProgram(0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    // delet stuff
+    // delete stuff
     delete_shader(&fb->shader);
     glDeleteTextures(1, &fb->texture_color_id);
     glDeleteBuffers(1, &fb->ebo);

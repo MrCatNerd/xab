@@ -2,7 +2,6 @@
 will be implemented (probably)
 
 * general
-- 'u_' prefix in shader uniforms
 - meson feature selection in meson options, so i can disable features (like multi monitor support)
 - stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
 - same video on multiple monitors
