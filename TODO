@@ -2,7 +2,6 @@
 will be implemented (probably)
 
 * general
-- stb_image/SOIL2 for normal backgrounds (as a compile option cuz ppl don't like bloat)
 - same video on multiple monitors
 - max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
 - load default shaders as strings (in build system or smh), so i don't have to have the 'res' directory near the xab executable, i wanna do that in the build system
