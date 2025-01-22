@@ -27,7 +27,7 @@ if get_option('static_build')
   extra_link_args += '-static'
 endif
 
-# --- logging and stuff---
+# --- logging and stuff ---
 
 log_level = get_option('log')
 

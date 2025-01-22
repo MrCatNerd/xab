@@ -45,10 +45,10 @@ Any format supported by ffmpeg
 - Custom shader support
 
 ## Usage
-xab \<path/to/file.mp4> \[options]
-
-example:
+```sh
+# example:
 xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
+```
 
 global options:
 | Option | Description | default |
