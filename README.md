@@ -73,7 +73,7 @@ Anything that supports OpenGL 3.3
 
 ### Dependencies
 
-Assuming you already have the building tools installed (e.g. gcc, meson, ninja, etc.), you still need:
+Assuming you already have the building tools installed (e.g. gcc, meson, ninja, xxd, etc.), you still need:
 * xcb
 * xcb-util
 * xproto
@@ -185,4 +185,7 @@ meson configure build -Dlog=verbose
 
 # change video reader
 meson configure build -Dvideo_reader=xab_custom
+
+# disable BCE files
+meson configure build -Ddisable_bce=true
 ```

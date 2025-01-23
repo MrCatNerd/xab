@@ -8,7 +8,6 @@
 #include "framebuffer.h"
 #include "logger.h"
 #include "shader.h"
-#include "utils.h"
 #include "vertex.h"
 
 // clang-format off

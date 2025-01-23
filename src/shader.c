@@ -1,9 +1,64 @@
 #include <stdlib.h>
+#include <string.h>
 #include <epoxy/gl.h>
 
 #include "shader.h"
 #include "logger.h"
 #include "utils.h"
+
+#include "length_string.h"
+
+#ifndef DISABLE_BCE
+#include "bce_files.h"
+#endif
+
+// very spaghett
+static length_string_t search_bce_shaders(const char *path);
+typedef struct free_file {
+        length_string_t lenstr;
+        bool should_free;
+} free_file_t;
+
+static free_file_t get_shader_file(const char *path) {
+    xab_log(LOG_TRACE, "Getting shader file: %s\n", path);
+#ifndef DISABLE_BCE
+    free_file_t shader_file = {{NULL, NULL}, false};
+
+    shader_file.lenstr = search_bce_shaders(path);
+
+    if (shader_file.lenstr.str == NULL) {
+        shader_file.lenstr = ReadFile(path);
+        shader_file.should_free = true;
+    }
+
+#else
+    free_file_t shader_file = {ReadFile(path), true};
+#endif
+
+    return shader_file;
+}
+
+#ifndef DISABLE_BCE
+static length_string_t search_bce_shaders(const char *path) {
+    xab_log(LOG_TRACE, "Searching BCE files...\n");
+    // haha no hashmaps too lazy
+
+    for (int i = 0; i < (int)bce_files_len; i++) {
+        bce_file_t bce_file = bce_files[i];
+        if (strcmp(bce_file.path, path) == 0) {
+            xab_log(LOG_TRACE, "BCE file `%s` was found\n", bce_file.path);
+            Assert(bce_file.contents.len >= 0);
+
+            return bce_file.contents;
+        }
+    }
+
+    xab_log(LOG_TRACE, "no BCE files found, reading files...\n");
+
+    const length_string_t empty = {NULL, 0};
+    return empty;
+}
+#endif
 
 int shader_get_uniform_location(Shader_t *shader, const char *name) {
     return glGetUniformLocation(shader->program_id, name);
@@ -23,9 +78,10 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
 
     // vertex shader
     unsigned int vshader;
-    const char *vshader_src = ReadFile(vertex_path);
+    free_file_t vshader_src = get_shader_file(vertex_path);
     vshader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vshader, 1, &vshader_src, NULL);
+    glShaderSource(vshader, 1, (const GLchar *const *)&vshader_src.lenstr.str,
+                   (const GLint *)&vshader_src.lenstr.len);
     glCompileShader(vshader);
 
     glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
@@ -37,9 +93,10 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
 
     // fragment shader
     unsigned int fshader;
-    const char *fshader_src = ReadFile(fragment_path);
+    free_file_t fshader_src = get_shader_file(fragment_path);
     fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fshader, 1, &fshader_src, NULL);
+    glShaderSource(fshader, 1, (const GLchar *const *)&fshader_src.lenstr.str,
+                   (const GLint *)&fshader_src.lenstr.len);
     glCompileShader(fshader);
 
     glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
@@ -65,8 +122,10 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     glDeleteShader(vshader);
     glDeleteShader(fshader);
 
-    free((void *)vshader_src);
-    free((void *)fshader_src);
+    if (vshader_src.should_free)
+        free((void *)vshader_src.lenstr.str);
+    if (fshader_src.should_free)
+        free((void *)fshader_src.lenstr.str);
 
     return shader;
 }

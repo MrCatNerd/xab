@@ -5,27 +5,32 @@
 #include <unistd.h>
 
 #include "utils.h"
+#include "length_string.h"
+#include "logger.h"
 
-const char *ReadFile(const char *path) {
+length_string_t ReadFile(const char *path) {
+    xab_log(LOG_TRACE, "Reading file: \n", path);
+
+    length_string_t buffer = {NULL, 0};
+
     if (access(path, F_OK) != 0)
-        return NULL;
+        return buffer;
 
-    char *buffer = NULL;
     long length = 0;
     FILE *f = fopen(path, "rb");
 
     if (f) {
         fseek(f, 0, SEEK_END);
         length = ftell(f);
+        Assert(length >= 0);
         fseek(f, 0, SEEK_SET);
-        buffer = malloc(length + 1);
-        Assert(buffer != NULL &&
-               "Error allocating memory while reading file: '%s'" STR(
-                   path)); // FIXME: STR(path) not working, i need a new assert
-                           // system
+        // maybe i should add an arg to ensure EOF or not but its just one byte
+        buffer.str = malloc(length + 1);
+        Assert(buffer.str != NULL);
 
-        (void)fread(buffer, 1, length, f);
-        buffer[length] = '\0'; // ensure EOF
+        (void)fread((void *)buffer.str, 1, length, f);
+        buffer.str[length] = '\0'; // ensure EOF
+        buffer.len = length + 1;
         fclose(f);
     }
 

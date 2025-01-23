@@ -1,3 +1,8 @@
 build
 compile_commands.json
 .cache
+
+# Ignore everything but .wrap and packagefiles in the subprojects directory
+subprojects/*
+!subprojects/*.wrap
+!subprojects/packagefiles

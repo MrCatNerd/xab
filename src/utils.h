@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include "length_string.h"
 
 // replace this with your favorite Assert() implementation
 #define Assert(cond) assert(cond)
@@ -15,4 +16,4 @@
  * @param path
  * @param buffer
  */
-const char *ReadFile(const char *path);
+length_string_t ReadFile(const char *path);

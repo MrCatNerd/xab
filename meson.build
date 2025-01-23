@@ -5,7 +5,7 @@ project(
   default_options: [
     'warning_level=3',
     'b_ndebug=if-release',
-    'buildtype=debugoptimized',
+    'buildtype=release',
   ],
 )
 
@@ -19,7 +19,7 @@ if c_compiler.get_id() not in ['gcc']
   )
 endif
 
-project_include_dirs = ['src']
+project_include_dirs = [include_directories('src'), include_directories('res')]
 src_files = []
 extra_link_args = []
 
@@ -89,6 +89,11 @@ else
 endif
 
 # --- dependencies ---
+disable_bce = get_option('disable_bce')
+if disable_bce
+  add_project_arguments('-DDISABLE_BCE', language: 'c')
+endif
+
 xcb_deps = [
   dependency('xcb'),
   dependency('xcb-atom'),
@@ -122,6 +127,7 @@ deps = xcb_deps + [
 ]
 
 # --- source files ---
+subdir('res/shaders')
 subdir('src')
 
 # --- make executable ---

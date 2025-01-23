@@ -1,0 +1,9 @@
+[wrap-git]
+url = https://github.com/wr7/bce.git
+revision = b41f44dc48266df775d1e09b2b7b39e2e58b800d
+depth = 1
+patch_directory=bce
+
+[provide]
+dependency_names = bce
+
