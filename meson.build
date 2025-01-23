@@ -23,10 +23,6 @@ project_include_dirs = [include_directories('src'), include_directories('res')]
 src_files = []
 extra_link_args = []
 
-if get_option('static_build')
-  extra_link_args += '-static'
-endif
-
 # --- logging and stuff ---
 
 log_level = get_option('log')

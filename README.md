@@ -156,7 +156,7 @@ TODO: fedora and arch <!-- maybe -->
 
 ### Setup
 ```sh
-meson setup build --buildtype=release
+meson setup build
 ```
 
 ### To build

@@ -28,9 +28,3 @@ option(
   value: false,
   description: 'Disable embedding files (shaders) into the xab binary (BCE)',
 )
-
-option(
-  'static_build',
-  type: 'boolean',
-  value: false,
-)
