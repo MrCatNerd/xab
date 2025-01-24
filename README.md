@@ -73,7 +73,7 @@ Anything that supports OpenGL 3.3
 
 ### Dependencies
 
-Assuming you already have the building tools installed (e.g. gcc, meson, ninja, xxd, etc.), you still need:
+Assuming you already have the building tools installed (e.g. gcc, meson, ninja, etc.), you still need:
 * xcb
 * xcb-util
 * xproto
@@ -169,6 +169,7 @@ Built binary can be found in `build/xab`
 
 ### To install
 ```sh
+# (sudo)
 meson install -C build
 ```
 This will install xab at `/usr/local/bin` (probably)
