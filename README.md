@@ -189,4 +189,7 @@ meson configure build -Dvideo_reader=xab_custom
 
 # disable BCE files
 meson configure build -Ddisable_bce=true
+
+# disable ANSII colored logging
+meson configure build -Denable_ansii_log=false
 ```

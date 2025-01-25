@@ -32,7 +32,7 @@ void update_background(context_t *context) {
 }
 
 void setup_background(context_t *context) {
-    xab_log(LOG_VERBOSE, "Creating background pixmap\n");
+    xab_log(LOG_DEBUG, "Creating background pixmap\n");
     // create pixmap
     context->background_pixmap = xcb_generate_id(context->connection);
 

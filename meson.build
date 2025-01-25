@@ -26,6 +26,11 @@ extra_link_args = []
 # --- logging and stuff ---
 
 log_level = get_option('log')
+should_enable_ansii_colors = get_option('enable_ansii_log')
+
+if should_enable_ansii_colors
+  add_global_arguments('-DLOG_ANSII_COLORS', language: 'c')
+endif
 
 # automatic log level by build type
 buildtype = get_option('buildtype')

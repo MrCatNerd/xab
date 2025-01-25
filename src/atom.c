@@ -49,7 +49,7 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
             }
         }
         if (should_continue) {
-            xab_log(LOG_VERBOSE, "skipping atom: %s\n", ATOM_LIST[i].name);
+            xab_log(LOG_TRACE, "skipping atom: %s\n", ATOM_LIST[i].name);
             continue;
         }
 
@@ -71,7 +71,7 @@ void load_atoms(context_t *context, load_atoms_config_t *config) {
         }
 
         *ATOM_LIST[index].atom = reply->atom;
-        xab_log(LOG_VERBOSE, "atom: %s - 0x%08x\n", ATOM_LIST[index].name,
+        xab_log(LOG_TRACE, "atom: %s - 0x%08x\n", ATOM_LIST[index].name,
                 *ATOM_LIST[index].atom);
 
         free((void *)reply);

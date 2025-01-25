@@ -6,28 +6,28 @@
 void xab_log(log_level level, const char *format, ...) {
     if (level < LOG_LEVEL)
         return;
-    const char *prefix = "";
+    const char *logtype_prefix = "";
     switch (level) {
     case LOG_TRACE:
-        prefix = XAB_LOG_PREFIX_THINGY "TRACE: ";
+        logtype_prefix = "TRACE";
         break;
     case LOG_VERBOSE:
-        prefix = XAB_LOG_PREFIX_THINGY "VERBOSE: ";
+        logtype_prefix = "VERBOSE";
         break;
     case LOG_DEBUG:
-        prefix = XAB_LOG_PREFIX_THINGY "DEBUG: ";
+        logtype_prefix = "DEBUG";
         break;
     case LOG_INFO:
-        prefix = XAB_LOG_PREFIX_THINGY "INFO: ";
+        logtype_prefix = "INFO";
         break;
     case LOG_WARN:
-        prefix = XAB_LOG_PREFIX_THINGY "WARN: ";
+        logtype_prefix = "WARN";
         break;
     case LOG_ERROR:
-        prefix = XAB_LOG_PREFIX_THINGY "ERROR: ";
+        logtype_prefix = "ERROR";
         break;
     case LOG_FATAL:
-        prefix = XAB_LOG_PREFIX_THINGY "FATAL: ";
+        logtype_prefix = "FATAL";
         break;
     default:
         fprintf(stderr, "XAB LOG ERROR: INVALID LOG LEVEL!\n");
@@ -36,7 +36,8 @@ void xab_log(log_level level, const char *format, ...) {
     };
     va_list args;
     va_start(args, format);
-    fprintf(stderr, "%s", prefix);
+    fprintf(stderr, XAB_LOG_PREFIX_THINGY "[%s%s%s] ", get_logtype_color(level),
+            logtype_prefix, COLOR_RESET);
     vfprintf(stderr, format, args);
     // no \n, deal with it
     va_end(args);

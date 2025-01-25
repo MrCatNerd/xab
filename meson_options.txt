@@ -23,6 +23,13 @@ option(
 )
 
 option(
+  'enable_ansii_log',
+  type: 'boolean',
+  value: true,
+  description: 'Enable ANSII terminal colors for logging',
+)
+
+option(
   'disable_bce',
   type: 'boolean',
   value: false,
