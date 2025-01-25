@@ -2,15 +2,17 @@
 will be implemented (probably)
 
 * general
-- custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
+- ansii logger colors with a meson build option for toggeling it
+- pch for slightly better compile times
 - same video on multiple monitors
+- lazy rendering - (toggleable), if there are no new frames to draw than don't redraw - this will be on by default and can be turned off so if you have a time based shader or smh it'll still look good
+- custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
 - max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
 - scaling, fitting, centering, tiling and other background stuff
 - better clean ups so i can clean up something even though its initalizing
 - clean up my bad code lol
 - man page
 - add a clang format thingy
-- ansii logger colors with a meson build option for toggeling it
 - try to optimize the hell out of xab
 - dummy video player or smh
 - optimize the hell out of xab and decrease cpu usage as much as i can
@@ -43,7 +45,6 @@ will be implemented (probably)
 may or may not be implemented
 
 - add vlc support
-- shader pool/cache (for example if i have multiple framebuffers, i can compile res/shaders/framebuffer_vertex.glsl only once)
 - find a way to only change 1 monitor/part of the screen without cleaning everything else (maybe save a part of the pixmap to a texture?)
 - a very simple toml config that will become super complicated after a week
 - daemon and client thingy (like swww), so i can change the background on the fly and other cool things

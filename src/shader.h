@@ -1,7 +1,11 @@
 #pragma once
 
 typedef struct Shader {
+        /// OpenGL shader program ID
         unsigned int program_id;
+
+        /// paths of the shader files - vertex and than fragment
+        const char *paths[2];
 } Shader_t;
 
 Shader_t create_shader(const char *vertex_path, const char *fragment_path);

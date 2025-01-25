@@ -1,6 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
@@ -8,6 +7,7 @@
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
 
+#include "shader_cache.h"
 #include "video_reader_interface.h"
 #include "logger.h"
 #include "framebuffer.h"
@@ -27,18 +27,19 @@ static void on_mpv_events(void *ctx);
 static void set_init_mpv_options(VideoReaderState_t *state);
 
 VideoReaderState_t open_video(const char *path,
-                              VideoReaderRenderConfig_t vr_config) {
+                              VideoReaderRenderConfig_t vr_config,
+                              ShaderCache_t *scache) {
     VideoReaderState_t state = {.path = path,
                                 .vrc = vr_config,
                                 .internal =
-                                    calloc(sizeof(VRStateInternal_t), 1)};
+                                    calloc(1, sizeof(VRStateInternal_t))};
 
     VRStateInternal_t *internal_state = VR_INTERNAL(state.internal);
 
     xab_log(LOG_DEBUG, "Creating video framebuffer\n");
     internal_state->framebuffer = create_framebuffer(
         state.vrc.width * state.vrc.scale, state.vrc.height * state.vrc.scale,
-        state.vrc.gl_internal_format);
+        state.vrc.gl_internal_format, scache);
 
     xab_log(LOG_DEBUG, "Initializing mpv handle\n");
     internal_state->mpv_handle = mpv_create();
@@ -73,7 +74,7 @@ VideoReaderState_t open_video(const char *path,
     mpv_render_param render_param[] = {
         {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
         {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-         &(mpv_opengl_init_params){get_proc_address_mpv, NULL, NULL}},
+         &(mpv_opengl_init_params){get_proc_address_mpv, NULL}},
         {MPV_RENDER_PARAM_ADVANCED_CONTROL, &(int){1}},
         {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME, &(int){0}},
         {MPV_RENDER_PARAM_INVALID, NULL},
@@ -227,8 +228,8 @@ void unpause_video(VideoReaderState_t *state) {
                       (const char *[]){"set", "pause", "no", NULL});
 }
 
-void close_video(VideoReaderState_t *state) {
-    xab_log(LOG_DEBUG, "Closing video: %s\n", state->path);
+void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
+    xab_log(LOG_VERBOSE, "Closing video: %s\n", state->path);
     if (!state || !state->internal)
         return;
 
@@ -246,7 +247,7 @@ void close_video(VideoReaderState_t *state) {
     }
 
     // delete framebuffer
-    delete_framebuffer(&internal_state->framebuffer);
+    delete_framebuffer(&internal_state->framebuffer, scache);
 
     free(state->internal);
 }

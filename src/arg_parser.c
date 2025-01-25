@@ -36,17 +36,6 @@ static void help(const char *program_name) {
         program_name);
 }
 
-void clean_opts(struct argument_options *opts) {
-    for (int i = 0; i < opts->n_wallpaper_options; i++) {
-        if (opts->wallpaper_options[i].video_path != NULL) {
-            free(opts->wallpaper_options[i].video_path);
-            opts->wallpaper_options[i].video_path = NULL;
-        }
-    }
-    free(opts->wallpaper_options);
-    opts->wallpaper_options = NULL;
-}
-
 struct argument_options parse_args(int argc, char *argv[]) {
     struct argument_options opts = {
         .wallpaper_options = NULL,
@@ -173,4 +162,16 @@ struct argument_options parse_args(int argc, char *argv[]) {
     }
 
     return opts;
+}
+
+void clean_opts(struct argument_options *opts) {
+    xab_log(LOG_TRACE, "Cleaning argument options\n");
+    for (int i = 0; i < opts->n_wallpaper_options; i++) {
+        if (opts->wallpaper_options[i].video_path != NULL) {
+            free(opts->wallpaper_options[i].video_path);
+            opts->wallpaper_options[i].video_path = NULL;
+        }
+    }
+    free(opts->wallpaper_options);
+    opts->wallpaper_options = NULL;
 }

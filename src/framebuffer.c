@@ -8,6 +8,7 @@
 #include "framebuffer.h"
 #include "logger.h"
 #include "shader.h"
+#include "shader_cache.h"
 #include "vertex.h"
 
 // clang-format off
@@ -21,8 +22,8 @@ static const Vertex_t vertices[] = {
 static const unsigned int indices[] = {0, 1, 2, 0, 3, 2};
 // clang-format on
 
-FrameBuffer_t create_framebuffer(int width, int height,
-                                 int gl_internal_format) {
+FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
+                                 ShaderCache_t *scache) {
     // create fbo
     FrameBuffer_t fb;
     glGenFramebuffers(1, &fb.fbo_id);
@@ -103,8 +104,9 @@ FrameBuffer_t create_framebuffer(int width, int height,
                           (void *)offsetof(Vertex_t, color));
     glEnableVertexAttribArray(2);
 
-    fb.shader = create_shader("res/shaders/framebuffer_vertex.glsl",
-                              "res/shaders/framebuffer_fragment.glsl");
+    fb.shader = shader_cache_create_or_cache_shader(
+        "res/shaders/framebuffer_vertex.glsl",
+        "res/shaders/framebuffer_fragment.glsl", scache);
     // "res/shaders/mouse_distance_thingy.glsl");
 
     // unbind buffers
@@ -144,8 +146,8 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     // shader stuff
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
-    use_shader(&fb->shader);
-    glUniform1f(shader_get_uniform_location(&fb->shader, "u_Time"), da_time);
+    use_shader(fb->shader);
+    glUniform1f(shader_get_uniform_location(fb->shader, "u_Time"), da_time);
 
     // geometry stuff
     glBindVertexArray(fb->vao);
@@ -192,9 +194,10 @@ void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void delete_framebuffer(FrameBuffer_t *fb) {
+void delete_framebuffer(FrameBuffer_t *fb, ShaderCache_t *scache) {
     // delete stuff
-    delete_shader(&fb->shader);
+    xab_log(LOG_VERBOSE, "Deleting framebuffer #%d\n", fb->fbo_id);
+    shader_cache_unref_shader(fb->shader, scache);
     glDeleteTextures(1, &fb->texture_color_id);
     glDeleteBuffers(1, &fb->ebo);
     glDeleteBuffers(1, &fb->vbo);

@@ -1,3 +1,4 @@
+#include "shader_cache.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -289,15 +290,19 @@ context_t context_create(struct argument_options *opts) {
                 (context.monitors[i])->x, (context.monitors[i])->y,
                 (context.monitors[i])->width, (context.monitors[i])->height);
 
-    // create main framebuffer
-    context.framebuffer =
-        create_framebuffer(context.screen->width_in_pixels,
-                           context.screen->height_in_pixels, GL_RGBA);
-
-    // load the videos
+    // allocate wallpapers and set wallpaper_count
     context.wallpaper_count = opts->n_wallpaper_options;
     context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
 
+    // allocate the shader cache
+    context.scache = create_shader_cache(2); // reserve 2 shaders in the cache
+
+    // create main framebuffer
+    context.framebuffer = create_framebuffer(context.screen->width_in_pixels,
+                                             context.screen->height_in_pixels,
+                                             GL_RGBA, &context.scache);
+
+    // load the videos
     monitor_t *fullscreen_monitor = create_monitor(
         "fullscreen-monitor", 0, true, 0, 0, context.screen->width_in_pixels,
         context.screen->height_in_pixels);
@@ -322,7 +327,7 @@ context_t context_create(struct argument_options *opts) {
                        monitor->y, opts->wallpaper_options[i].pixelated,
                        opts->wallpaper_options[i].video_path,
                        &context.wallpapers[i],
-                       opts->wallpaper_options[i].hw_accel);
+                       opts->wallpaper_options[i].hw_accel, &context.scache);
     }
 
     free(fullscreen_monitor); // TODO: remove malloc from the init

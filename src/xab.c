@@ -34,6 +34,7 @@
 #include "video_reader_interface.h"
 #include "logger.h"
 #include "framebuffer.h"
+#include "shader_cache.h"
 #include "setbg.h"
 #include "monitor.h"
 #include "wallpaper.h"
@@ -156,18 +157,22 @@ static void cleanup(
 
     // close and clean up the videos
     for (int i = 0; i < context.wallpaper_count; i++)
-        wallpaper_close(&context.wallpapers[i]);
+        wallpaper_close(&context.wallpapers[i], &context.scache);
     free(context.wallpapers);
 
     // clean up framebuffer
-    delete_framebuffer(&context.framebuffer);
+    delete_framebuffer(&context.framebuffer, &context.scache);
 
     cleanup_monitors(context.monitor_count, context.monitors);
+
+    // clean up shader cache
+    shader_cache_cleanup(&context.scache);
 
     // todo: maybe i can free some of the memory earlier
     clean_opts(opts);
 
     // destroy the EGL context, surface, and display
+    xab_log(LOG_DEBUG, "Cleaning up EGL stuff\n");
     if (context.context != EGL_NO_CONTEXT) {
         eglMakeCurrent(context.display, EGL_NO_SURFACE, EGL_NO_SURFACE,
                        EGL_NO_CONTEXT);
@@ -181,12 +186,14 @@ static void cleanup(
     }
 
     // clean up background pixmap
+    xab_log(LOG_DEBUG, "Freeing the background pixmap\n");
     xcb_free_pixmap(
         context.connection,
         context.background_pixmap); // i'm not sure if im supposed to clean
                                     // this up cuz of the preserve thingy
 
     // disconnect from the X server
+    xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
     if (context.connection)
         xcb_disconnect(context.connection);
 

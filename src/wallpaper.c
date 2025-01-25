@@ -1,3 +1,4 @@
+#include "shader_cache.h"
 #include <epoxy/gl.h>
 
 #ifdef HAVE_LIBCGLM
@@ -19,10 +20,11 @@
 #include "logger.h"
 #include "shader.h"
 #include "video_reader_interface.h"
+#include "shader_cache.h"
 
 void wallpaper_init(float scale, int width, int height, int x, int y,
                     bool pixelated, const char *video_path, wallpaper_t *dest,
-                    int hw_accel) {
+                    int hw_accel, ShaderCache_t *scache) {
     xab_log(LOG_DEBUG, "Creating animated wallpaper: '%s' %dx%dpx at %dx%d\n",
             video_path, width, height, x, y);
     // save wallpaper position
@@ -30,8 +32,9 @@ void wallpaper_init(float scale, int width, int height, int x, int y,
     dest->y = y;
 
     // load shaders
-    dest->shader = create_shader("res/shaders/wallpaper_vertex.glsl",
-                                 "res/shaders/wallpaper_fragment.glsl");
+    dest->shader = shader_cache_create_or_cache_shader(
+        "res/shaders/wallpaper_vertex.glsl",
+        "res/shaders/wallpaper_fragment.glsl", scache);
     // "res/shaders/mouse_distance_thingy.glsl");
 
     // create vrc
@@ -45,7 +48,7 @@ void wallpaper_init(float scale, int width, int height, int x, int y,
     };
 
     // open video
-    dest->video = open_video(video_path, vrc);
+    dest->video = open_video(video_path, vrc, scache);
 }
 
 void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
@@ -62,12 +65,12 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
 
     glViewport(0, 0, fbo_dest->width, fbo_dest->height);
 
-    use_shader(&wallpaper->shader);
+    use_shader(wallpaper->shader);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, get_video_ogl_texture(&wallpaper->video));
     glUniform1i(
-        shader_get_uniform_location(&wallpaper->shader, "u_wallpaperTexture"),
+        shader_get_uniform_location(wallpaper->shader, "u_wallpaperTexture"),
         0);
 
 #ifdef HAVE_LIBCGLM
@@ -78,12 +81,12 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
     if (!all_identity) {
         // projection matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_ortho_proj"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_ortho_proj"), 1,
             GL_FALSE, (const GLfloat *)camera->ortho);
 
         // view matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_view"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_view"), 1,
             GL_FALSE, (const GLfloat *)camera->view);
 
         // model matrix
@@ -103,11 +106,11 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
         glm_scale(model, da_scaler);
 
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_model"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_model"), 1,
             GL_FALSE, (const GLfloat *)model);
 
         // the projection flips it up
-        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "u_flip_y"),
+        glUniform1i(shader_get_uniform_location(wallpaper->shader, "u_flip_y"),
                     0);
     }
 #else
@@ -121,29 +124,30 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
 
         // projection matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_ortho_proj"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_ortho_proj"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // view matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_view"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_view"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // model matrix
         glUniformMatrix4fv(
-            shader_get_uniform_location(&wallpaper->shader, "u_model"), 1,
+            shader_get_uniform_location(wallpaper->shader, "u_model"), 1,
             GL_FALSE, (const GLfloat *)identity_matrix);
 
         // video reader flips once
-        glUniform1i(shader_get_uniform_location(&wallpaper->shader, "u_flip_y"),
+        glUniform1i(shader_get_uniform_location(wallpaper->shader, "u_flip_y"),
                     1);
     }
 
     render_framebuffer_borrow_shader(fbo_dest, fbo_dest->fbo_id,
-                                     &wallpaper->shader);
+                                     wallpaper->shader);
 }
 
-void wallpaper_close(wallpaper_t *wallpaper) {
-    close_video(&wallpaper->video);
-    delete_shader(&wallpaper->shader);
+void wallpaper_close(wallpaper_t *wallpaper, ShaderCache_t *scache) {
+    xab_log(LOG_DEBUG, "Closing wallpaper: %s\n", wallpaper->video.path);
+    close_video(&wallpaper->video, scache);
+    shader_cache_unref_shader(wallpaper->shader, scache);
 }

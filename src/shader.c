@@ -22,7 +22,7 @@ typedef struct free_file {
 static free_file_t get_shader_file(const char *path) {
     xab_log(LOG_TRACE, "Getting shader file: %s\n", path);
 #ifndef DISABLE_BCE
-    free_file_t shader_file = {{NULL, NULL}, false};
+    free_file_t shader_file = {{NULL, 0}, false};
 
     shader_file.lenstr = search_bce_shaders(path);
 
@@ -47,7 +47,6 @@ static length_string_t search_bce_shaders(const char *path) {
         bce_file_t bce_file = bce_files[i];
         if (strcmp(bce_file.path, path) == 0) {
             xab_log(LOG_TRACE, "BCE file `%s` was found\n", bce_file.path);
-            Assert(bce_file.contents.len >= 0);
 
             return bce_file.contents;
         }
@@ -70,7 +69,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     xab_log(LOG_DEBUG,
             "Creating shader from '%s' (vertex) and '%s' (fragment)\n",
             vertex_path, fragment_path);
-    Shader_t shader = {0};
+    Shader_t shader = {0, {vertex_path, fragment_path}};
 
     // error stuff
     int success;
@@ -78,7 +77,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
 
     // vertex shader
     unsigned int vshader;
-    free_file_t vshader_src = get_shader_file(vertex_path);
+    free_file_t vshader_src = get_shader_file(shader.paths[0]);
     vshader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vshader, 1, (const GLchar *const *)&vshader_src.lenstr.str,
                    (const GLint *)&vshader_src.lenstr.len);
@@ -93,7 +92,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
 
     // fragment shader
     unsigned int fshader;
-    free_file_t fshader_src = get_shader_file(fragment_path);
+    free_file_t fshader_src = get_shader_file(shader.paths[1]);
     fshader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fshader, 1, (const GLchar *const *)&fshader_src.lenstr.str,
                    (const GLint *)&fshader_src.lenstr.len);
@@ -122,6 +121,8 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     glDeleteShader(vshader);
     glDeleteShader(fshader);
 
+    // if the shader files were memeory allocated than free them (this only
+    // happens when actually reading a file and not getting it from BCE)
     if (vshader_src.should_free)
         free((void *)vshader_src.lenstr.str);
     if (fshader_src.should_free)

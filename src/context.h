@@ -8,6 +8,7 @@
 #include "framebuffer.h"
 #include "camera.h"
 #include "monitor.h"
+#include "shader_cache.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
 
@@ -28,6 +29,7 @@ typedef struct context {
         monitor_t **monitors;
         int monitor_count;
 
+        ShaderCache_t scache; // TODO: use it
         FrameBuffer_t framebuffer;
         wallpaper_t *wallpapers;
         int wallpaper_count;

@@ -11,6 +11,7 @@ src_files += files(
   'mouse.c',
   'setbg.c',
   'shader.c',
+  'shader_cache.c',
   'utils.c',
   'wallpaper.c',
   'xab.c',

@@ -16,6 +16,7 @@
 
 #include <epoxy/gl.h>
 
+#include "shader_cache.h"
 #include "video_reader_interface.h"
 #include "logger.h"
 #include "utils.h"
@@ -65,7 +66,9 @@ struct packet_queue {
 };
 
 VideoReaderState_t open_video(const char *path,
-                              VideoReaderRenderConfig_t vr_config) {
+                              VideoReaderRenderConfig_t vr_config,
+                              ShaderCache_t *scache) {
+    (void)scache;
     VideoReaderState_t state = {.path = path,
                                 .vrc = vr_config,
                                 .internal =
@@ -365,8 +368,9 @@ void render_video(VideoReaderState_t *state) {
     // profit
 }
 
-void close_video(VideoReaderState_t *state) {
-    xab_log(LOG_DEBUG, "Closing video: %s\n", state->path);
+void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
+    (void)scache;
+    xab_log(LOG_VERBOSE, "Closing video: %s\n", state->path);
     if (!state || !state->internal) {
         xab_log(LOG_ERROR, "No video reader state of video %s\n", state->path);
         return;

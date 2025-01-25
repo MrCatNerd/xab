@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "framebuffer.h"
+#include "shader_cache.h"
 
 // TODO: maybe expose the actual video with and height from the struct (not the
 // target width and height from VideoReaderRenderConfig)
@@ -32,7 +32,7 @@ typedef struct VideoReaderRenderConfig {
          */
         bool pixelated;
         /**
-         * @brief gl internal format of the video framebuffer
+         * @brief gl internal format of the video framebuffer/texture
          */
         int gl_internal_format;
         /**
@@ -71,17 +71,16 @@ typedef struct VideoReaderState {
  * @return video reader state
  */
 VideoReaderState_t open_video(const char *path,
-                              VideoReaderRenderConfig_t vr_config);
+                              VideoReaderRenderConfig_t vr_config,
+                              ShaderCache_t *scache);
 
 /**
- * @brief Render a video to the VideoReaderState's framebuffer
+ * @brief Render a video to the VideoReaderState's framebuffer/texture
  *
  * @param state - video reader state
  */
 void render_video(VideoReaderState_t *state);
 
-// TODO: save the framebuffer in the VideoReaderState_t and not in the internal
-// pointer
 /**
  * @brief Get an id to the video reader's opengl texture
  *
@@ -109,7 +108,7 @@ void unpause_video(VideoReaderState_t *state);
  *
  * @param state - video reader state
  */
-void close_video(VideoReaderState_t *state);
+void close_video(VideoReaderState_t *state, ShaderCache_t *scache);
 
 /// (optional implementation)
 /// don't worry about it
