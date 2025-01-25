@@ -33,7 +33,8 @@
 ## Introduction
 xab (X11 Animated Background) is an overkill animated wallpaper setter for X11 that
 strives to be as feature complete as possible
-<!-- TODO: video -->
+
+<!-- TODO: a video demo -->
 
 #### Supported file formats
 Any format supported by ffmpeg
@@ -118,7 +119,7 @@ currently there are two options:
 
 * \[default] libmpv (mpv) - this is the recommended video reader, it uses libmpv to read the video
 
-* ffmpeg (xab_custom) -
+* ffmpeg -
 i made this video reader for educational purposes,
 this is an ffmpeg-based video reader, it is way less performant compared to the the other options,
 this is my fault because i suck at ffmpeg,
@@ -185,7 +186,7 @@ To see the full list of the meson options, run `meson configure build`
 meson configure build -Dlog=verbose
 
 # change video reader
-meson configure build -Dvideo_reader=xab_custom
+meson configure build -Dvideo_reader=ffmpeg
 
 # disable BCE files
 meson configure build -Ddisable_bce=true

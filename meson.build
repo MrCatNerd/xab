@@ -77,7 +77,7 @@ video_reader_deps = []
 if video_library == 'mpv'
   src_files += files('src/mpv_reader.c')
   video_reader_deps += dependency('mpv')
-elif video_library == 'xab_custom'
+elif video_library == 'ffmpeg'
   src_files += files('src/xab_reader.c')
   video_reader_deps += [
     dependency('libavcodec'),

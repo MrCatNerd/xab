@@ -2,7 +2,7 @@ option(
   'video_reader',
   type: 'combo',
   # todo: vlc
-  choices: ['mpv', 'xab_custom'],
+  choices: ['mpv', 'ffmpeg'],
   value: 'mpv',
   description: 'Which video library to use',
 )
