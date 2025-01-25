@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
+#include "pch.h"
 
 #include "camera.h"
 #include "video_reader.h"

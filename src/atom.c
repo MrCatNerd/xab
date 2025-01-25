@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
+#include "pch.h"
 
 #include "atom.h"
 #include "context.h"

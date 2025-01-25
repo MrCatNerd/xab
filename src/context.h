@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-
-#include <xcb/xcb.h>
-#include <epoxy/egl.h>
+#include "pch.h"
 
 #include "framebuffer.h"
 #include "camera.h"

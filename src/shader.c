@@ -1,6 +1,4 @@
-#include <stdlib.h>
-#include <string.h>
-#include <epoxy/gl.h>
+#include "pch.h"
 
 #include "shader.h"
 #include "logger.h"

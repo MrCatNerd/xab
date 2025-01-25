@@ -1,7 +1,6 @@
 #pragma once
 
-#include <epoxy/gl.h>
-#include <epoxy/egl.h>
+#include "pch.h"
 
 #include "logger.h"
 #include "utils.h"

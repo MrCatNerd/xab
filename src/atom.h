@@ -1,8 +1,6 @@
 #pragma once
 
-#include <xcb/xcb.h>
-#include <xcb/xcb_atom.h>
-#include <xcb/xproto.h>
+#include "pch.h"
 
 #include "context.h"
 

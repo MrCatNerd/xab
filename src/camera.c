@@ -1,3 +1,4 @@
+#include "pch.h"
 #ifdef HAVE_LIBCGLM
 #include <cglm/call.h>
 #include <cglm/cam.h>
@@ -5,7 +6,6 @@
 #include <cglm/mat4.h>
 #include <cglm/util.h>
 #endif
-#include <epoxy/gl.h>
 
 #include "camera.h"
 

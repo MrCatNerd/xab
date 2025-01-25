@@ -1,22 +1,4 @@
-#include <inttypes.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xcb_aux.h>
-#include <xcb/xproto.h>
-#include <xcb/xcb_atom.h>
-
-#include <epoxy/egl.h>
-#include <epoxy/gl.h>
-#include <epoxy/common.h>
+#include "pch.h"
 
 // libepoxy havn't updated their khoronos registry yet, there is an unmerged
 // pull request about it and I got nothing to about it until it gets merged :(

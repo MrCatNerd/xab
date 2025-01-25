@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
-#include <xcb/xcb_aux.h>
-#include <stdlib.h>
+#include "pch.h"
 
 #include "setbg.h"
 

@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include "pch.h"
 #include <time.h>
 
 #include <libavcodec/avcodec.h>
@@ -13,8 +11,6 @@
 #include <libswscale/swscale.h>
 #include <libavformat/avio.h>
 #include <libavutil/pixfmt.h>
-
-#include <epoxy/gl.h>
 
 #include "shader_cache.h"
 #include "video_reader_interface.h"

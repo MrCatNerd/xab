@@ -1,7 +1,4 @@
-#include <stdio.h>
-
-#include <epoxy/gl.h>
-#include <epoxy/egl.h>
+#include "pch.h"
 
 #include "utils.h"
 #include "logger.h"

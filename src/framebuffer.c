@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <epoxy/common.h>
-#include <epoxy/gl.h>
-#include <epoxy/egl.h>
+#include "pch.h"
 
 #include "framebuffer.h"
 #include "logger.h"

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stddef.h>
+#include "pch.h"
 
 #include <libavformat/avformat.h>
 #include <libavutil/buffer.h>

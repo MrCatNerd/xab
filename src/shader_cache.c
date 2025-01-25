@@ -1,7 +1,4 @@
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "pch.h"
 
 #include "shader_cache.h"
 #include "logger.h"

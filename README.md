@@ -31,8 +31,8 @@
 ---
 
 ## Introduction
-xab (X11 Animated Background) is an animated wallpaper setter for X11 that
-strives to be as feature complete as possible while maintaining reasonable resource usage
+xab (X11 Animated Background) is an overkill animated wallpaper setter for X11 that
+strives to be as feature complete as possible
 <!-- TODO: video -->
 
 #### Supported file formats
@@ -193,3 +193,12 @@ meson configure build -Ddisable_bce=true
 # disable ANSII colored logging
 meson configure build -Denable_ansii_log=false
 ```
+
+---
+
+### features that you probably don't care about
+* Binary C embed for shader files so you can run your lil executable from anywhere
+* PCH for slightly faster build times
+* an overkill shader cache system
+* fancy colored logging
+* a cool mouse light shader

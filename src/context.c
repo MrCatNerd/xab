@@ -1,16 +1,4 @@
-#include "shader_cache.h"
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xcb_aux.h>
-#include <xcb/xproto.h>
-#include <xcb/xcb_atom.h>
-#ifdef HAVE_LIBXRANDR
-#include <xcb/randr.h>
-#endif /* HAVE_LIBXRANDR */
+#include "pch.h"
 
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
@@ -30,6 +18,7 @@
 #include "atom.h"
 #include "wallpaper.h"
 #include "framebuffer.h"
+#include "shader_cache.h"
 #include "setbg.h"
 #include "monitor.h"
 #include "utils.h"

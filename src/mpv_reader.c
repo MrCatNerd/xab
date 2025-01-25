@@ -1,8 +1,5 @@
-#include <string.h>
-#include <stdlib.h>
+#include "pch.h"
 
-#include <epoxy/gl.h>
-#include <epoxy/egl.h>
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>

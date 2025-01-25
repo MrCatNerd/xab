@@ -1,9 +1,4 @@
-#include <string.h>
-
-#include <xcb/xproto.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <xcb/randr.h>
+#include "pch.h"
 
 #include "monitor.h"
 #include "logger.h"

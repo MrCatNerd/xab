@@ -138,6 +138,7 @@ executable(
   c_args: [
     '-DXAB_VERSION="' + meson.project_version() + '"',
   ],
+  c_pch: 'src/pch.h',
   link_args: extra_link_args,
   dependencies: deps,
   include_directories: project_include_dirs,

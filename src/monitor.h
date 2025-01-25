@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
+#include "pch.h"
 
 typedef struct monitor {
         char *name;
