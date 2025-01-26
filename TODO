@@ -2,6 +2,7 @@
 will be implemented (probably)
 
 * general
+- add a profiler (probably tracy)
 - same video on multiple monitors
 - lazy rendering - (toggleable), if there are no new frames to draw than don't redraw - this will be on by default and can be turned off so if you have a time based shader or smh it'll still look good
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
@@ -17,7 +18,7 @@ will be implemented (probably)
 - optimize the hell out of xab and decrease cpu usage as much as i can
 - pause rendering: https://github.com/glouw/paperview/issues/7
 - remake atom system
-- trace logs
+- trace logs for more stuff
 - (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
 - offset videos by x,y
 
