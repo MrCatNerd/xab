@@ -38,3 +38,4 @@
 #include "shader.h"
 #include "shader_cache.h"
 #include "context.h"
+#include "atom.h"
