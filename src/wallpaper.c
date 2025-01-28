@@ -53,6 +53,8 @@ void wallpaper_init(float scale, int width, int height, int x, int y,
 
 void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
                       FrameBuffer_t *fbo_dest) {
+    TracyCZoneNC(tracy_ctx, "WP_RENDER", TRACY_COLOR_WHITE, true);
+
     render_video(&wallpaper->video);
 
     // TODO: maybe drop the cglm dependency for glviewport (or make it
@@ -144,6 +146,8 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
 
     render_framebuffer_borrow_shader(fbo_dest, fbo_dest->fbo_id,
                                      wallpaper->shader);
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void wallpaper_close(wallpaper_t *wallpaper, ShaderCache_t *scache) {

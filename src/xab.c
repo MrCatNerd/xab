@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <stdio.h>
 
 // libepoxy havn't updated their khoronos registry yet, there is an unmerged
 // pull request about it and I got nothing to about it until it gets merged :(
@@ -27,6 +28,9 @@ static bool keep_running = true;
 static void handle_sigint(int sig);
 
 static void setup(struct argument_options *opts) {
+    ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Setup`\n");)
+    TracyCZoneNC(tracy_ctx, "Setup", TRACY_COLOR_GREEN, true);
+
     xab_log(LOG_DEBUG, "Initializing...\n");
 
 #ifndef NEDBUG
@@ -37,10 +41,17 @@ static void setup(struct argument_options *opts) {
 #endif
 
     context = context_create(opts);
+
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Setup`\n");)
+    TracyCZoneEnd(tracy_ctx);
 }
 
 static void mainloop(void) {
     xab_log(LOG_DEBUG, "Runninng main loop...\n");
+
+    ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Mainloop`\n");)
+    TracyCZoneNC(tracy_ctx, "Mainloop", TRACY_COLOR_WHITE, true);
+    printf("%d", LOG_LEVEL);
 
     // set up the signal handler (so the program would gracefully exit on
     // Ctrl+c)
@@ -75,7 +86,11 @@ static void mainloop(void) {
     float da_time = 0.0f;
 
     while (keep_running) {
+        TracyCFrameMarkStart("FrameRender");
+
         // delta time
+        TracyCZoneNC(tracy_ctx2, "Stuff", TRACY_COLOR_BLUE, true);
+
         struct timespec c2;
         clock_gettime(CLOCK_MONOTONIC, &c2);
         float delta =
@@ -89,6 +104,8 @@ static void mainloop(void) {
             xcb_get_geometry_reply(context.connection, geometry_cookie, NULL);
         const int width = (int)geometry->width;
         const int height = (int)geometry->height;
+
+        TracyCZoneEnd(tracy_ctx2);
 
         // render only if window size is non-zero (minimized)
         if (width != 0 && height != 0) {
@@ -129,12 +146,20 @@ static void mainloop(void) {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
         }
+
+        TracyCFrameMarkEnd("FrameRender");
     }
+
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Mainloop`\n");)
+    TracyCZoneEnd(tracy_ctx);
 }
 
 static void cleanup(
     struct argument_options
         *opts) { // maybe i should make the context do some of the cleaning...
+    ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Cleanup`\n");)
+    TracyCZoneNC(tracy_ctx, "Cleanup", TRACY_COLOR_GREEN, true);
+
     xab_log(LOG_DEBUG, "Cleaning up...\n");
 
     // close and clean up the videos
@@ -179,10 +204,15 @@ static void cleanup(
     if (context.connection)
         xcb_disconnect(context.connection);
 
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Cleanup`\n");)
+    TracyCZoneEnd(tracy_ctx);
+
     printf("xab has shut down gracefully\n");
 }
 
 int main(int argc, char *argv[]) {
+    ON_TRACY(xab_log(LOG_TRACE, "Starting up the tracy profiler...");)
+
     struct argument_options opts = parse_args(argc, argv);
 
     setup(&opts);

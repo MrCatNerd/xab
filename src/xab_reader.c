@@ -221,6 +221,8 @@ VideoReaderState_t open_video(const char *path,
 }
 
 void render_video(VideoReaderState_t *state) {
+    TracyCZoneNC(tracy_ctx, "VIDEO_RENDER", TRACY_COLOR_GREEN, true);
+
     VRStateInternal_t *internal_state = VR_INTERNAL(state->internal);
 
     // swap the PBOs each frame cuz async
@@ -360,6 +362,8 @@ void render_video(VideoReaderState_t *state) {
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    TracyCZoneEnd(tracy_ctx);
 
     // profit
 }

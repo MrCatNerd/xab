@@ -29,7 +29,7 @@ log_level = get_option('log')
 should_enable_ansii_colors = get_option('enable_ansii_log')
 
 if should_enable_ansii_colors
-  add_global_arguments('-DLOG_ANSII_COLORS', language: 'c')
+  add_project_arguments('-DLOG_ANSII_COLORS', language: 'c')
 endif
 
 # automatic log level by build type
@@ -37,9 +37,9 @@ buildtype = get_option('buildtype')
 if log_level == 'auto'
   if buildtype == 'plain'
     log_level = 'trace'
-  elif buildtype == 'debug' or buildtype == 'debugoptimized'
+  elif buildtype == 'debug'
     log_level = 'debug'
-  elif buildtype == 'release'
+  elif buildtype == 'release' or buildtype == 'debugoptimized'
     log_level = 'warn'
   else
     # all of the other buildtypes will default to info log level
@@ -68,7 +68,7 @@ elif log_level == 'auto'
   log_num = 3
 endif
 assert(log_num >= 0)
-add_global_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
+add_project_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
 
 # --- video reader ---
 # choose video reader interface
@@ -89,12 +89,51 @@ else
   error('invalid video reader: \'' + video_library + '\'')
 endif
 
-# --- dependencies ---
+# --- tracy profiler ---
+# TODO: _opt suffix for get_option vars
+tracy_enable = get_option('tracy_enable')
+
+# will be an empty list unless tracy is enabled, which in that case this will be a dependency
+tracy_dep = []
+if tracy_enable
+  tracy_dep = dependency('tracy', static: true, version: '>= 0.11.2')
+  tracy_version = tracy_dep.version().strip()
+
+  if tracy_version != '0.11.2'
+    warning(
+      'tracy ' + tracy_dep.version().strip(),
+      'is not supported, tracy 0.11.2 is preferred',
+    )
+  endif
+
+  if buildtype != 'debugoptimized'
+    warning('Profiling builds should set --buildtype=debugoptimized')
+  endif
+
+  # to check out
+  # add_project_arguments('-DTRACY_NO_SAMPLING', language: 'c')
+  # add_project_arguments('-DTRACY_NO_SYSTEM_TRACING', language: 'c')
+
+  add_project_arguments('-DTRACY_ENABLE', language: 'c') # enable tracy
+  add_project_arguments('-DTRACY_ON_DEMAND', language: 'c') # i forgor
+  add_project_arguments('-DTRACY_NO_BROADCAST', language: 'c') # don't broadcast to network
+  # TRACY_MANUAL_LIFETIME doesn't work for some reason :( maybe its cuz im using C and not C++
+endif
+
+# --- OpenGL stuff ---
+enable_opengl_debug_callback = get_option('enable_opengl_debug_callback')
+# auto and debug or less or enabled
+if (enable_opengl_debug_callback.auto() and log_num <= 2) or enable_opengl_debug_callback.enabled()
+  add_project_arguments('-DENABLE_OPENGL_DEBUG_CALLBACK', language: 'c')
+endif
+
+# --- bce ---
 disable_bce = get_option('disable_bce')
 if disable_bce
   add_project_arguments('-DDISABLE_BCE', language: 'c')
 endif
 
+# --- dependencies ---
 xcb_deps = [
   dependency('xcb'),
   dependency('xcb-atom'),
@@ -125,6 +164,7 @@ deps = xcb_deps + [
   xrandr_dep,
   c_compiler.find_library('m'),
   video_reader_deps,
+  tracy_dep,
 ]
 
 # --- source files ---

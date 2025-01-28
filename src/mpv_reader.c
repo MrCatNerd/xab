@@ -175,6 +175,8 @@ static void set_init_mpv_options(VideoReaderState_t *state) {
 }
 
 void render_video(VideoReaderState_t *state) {
+    TracyCZoneNC(tracy_ctx, "VIDEO_RENDER", TRACY_COLOR_GREEN, true);
+
     VRStateInternal_t *internal_state = VR_INTERNAL(state->internal);
 
     // if mpv has a new frame, render it
@@ -209,6 +211,8 @@ void render_video(VideoReaderState_t *state) {
             }
         }
     }
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 unsigned int get_video_ogl_texture(VideoReaderState_t *state) {
@@ -250,6 +254,8 @@ void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
 }
 
 void report_swap_video(VideoReaderState_t *state) {
+    TracyCZoneNC(tracy_ctx, "ReportSwapVideo", TRACY_COLOR_GREY, true);
+
     // /* Tell the renderer that a frame was flipped at the given time. This is
     // optional, but can help the player to achieve better timing. Note that
     // calling this at least once informs libmpv that you will use this
@@ -261,6 +267,8 @@ void report_swap_video(VideoReaderState_t *state) {
         mpv_render_context_report_swap(
             VR_INTERNAL(state->internal)->mpv_glcontext);
     }
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 static void *(get_proc_address_mpv)(void *ctx, const char *name) {

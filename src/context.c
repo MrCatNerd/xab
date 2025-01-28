@@ -138,7 +138,7 @@ context_t context_create(struct argument_options *opts) {
         free(ver_reply);
 #endif /* HAVE_LIBXRANDR */
 
-        // don't assert on debug mode
+        // don't assert not on debug mode
 #ifndef NDEBUG
         pretty_print_egl_check(false, "eglInitialize call");
 #else
@@ -232,7 +232,7 @@ context_t context_create(struct argument_options *opts) {
                         context.context);
     Assert(ok && "Failed to make context current");
 
-#ifndef NDEBUG
+#ifdef ENABLE_OPENGL_DEBUG_CALLBACK
     // enable debug callback
     glDebugMessageCallback(&DebugCallback, NULL);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -275,7 +275,7 @@ context_t context_create(struct argument_options *opts) {
 
     // TODO: verbose macro ifdef thingy
     for (int i = 0; i < context.monitor_count; i++)
-        xab_log(LOG_VERBOSE, "[%d] x: %d, y: %d, w: %d, h: %d\n", i,
+        xab_log(LOG_VERBOSE, "Monitor [%d] x: %d, y: %d, w: %d, h: %d\n", i,
                 (context.monitors[i])->x, (context.monitors[i])->y,
                 (context.monitors[i])->width, (context.monitors[i])->height);
 

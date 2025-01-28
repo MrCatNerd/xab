@@ -39,3 +39,7 @@
 #include "shader_cache.h"
 #include "context.h"
 #include "atom.h"
+
+#ifdef TRACY_ENABLE
+#include "tracy.h"
+#endif

@@ -117,6 +117,8 @@ FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
 }
 
 void render_framebuffer_start_render(FrameBuffer_t *fb) {
+    TracyCZoneNC(tracy_ctx, "FB_START_RENDER", TRACY_COLOR_RED, true);
+
     // first pass
     glBindFramebuffer(GL_FRAMEBUFFER, fb->fbo_id);
 
@@ -125,9 +127,13 @@ void render_framebuffer_start_render(FrameBuffer_t *fb) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE); // oopsie square vertices are (sorta) wrong and im
                              // too lazy to fix them because it doesn't matter
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
+    TracyCZoneNC(tracy_ctx, "FB_END_RENDER", TRACY_COLOR_RED, true);
+
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, dest);
 
@@ -157,10 +163,14 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     glUseProgram(0);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
                                       Shader_t *shader) {
+    TracyCZoneNC(tracy_ctx, "FB_BORROW_RENDER", TRACY_COLOR_RED, true);
+
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, dest);
 
@@ -187,6 +197,8 @@ void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void delete_framebuffer(FrameBuffer_t *fb, ShaderCache_t *scache) {

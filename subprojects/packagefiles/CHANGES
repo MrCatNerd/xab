@@ -1,0 +1,8 @@
+-- CHANGES --
+
+* tracy-0.11.2:
+- they forgor to bump the version to 0.11.2 in the meson.build file so i did it myself
+- i added a project argument to disable all of the warnings (-w) cuz it was annoying
+
+* bce-1.3:
+- i assigned a variable to the executable thingy so i can use get_variable from a meson subproject thingy

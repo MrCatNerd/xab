@@ -2,10 +2,10 @@
 directory = bce-1.3
 
 url = https://github.com/wr7/bce.git
+# version 1.3
 revision = b41f44dc48266df775d1e09b2b7b39e2e58b800d
 depth = 1
-patch_directory=bce-1.3
+patch_directory = bce-1.3
 
 [provide]
 dependency_names = bce
-

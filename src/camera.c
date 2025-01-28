@@ -42,10 +42,14 @@ void camera_rotate(camera_t *camera, float angle) {
 }
 
 void camera_reset_gl_viewport(camera_t *camera) {
+    TracyCZoneNC(tracy_ctx, "CAMERA_RESET_GL_VP", TRACY_COLOR_GREY, true);
+
     // im not sure if this is accurate but it gets the job done
     glViewport(camera->vpc.left, camera->vpc.top,
                camera->vpc.right - camera->vpc.left,
                camera->vpc.bottom - camera->vpc.top);
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void camera_change_viewport_config(camera_t *camera, ViewPortConfig_t vpc) {

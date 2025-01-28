@@ -15,6 +15,8 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
 static void set_background_pixmap(context_t *context);
 
 void update_background(context_t *context) {
+    TracyCZoneNC(tracy_ctx, "update_background", TRACY_COLOR_BLUE, true);
+
     xcb_change_property(context->connection, XCB_PROP_MODE_REPLACE,
                         *context->desktop_window, ESETROOT_PMAP_ID,
                         XCB_ATOM_PIXMAP, 32, 1, &context->background_pixmap);
@@ -25,6 +27,8 @@ void update_background(context_t *context) {
                    context->screen->width_in_pixels,
                    context->screen->height_in_pixels);
     xcb_flush(context->connection);
+
+    TracyCZoneEnd(tracy_ctx);
 }
 
 void setup_background(context_t *context) {

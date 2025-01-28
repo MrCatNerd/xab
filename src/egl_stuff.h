@@ -7,20 +7,7 @@
 
 void pretty_print_egl_check(int do_assert_on_failure, const char *message);
 
-GLenum glCheckError_(const char *file, int line);
-void clear_error(void);
-
-#ifndef NGLCALLDEBUG
-// OpenGL calls debug stuff
-#define GLCALL(x)                                                              \
-    clear_error();                                                             \
-    x;                                                                         \
-    glCheckError_(__FILE__, __LINE__)
-#else
-#define GLCALL(x) x
-#endif
-
-#ifndef NDEBUG
+#ifdef ENABLE_OPENGL_DEBUG_CALLBACK
 
 // OpenGL error handling stuff
 _Pragma("GCC diagnostic push")
