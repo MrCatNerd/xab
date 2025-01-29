@@ -49,3 +49,10 @@ option(
   value: false,
   description: 'Disable embedding files (shaders) into the xab binary (BCE)',
 )
+
+option(
+  'nopch',
+  type: 'boolean',
+  value: false,
+  description: 'Disable pch',
+)

@@ -167,6 +167,13 @@ deps = xcb_deps + [
   tracy_dep,
 ]
 
+# --- pch ---
+
+pch_files = [join_paths('src', 'pch.h')]
+if (get_option('nopch'))
+  pch_files = []
+endif
+
 # --- source files ---
 subdir('res/shaders')
 subdir('src')
@@ -178,7 +185,7 @@ executable(
   c_args: [
     '-DXAB_VERSION="' + meson.project_version() + '"',
   ],
-  c_pch: 'src/pch.h',
+  c_pch: pch_files,
   link_args: extra_link_args,
   dependencies: deps,
   include_directories: project_include_dirs,
