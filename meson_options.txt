@@ -44,7 +44,7 @@ option(
 )
 
 option(
-  'disable_bce',
+  'nobce',
   type: 'boolean',
   value: false,
   description: 'Disable embedding files (shaders) into the xab binary (BCE)',

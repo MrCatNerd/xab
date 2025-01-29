@@ -128,7 +128,7 @@ if (enable_opengl_debug_callback.auto() and log_num <= 2) or enable_opengl_debug
 endif
 
 # --- bce ---
-disable_bce = get_option('disable_bce')
+disable_bce = get_option('nobce')
 if disable_bce
   add_project_arguments('-DDISABLE_BCE', language: 'c')
 endif
