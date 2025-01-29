@@ -35,6 +35,7 @@
 #include "length_string.h"
 #include "ansii_colors.h"
 #include "vertex.h"
+#include "tracy.h"
 
 // these ones might be a bad idea
 #include "framebuffer.h"
@@ -42,7 +43,3 @@
 #include "shader_cache.h"
 #include "context.h"
 #include "atom.h"
-
-#ifdef TRACY_ENABLE
-#include "tracy.h"
-#endif
