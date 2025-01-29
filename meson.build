@@ -78,7 +78,7 @@ if video_library == 'mpv'
   src_files += files('src/mpv_reader.c')
   video_reader_deps += dependency('mpv')
 elif video_library == 'ffmpeg'
-  src_files += files('src/xab_reader.c')
+  src_files += files('src/ffmpeg_reader.c')
   video_reader_deps += [
     dependency('libavcodec'),
     dependency('libavutil'),
