@@ -91,7 +91,7 @@ VideoReaderState_t open_video(const char *path,
         // future if i won't be not lazy
     }
 
-    xab_log(LOG_DEBUG, "Reading file: %s\n", path);
+    xab_log(LOG_DEBUG, "Reading video file: %s\n", path);
     internal_state->av_format_ctx = avformat_alloc_context();
     if (internal_state->av_format_ctx == NULL) {
         xab_log(LOG_ERROR, "Couldn't create AVFormatContext\n");

@@ -1,5 +1,8 @@
 #pragma once
 
+// NOTE: order matters in some cases
+// e.g. utils.h and length_string.h
+
 // std
 #include <inttypes.h>
 #include <stdarg.h>
@@ -28,9 +31,9 @@
 #include <epoxy/common.h>
 
 #include "logger.h"
-#include "ansii_colors.h"
-#include "length_string.h"
 #include "utils.h"
+#include "length_string.h"
+#include "ansii_colors.h"
 #include "vertex.h"
 
 // these ones might be a bad idea

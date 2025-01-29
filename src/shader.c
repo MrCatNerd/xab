@@ -11,7 +11,9 @@
 #endif
 
 // very spaghett
+#ifndef DISABLE_BCE
 static length_string_t search_bce_shaders(const char *path);
+#endif
 typedef struct free_file {
         length_string_t lenstr;
         bool should_free;
@@ -84,7 +86,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vshader, sizeof(infoLog), NULL, infoLog);
-        xab_log(LOG_ERROR, "Failed to compile vertex shader: '%s'\n%s\n",
+        xab_log(LOG_ERROR, "Failed to compile vertex shader: `%s` %s\n",
                 vertex_path, infoLog);
     }
 
@@ -99,7 +101,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fshader, sizeof(infoLog), NULL, infoLog);
-        xab_log(LOG_ERROR, "Failed to compile fragment shader: '%s'\n%s\n",
+        xab_log(LOG_ERROR, "Failed to compile fragment shader: `%s` %s\n",
                 fragment_path, infoLog);
     }
 
