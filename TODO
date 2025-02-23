@@ -58,7 +58,6 @@ may or may not be implemented
 - multithreading
 
 -- GIT STUFF --
-- when things get stable, make a stable branch
 - github issue template
 - make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
 - use github actions to build releases
