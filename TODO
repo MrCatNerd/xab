@@ -2,6 +2,8 @@
 will be implemented (probably)
 
 * general
+- mt safe logging
+- tests (meson test system) with with a dummy root window and stuff + unit tests
 - add more tracy zones and stuff
 - make the shader cache thingy delete the shader even if there is only 1 left and make it allocate a new head when it needs to
 - same video on multiple monitors
@@ -13,7 +15,6 @@ will be implemented (probably)
 - better clean ups so i can clean up something even though its initalizing
 - clean up my bad code lol
 - man page
-- add a clang format thingy
 - try to optimize the hell out of xab
 - dummy video player or smh
 - optimize the hell out of xab and decrease cpu usage as much as i can
@@ -52,7 +53,6 @@ may or may not be implemented
 - an optional gui (with rust and iced or smh), as a seperate repo, but i think i have to make the daemon thingy first
 - slideshow for video and images (i think this is already implemented in the libmpv videa reader, but i havn't included it into xab)
 - video filters and stuff
-- tests with a dummy root window and stuff
 - somehow cache the frames? (xab reader)
 - error trace with a txt file for errors and stuff
 - multithreading
