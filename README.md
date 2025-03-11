@@ -215,4 +215,11 @@ xab uses tracy for profiling:
 meson setup tbuild --buildtype=debugoptimized \
     -Dlog=trace -Denable_opengl_debug_callback=disabled -Dtracy_enable=true
 meson compile -C tbuild
+
 ```
+
+### Testing
+currently, xab has only tests for some components of the `ffmpeg` video reader,
+more comprehensive test for *all of the compenents of xab are (probably) on their way at some point
+
+to run the tests, you must have CTest installed on ur system

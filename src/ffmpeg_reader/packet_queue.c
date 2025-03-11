@@ -7,7 +7,7 @@ packet_queue_t packet_queue_init(short load_factor) {
     packet_queue_t pq = {.first_packet = NULL,
                          .last_packet = NULL,
                          .packet_count = 0,
-                         .load_factor = load_factor,
+                         .load_factor = (float)load_factor / 100,
                          .size = 0};
 
     return pq;
@@ -22,43 +22,58 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
         return false;
 
     // ref dat packet
-    AVPacket *ref_packet = NULL;
-    if (av_packet_ref(ref_packet, src_packet) != 0)
+    AVPacket *dst_ref_packet = av_packet_alloc();
+    if (!dst_ref_packet)
         return false;
-    else if (!ref_packet)
+    else if (av_packet_ref(dst_ref_packet, src_packet) != 0) {
+        av_packet_free(&dst_ref_packet);
         return false;
+    }
 
     // alocate the packet and append it
-    packet_node_t *pnode = calloc(1, sizeof(packet_queue_t));
-    pnode->packet = ref_packet;
+    packet_node_t *pnode = calloc(1, sizeof(packet_node_t));
+    if (!pnode) {
+        av_packet_free(&dst_ref_packet);
+        return false;
+    }
+    pnode->packet = dst_ref_packet;
 
     packet_node_t *last_used_node = packet_queue_get_last_used_node(pq);
     if (last_used_node)
         last_used_node->next = pnode;
     else // this means there's probably no head, or im kinda dumb
+    {
         pq->first_packet = pnode;
+        pq->last_packet = pnode;
+    }
 
     return true;
 }
 
 bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
-    // get the first packet, link it up to the last used node, and unref it
-
-    // set the first node to the next node
+    // get the first packet
     packet_node_t *pnode = pq->first_packet;
     if (pnode == NULL) {
         return false;
     }
-    pq->first_packet = pnode->next;
 
     // copy the dest packet to the first packet
-    *dest_packet = *pnode->packet;
+    if (av_packet_ref(dest_packet, pnode->packet) != 0)
+        return false;
 
-    // set the pnode to the end and reset it
-    pnode->next = pq->last_packet->next;
-    pnode->packet = NULL;
-    pq->last_packet->next = pnode;
+    // set the head to the next pnode
+    pq->first_packet = pnode->next;
+
+    // set the node to the end, only if it's not already at the end so it won't
+    // create a circular link
+    if (pnode != pq->last_packet) {
+        pnode->next = pq->last_packet->next;
+        pq->last_packet->next = pnode;
+    }
     pq->packet_count--;
+
+    // unref dat node
+    av_packet_unref(pnode->packet);
 
     // handle load factor so the packets will be fred
     packet_queue_handle_load_factor(pq);
@@ -77,6 +92,7 @@ void packet_queue_free(packet_queue_t *pq) {
             av_packet_unref(pnode->packet);
 
         next = pnode->next;
+        av_packet_free(&pnode->packet);
         free(pnode);
         pnode = next;
         i++;
@@ -111,13 +127,26 @@ bool packet_queue_handle_load_factor(packet_queue_t *pq) {
 
     int i = 0;
     packet_node_t *pnode = pq->first_packet;
+    packet_node_t *next = NULL;
+    packet_node_t *prev = NULL;
     while (i < pq->size && pnode != NULL) {
+        if (!pnode)
+            break;
+        next = pnode->next;
         if (i >= pq->packet_count) {
+            // clean dat packet and link the previous and next pnodes
+            av_packet_unref(pnode->packet);
+            av_packet_free(&pnode->packet);
             free(pnode);
+            pnode = NULL;
+
+            if (prev)
+                prev->next = next;
         }
 
         i++;
-        pnode = pnode->next;
+        pnode = next;
+        prev = pnode;
     }
 
     return true;

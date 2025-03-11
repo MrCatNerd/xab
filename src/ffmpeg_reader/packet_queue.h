@@ -32,7 +32,7 @@ typedef struct packet_queue {
         /// actual size
         int size;
 
-        short load_factor;
+        float load_factor;
 } packet_queue_t;
 
 packet_queue_t packet_queue_init(short load_factor);

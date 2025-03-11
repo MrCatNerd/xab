@@ -191,3 +191,8 @@ executable(
   include_directories: project_include_dirs,
   install: true,
 )
+
+# --- tests ---
+if not meson.is_subproject()
+  subdir('tests')
+endif
