@@ -1,21 +1,19 @@
+#include <bits/pthreadtypes.h>
 #include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavcodec/codec_par.h>
 #include <libavcodec/packet.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
-#include <libswscale/swscale.h>
-#include <libavformat/avio.h>
 #include <libavutil/pixfmt.h>
+#include <libswscale/swscale.h>
 #include <stdbool.h>
 
-// TODO: unit tests
+// TODO: multithreading unit tests
 // TODO: maybe packet chucks?
 // TODO: maybe switch to ffmpeg allocation functions for packet_node_t
-
-// high priority:
-// TODO: mutexes and stuff
 
 #define PACKET_QUEUE_MAX_PACKETS 128
 typedef struct packet_node {
@@ -33,6 +31,8 @@ typedef struct packet_queue {
         int size;
 
         float load_factor;
+
+        pthread_mutex_t mutex;
 } packet_queue_t;
 
 packet_queue_t packet_queue_init(short load_factor);
@@ -46,7 +46,13 @@ void packet_queue_free(packet_queue_t *pq);
 // -- internal --
 
 // TODO: store this as a variable in the packet_queue struct and update it
+
+/// get the last USED node from the packet queue
+/// * not mt safe, you must manually lock the packet_queue_t->mutex before using
+/// this function
 packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq);
 
 /// returns true if any unused nodes were freed
+/// * not mt safe, you must manually lock the packet_queue_t->mutex before using
+/// this function
 bool packet_queue_handle_load_factor(packet_queue_t *pq);

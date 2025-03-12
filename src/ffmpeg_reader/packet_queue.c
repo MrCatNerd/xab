@@ -1,4 +1,5 @@
 #include <libavcodec/packet.h>
+#include <pthread.h>
 
 #include "packet_queue.h"
 #include "logger.h"
@@ -8,12 +9,16 @@ packet_queue_t packet_queue_init(short load_factor) {
                          .last_packet = NULL,
                          .packet_count = 0,
                          .load_factor = (float)load_factor / 100,
+                         .mutex = PTHREAD_MUTEX_INITIALIZER,
                          .size = 0};
+
+    pthread_mutex_init(&pq.mutex, NULL);
 
     return pq;
 }
 
 bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
+    pthread_mutex_lock(&pq->mutex);
     if (!src_packet || !pq)
         return false;
 
@@ -47,10 +52,15 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
         pq->last_packet = pnode;
     }
 
+    pthread_mutex_unlock(&pq->mutex);
     return true;
 }
 
 bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
+    if (!pq || !dest_packet)
+        return false;
+    pthread_mutex_lock(&pq->mutex);
+
     // get the first packet
     packet_node_t *pnode = pq->first_packet;
     if (pnode == NULL) {
@@ -79,10 +89,13 @@ bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
     packet_queue_handle_load_factor(pq);
 
     // the user is responsible for unrefing the packet with av_packet_unref
+
+    pthread_mutex_unlock(&pq->mutex);
     return true;
 }
 
 void packet_queue_free(packet_queue_t *pq) {
+    pthread_mutex_lock(&pq->mutex);
     packet_node_t *pnode = pq->first_packet;
     packet_node_t *next = NULL;
 
@@ -97,6 +110,12 @@ void packet_queue_free(packet_queue_t *pq) {
         pnode = next;
         i++;
     }
+    pthread_mutex_unlock(&pq->mutex);
+
+    // i must destroy the mutex only when it's unlocked :(, so all of the
+    // threads that use the packet queue must be joined/destroyed before calling
+    // this function... sucks to suck
+    pthread_mutex_destroy(&pq->mutex);
 }
 
 packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq) {
