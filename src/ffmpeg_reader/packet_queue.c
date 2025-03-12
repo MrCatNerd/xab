@@ -130,23 +130,22 @@ bool packet_queue_handle_load_factor(packet_queue_t *pq) {
     packet_node_t *next = NULL;
     packet_node_t *prev = NULL;
     while (i < pq->size && pnode != NULL) {
-        if (!pnode)
-            break;
         next = pnode->next;
         if (i >= pq->packet_count) {
-            // clean dat packet and link the previous and next pnodes
+            // clean the packet
             av_packet_unref(pnode->packet);
             av_packet_free(&pnode->packet);
             free(pnode);
-            pnode = NULL;
 
+            pnode = NULL;
             if (prev)
                 prev->next = next;
         }
 
-        i++;
+        if (pnode)
+            prev = pnode;
         pnode = next;
-        prev = pnode;
+        i++;
     }
 
     return true;
