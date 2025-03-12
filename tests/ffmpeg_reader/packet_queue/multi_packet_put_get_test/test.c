@@ -4,7 +4,7 @@
 #include <libavcodec/packet.h>
 #include <libavutil/mem.h>
 
-static void init_fake_packet(AVPacket *pkt);
+static void init_fake_packet(AVPacket *pkt, int metadata_pts);
 
 int main(void) {
     int ret_code = MESON_OK;
@@ -21,15 +21,18 @@ int main(void) {
     const int srcs_size = (int)(sizeof(srcs) / sizeof(*srcs));
     for (int i = 0; i < srcs_size; i++) {
         srcs[i] = av_packet_alloc();
-        init_fake_packet(srcs[i]);
+        init_fake_packet(srcs[i], i);
         if (!packet_queue_put(&pq, srcs[i]))
             ret_code = MESON_FAIL;
     }
 
     // get them and unref them
+    int i = 0;
     while (!packet_queue_get(&pq, dst)) {
-        // todo: maybe check the data?
+        if (dst->pts != i)
+            ret_code = MESON_FAIL;
         av_packet_unref(dst);
+        i++;
     }
 
     // clean and free
@@ -46,7 +49,7 @@ int main(void) {
     return ret_code;
 }
 
-static void init_fake_packet(AVPacket *pkt) {
+static void init_fake_packet(AVPacket *pkt, int metadata_pts) {
     assert(pkt != NULL);
 
     // manually allocate data buffer for the packet
@@ -58,7 +61,7 @@ static void init_fake_packet(AVPacket *pkt) {
     memset(pkt->data, 0xAA, pkt->size); // Example: Fill with 0xAA bytes
 
     // set some metadata (optional)
-    pkt->pts = 100;
+    pkt->pts = metadata_pts;
     pkt->dts = 90;
     pkt->stream_index = 1;
 }
