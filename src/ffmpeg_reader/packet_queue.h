@@ -1,3 +1,5 @@
+#pragma once
+
 #include <bits/pthreadtypes.h>
 #include <libavcodec/avcodec.h>
 #include <libavcodec/codec_par.h>
@@ -48,11 +50,11 @@ void packet_queue_free(packet_queue_t *pq);
 // TODO: store this as a variable in the packet_queue struct and update it
 
 /// get the last USED node from the packet queue
-/// * not mt safe, you must manually lock the packet_queue_t->mutex before using
-/// this function
+/// @warning not mt safe, you must manually lock the packet_queue_t->mutex
+/// before using this function
 packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq);
 
 /// returns true if any unused nodes were freed
-/// * not mt safe, you must manually lock the packet_queue_t->mutex before using
-/// this function
+/// @warning not mt safe, you must manually lock the packet_queue_t->mutex
+/// before using this function
 bool packet_queue_handle_load_factor(packet_queue_t *pq);

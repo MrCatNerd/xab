@@ -222,4 +222,7 @@ meson compile -C tbuild
 currently, xab has only tests for some components of the `ffmpeg` video reader,
 more comprehensive test for *all of the compenents of xab are (probably) on their way at some point
 
-to run the tests, you must have CTest installed on ur system
+to run the tests:
+```sh
+meson test -C build
+```

@@ -18,30 +18,50 @@ packet_queue_t packet_queue_init(short load_factor) {
 }
 
 bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
-    pthread_mutex_lock(&pq->mutex);
     if (!src_packet || !pq)
         return false;
+    pthread_mutex_lock(&pq->mutex);
 
     // return if the size is greater or equal to the max size
     if (pq->size >= PACKET_QUEUE_MAX_PACKETS)
         return false;
 
-    // ref dat packet
-    AVPacket *dst_ref_packet = av_packet_alloc();
-    if (!dst_ref_packet)
-        return false;
-    else if (av_packet_ref(dst_ref_packet, src_packet) != 0) {
-        av_packet_free(&dst_ref_packet);
-        return false;
+    // if set to true and refing the packet goes wrong, the packet will be
+    // cleaned up
+    bool new_packet = false;
+
+    // if there is an unused packet, use it
+    packet_node_t *pnode = NULL;
+    if (pq->packet_count < pq->size) {
+        new_packet = false;
+        pnode = pq->first_packet;
+        for (int i = 0; i < pq->packet_count - 1; i++) {
+            if (!pnode) {
+                break;
+            }
+            pnode = pnode->next;
+        }
+    }
+    // if there isn't create allocate a new node with a packet
+    if (!pnode) {
+        new_packet = true;
+        pnode = calloc(1, sizeof(packet_node_t));
+        if (!pnode) {
+            return false;
+        }
+        pnode->packet = av_packet_alloc();
     }
 
-    // alocate the packet and append it
-    packet_node_t *pnode = calloc(1, sizeof(packet_node_t));
-    if (!pnode) {
-        av_packet_free(&dst_ref_packet);
+    // ref dat packet
+    if (!pnode->packet)
+        return false;
+    else if (av_packet_ref(pnode->packet, src_packet) != 0) {
+        if (new_packet) {
+            av_packet_free(&pnode->packet);
+            free(pnode);
+        }
         return false;
     }
-    pnode->packet = dst_ref_packet;
 
     packet_node_t *last_used_node = packet_queue_get_last_used_node(pq);
     if (last_used_node)
@@ -51,6 +71,8 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
         pq->first_packet = pnode;
         pq->last_packet = pnode;
     }
+    // increase used packet count
+    pq->packet_count++;
 
     pthread_mutex_unlock(&pq->mutex);
     return true;
@@ -95,7 +117,10 @@ bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
 }
 
 void packet_queue_free(packet_queue_t *pq) {
+    if (!pq)
+        return;
     pthread_mutex_lock(&pq->mutex);
+
     packet_node_t *pnode = pq->first_packet;
     packet_node_t *next = NULL;
 
