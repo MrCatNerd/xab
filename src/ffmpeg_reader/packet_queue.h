@@ -17,7 +17,6 @@
 // TODO: maybe packet chucks?
 // TODO: maybe switch to ffmpeg allocation functions for packet_node_t
 
-#define PACKET_QUEUE_MAX_PACKETS 128
 typedef struct packet_node {
         AVPacket *packet;
         struct packet_node *next;
@@ -33,11 +32,12 @@ typedef struct packet_queue {
         int size;
 
         float load_factor;
+        int max_packets;
 
         pthread_mutex_t mutex;
 } packet_queue_t;
 
-packet_queue_t packet_queue_init(short load_factor);
+packet_queue_t packet_queue_init(short load_factor, int max_packets);
 
 bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet);
 /// NOTE: dest_packet must be unrefed using av_packet_unref when ur done

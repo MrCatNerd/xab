@@ -27,7 +27,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     // initialize packet queue
     xab_log(LOG_TRACE, "Decoder: Initalizing packet queue\n");
-    dst_dec->pq = packet_queue_init(70);
+    dst_dec->pq = packet_queue_init(70, 128);
 
     // allocate packets and frames
     xab_log(LOG_TRACE, "Decoder: Allocating AVPackets and AVFrames\n");
@@ -199,8 +199,8 @@ static void *decoder_packet_worker(void *ctx) {
         }
 
         pthread_cond_broadcast(&dec->cond);
-        xab_log(LOG_TRACE, "%d/%d packets\n", dec->pq.packet_count,
-                dec->pq.size);
+        // xab_log(LOG_TRACE, "%d/%d packets\n", dec->pq.packet_count,
+        //         dec->pq.size);
 
     // haha bad code practices go bRRR
     retry:

@@ -10,7 +10,8 @@ int main(void) {
     int ret_code = MESON_OK;
 
     // allocate packet queue
-    packet_queue_t pq = packet_queue_init(60);
+    packet_queue_t pq =
+        packet_queue_init(60, 128); // have at least 100 packets in max packets
 
     // allocate destination packet
     AVPacket *dst = av_packet_alloc();

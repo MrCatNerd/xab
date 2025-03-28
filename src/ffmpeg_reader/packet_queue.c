@@ -1,15 +1,17 @@
 #include <libavcodec/packet.h>
 #include <pthread.h>
-#include <stdio.h>
-
 #include "packet_queue.h"
 #include "logger.h"
 
-packet_queue_t packet_queue_init(short load_factor) {
+packet_queue_t packet_queue_init(short load_factor, int max_packets) {
+    if (max_packets <= 0)
+        max_packets = 128; // default
+
     packet_queue_t pq = {.first_packet = NULL,
                          .last_packet = NULL,
                          .packet_count = 0,
                          .load_factor = (float)load_factor / 100,
+                         .max_packets = max_packets,
                          .mutex = PTHREAD_MUTEX_INITIALIZER,
                          .size = 0};
 
@@ -24,7 +26,7 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
     pthread_mutex_lock(&pq->mutex);
 
     // return if the size is greater or equal to the max size
-    if (pq->packet_count >= PACKET_QUEUE_MAX_PACKETS) {
+    if (pq->packet_count >= pq->max_packets) {
         pthread_mutex_unlock(&pq->mutex);
         return false;
     }
