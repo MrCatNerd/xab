@@ -32,15 +32,16 @@ will be implemented (probably)
 - look into mpv specific video reader bug thingy for specific gpus
 - fullscreen monitor (--monitor=-1) doesn't work with libmpv specifically
 
-* xab video reader
+* ffmpeg video reader
+- *** add a frame/picture queue with a new thread *** highest priority
+- mt tests for packet queue
+- one packet/frame thread for multiple videos or smh (not sure if this is a good idea)
 - video looping
+- good frame timing and stuff
+- video frame dropping (can be turned off as an option/flag, on by default)
 - proper hardware acceleration for video decoding
 - libavdevice stuff ^
-- fix my bad ffmpeg reader implementation with a new shiny one
-- good frame timing and stuff
-- multithreading
-- video frame dropping (can be turned off as an option/flag, on by default)
-- find if there a way to not use PBOs, and just write to the gpu texture directly (probably requires gpu hardware acceleration?)
+- fix my bad ffmpeg reader implementation with a new shiny one (if this is the only one left than delete)
 
 
 --- IDEA LIST ---

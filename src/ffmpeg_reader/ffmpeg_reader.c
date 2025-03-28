@@ -1,4 +1,5 @@
 #include <epoxy/gl_generated.h>
+#include <stdio.h>
 #include <time.h>
 
 #include <libavcodec/avcodec.h>
@@ -57,13 +58,13 @@ VideoReaderState_t open_video(const char *path,
     }
 
     xab_log(LOG_DEBUG, "Reading video file: %s\n", path);
-    internal_state->decoder = decoder_init(
-        path, state.vrc.width, state.vrc.height, state.vrc.pixelated,
-        &decoder_callback_ctx, &internal_state->texture_id);
+    decoder_init(&internal_state->decoder, path, state.vrc.width,
+                 state.vrc.height, state.vrc.pixelated, &decoder_callback_ctx,
+                 &internal_state->texture_id);
 
     // Texture
     xab_log(LOG_DEBUG, "Creating video texture: %dx%dpx\n",
-            internal_state->width, internal_state->height);
+            internal_state->decoder.twidth, internal_state->decoder.theight);
     glGenTextures(1, &internal_state->texture_id);
     glBindTexture(GL_TEXTURE_2D, internal_state->texture_id);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
