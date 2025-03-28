@@ -153,7 +153,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     dst_dec->sws_scaler_ctx = sws_getContext(
         dst_dec->vwidth, dst_dec->vheight, dst_dec->av_codec_ctx->pix_fmt,
-        dst_dec->vwidth, dst_dec->vheight, AV_PIX_FMT_RGB24, flags, NULL, NULL,
+        dst_dec->twidth, dst_dec->theight, AV_PIX_FMT_RGB24, flags, NULL, NULL,
         NULL);
 
     if (!dst_dec->sws_scaler_ctx) {
