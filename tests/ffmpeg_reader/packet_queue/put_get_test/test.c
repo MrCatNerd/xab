@@ -31,9 +31,12 @@ int main(void) {
 
     if (!packet_queue_put(&pq, src))
         ret_code = MESON_FAIL;
-    return ret_code;
 
     if (!packet_queue_get(&pq, dst))
+        ret_code = MESON_FAIL;
+
+    // test some of the metadata
+    if (dst->pts != src->pts)
         ret_code = MESON_FAIL;
 
     // unref and free
