@@ -1,5 +1,6 @@
 #include <libavcodec/packet.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "packet_queue.h"
 #include "logger.h"
@@ -23,8 +24,10 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
     pthread_mutex_lock(&pq->mutex);
 
     // return if the size is greater or equal to the max size
-    if (pq->size >= PACKET_QUEUE_MAX_PACKETS)
+    if (pq->packet_count >= PACKET_QUEUE_MAX_PACKETS) {
+        pthread_mutex_unlock(&pq->mutex);
         return false;
+    }
 
     // if set to true and refing the packet goes wrong, the packet will be
     // cleaned up
@@ -47,32 +50,37 @@ bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
         new_packet = true;
         pnode = calloc(1, sizeof(packet_node_t));
         if (!pnode) {
+            pthread_mutex_unlock(&pq->mutex);
             return false;
         }
         pnode->packet = av_packet_alloc();
     }
 
     // ref dat packet
-    if (!pnode->packet)
+    if (!pnode->packet) {
+        pthread_mutex_unlock(&pq->mutex);
         return false;
-    else if (av_packet_ref(pnode->packet, src_packet) != 0) {
+    } else if (av_packet_ref(pnode->packet, src_packet) != 0) {
         if (new_packet) {
             av_packet_free(&pnode->packet);
             free(pnode);
         }
+        pthread_mutex_unlock(&pq->mutex);
         return false;
     }
 
     packet_node_t *last_used_node = packet_queue_get_last_used_node(pq);
-    if (last_used_node)
+    if (last_used_node) {
         last_used_node->next = pnode;
-    else // this means there's probably no head, or im kinda dumb
+        // increase used packet count
+        pq->packet_count++;
+    } else // this means there's probably no head, or im kinda dumb
     {
         pq->first_packet = pnode;
         pq->last_packet = pnode;
+        pq->packet_count = 1;
     }
-    // increase used packet count
-    pq->packet_count++;
+    pq->size++;
 
     pthread_mutex_unlock(&pq->mutex);
     return true;
@@ -86,12 +94,15 @@ bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
     // get the first packet
     packet_node_t *pnode = pq->first_packet;
     if (pnode == NULL) {
+        pthread_mutex_unlock(&pq->mutex);
         return false;
     }
 
     // copy the dest packet to the first packet
-    if (av_packet_ref(dest_packet, pnode->packet) != 0)
+    if (av_packet_ref(dest_packet, pnode->packet) != 0) {
+        pthread_mutex_unlock(&pq->mutex);
         return false;
+    }
 
     // set the head to the next pnode
     pq->first_packet = pnode->next;
@@ -103,6 +114,7 @@ bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
         pq->last_packet->next = pnode;
     }
     pq->packet_count--;
+    pq->size--;
 
     // unref dat node
     av_packet_unref(pnode->packet);
@@ -145,16 +157,19 @@ void packet_queue_free(packet_queue_t *pq) {
 
 packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq) {
     packet_node_t *packet = pq->first_packet;
-    for (int i = 0; i < pq->packet_count; i++) {
+    for (int i = 0; i < pq->packet_count - 1; i++) {
         if (!packet) {
             xab_log(LOG_WARN,
                     "packet queue: invalid packet node pointer! (%d/%d), "
-                    "fixing packet count\n",
+                    "fixing packet count...\n",
                     i, pq->packet_count);
+            // im not sure if i need i-1 or i but think its i
             pq->packet_count = i;
             pq->size = i;
             break;
         }
+        // if (i < pq->packet_count)
+        //     continue;
 
         packet = packet->next;
     }
