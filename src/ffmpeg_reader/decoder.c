@@ -54,19 +54,16 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
                 "Decoder: Failed to allocate AVFrame: raw_av_frame\n");
     }
     // - allocate memory for the scaled frame
-    xab_log(LOG_TRACE, "Decoder: Allocating frame memory for raw frame\n");
+    xab_log(LOG_TRACE, "Decoder: Allocating memory for raw frame (%.2f MB)\n",
+            av_image_get_buffer_size(AV_PIX_FMT_RGB24, dst_dec->twidth,
+                                     dst_dec->theight, 1) /
+                (1024.0 * 1024.0));
     dst_dec->raw_av_frame->width = dst_dec->twidth;
     dst_dec->raw_av_frame->height = dst_dec->theight;
     dst_dec->raw_av_frame->format = AV_PIX_FMT_RGB24;
     if (av_frame_get_buffer(dst_dec->raw_av_frame, 32)) { // 32-byte alignment
         xab_log(LOG_ERROR, "Decoder: Failed to allocate frame buffer\n");
     }
-
-    xab_log(LOG_TRACE, "Decoder: Raw frame size: %.2f MB\n",
-            av_image_get_buffer_size(dst_dec->raw_av_frame->format,
-                                     dst_dec->raw_av_frame->width,
-                                     dst_dec->raw_av_frame->height, 1) /
-                (1024.0 * 1024.0));
 
     // set the callback function
     xab_log(LOG_TRACE, "Decoder: Setting callback functions\n");
