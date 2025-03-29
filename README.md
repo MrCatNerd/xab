@@ -189,10 +189,10 @@ meson configure build -Dlog=verbose
 meson configure build -Dvideo_reader=ffmpeg
 
 # disable BCE files
-meson configure build -nobce=true
+meson configure build -Dnobce=true
 
 # disable PCH
-meson configure build -nopch=true
+meson configure build -Dnopch=true
 
 # disable ANSII colored logging
 meson configure build -Denable_ansii_log=false
