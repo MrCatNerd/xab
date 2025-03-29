@@ -84,6 +84,7 @@ elif video_library == 'ffmpeg'
     dependency('libavutil'),
     dependency('libavformat'),
     dependency('libswscale'),
+    dependency('threads'),
   ]
 else
   error('invalid video reader: \'' + video_library + '\'')
