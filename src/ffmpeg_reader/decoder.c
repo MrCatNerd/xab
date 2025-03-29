@@ -61,19 +61,12 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     if (av_frame_get_buffer(dst_dec->raw_av_frame, 32)) { // 32-byte alignment
         xab_log(LOG_ERROR, "Decoder: Failed to allocate frame buffer\n");
     }
-    const int raw_av_frame_size = av_image_get_buffer_size(
-        dst_dec->raw_av_frame->format, dst_dec->raw_av_frame->width,
-        dst_dec->raw_av_frame->height, 1);
 
-    if (raw_av_frame_size >= 0)
-        printf("raw frame size: %.2f MB\n",
-               av_image_get_buffer_size(dst_dec->raw_av_frame->format,
-                                        dst_dec->raw_av_frame->width,
-                                        dst_dec->raw_av_frame->height, 1) /
-                   (1024.0 * 1024.0));
-    else
-        printf("%d, %d, %d", dst_dec->raw_av_frame->format,
-               dst_dec->raw_av_frame->width, dst_dec->raw_av_frame->height);
+    xab_log(LOG_TRACE, "Raw frame size: %.2f MB\n",
+            av_image_get_buffer_size(dst_dec->raw_av_frame->format,
+                                     dst_dec->raw_av_frame->width,
+                                     dst_dec->raw_av_frame->height, 1) /
+                (1024.0 * 1024.0));
 
     // set the callback function
     xab_log(LOG_TRACE, "Decoder: Setting callback functions\n");
