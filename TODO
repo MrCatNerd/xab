@@ -39,7 +39,6 @@ will be implemented (probably)
 - picture queue tests
 - mt tests for packet queue
 - one packet/frame thread for multiple videos or smh (not sure if this is a good idea)
-- video looping
 - good frame timing and stuff
 - video frame dropping (can be turned off as an option/flag, on by default)
 - proper hardware acceleration for video decoding
