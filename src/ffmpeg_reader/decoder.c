@@ -62,7 +62,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
         xab_log(LOG_ERROR, "Decoder: Failed to allocate frame buffer\n");
     }
 
-    xab_log(LOG_TRACE, "Raw frame size: %.2f MB\n",
+    xab_log(LOG_TRACE, "Decoder: Raw frame size: %.2f MB\n",
             av_image_get_buffer_size(dst_dec->raw_av_frame->format,
                                      dst_dec->raw_av_frame->width,
                                      dst_dec->raw_av_frame->height, 1) /
