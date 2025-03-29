@@ -2,6 +2,7 @@
 #include "ffmpeg_reader/packet_queue.h"
 #include "ffmpeg_reader/picture_queue.h"
 #include "logger.h"
+#include <libavcodec/packet.h>
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
@@ -183,7 +184,6 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     // get time information
     xab_log(LOG_TRACE, "Decoder: Getting time information\n");
     dst_dec->time_base = av_q2d(dst_dec->video->time_base);
-    dst_dec->start_time = dst_dec->video->start_time;
 
     // get the frame size
     dst_dec->frame_size_bytes = dst_dec->vwidth * dst_dec->vheight * 3;
@@ -224,14 +224,23 @@ static void *decoder_packet_worker(void *ctx) {
         // enqueue packets
         response = av_read_frame(dec->av_format_ctx, packet);
 
+        if (packet->stream_index != dec->video_stream_idx) {
+            av_packet_unref(packet);
+            pthread_mutex_unlock(&dec->packet_mutex);
+            continue;
+        }
+
         // handle looping and read frame errors
         if (response == AVERROR_EOF) {
             xab_log(LOG_TRACE, "Decoder: looping video\n");
             av_seek_frame(dec->av_format_ctx, dec->video_stream_idx,
-                          dec->start_time != AV_NOPTS_VALUE ? dec->start_time
-                                                            : 0,
+                          dec->video->start_time != AV_NOPTS_VALUE
+                              ? dec->video->start_time
+                              : 0,
                           AVSEEK_FLAG_BACKWARD);
-            avcodec_flush_buffers(dec->av_codec_ctx);
+            av_packet_unref(packet);
+            pthread_mutex_unlock(&dec->packet_mutex);
+            continue;
         } else if (response < 0) {
             xab_log(LOG_ERROR, "Failed to read frame: %s (%d)\n",
                     av_err2str(response), response);
@@ -240,15 +249,7 @@ static void *decoder_packet_worker(void *ctx) {
             continue;
         }
 
-        if (packet->stream_index != dec->video_stream_idx) {
-            av_packet_unref(packet);
-            pthread_mutex_unlock(&dec->packet_mutex);
-            continue;
-        }
-
         pthread_cond_broadcast(&dec->cond);
-        // xab_log(LOG_TRACE, "%d/%d packets\n", dec->pq.packet_count,
-        //         dec->pq.size);
 
     // haha bad code practices go bRRR
     retry:
