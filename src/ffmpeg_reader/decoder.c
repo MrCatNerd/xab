@@ -1,14 +1,18 @@
 #include "ffmpeg_reader/decoder.h"
 #include "ffmpeg_reader/packet_queue.h"
+#include "ffmpeg_reader/picture_queue.h"
 #include "logger.h"
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
+#include <libavutil/frame.h>
 #include <libavutil/rational.h>
+#include <libavutil/imgutils.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
 static void *decoder_packet_worker(void *ctx);
+static void *decoder_picture_worker(void *ctx);
 
 void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
                   unsigned int height, bool pixelated,
@@ -19,7 +23,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     // set defaults
     dst_dec->video_stream_idx = -1;
-    dst_dec->dead = false;
+    dst_dec->packet_dead = false;
 
     // set target dimensions
     dst_dec->twidth = width;
@@ -27,12 +31,15 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     // initialize packet queue
     xab_log(LOG_TRACE, "Decoder: Initalizing packet queue\n");
-    dst_dec->pq = packet_queue_init(70, 128);
+    dst_dec->pacq = packet_queue_init(70, 128);
+    xab_log(LOG_TRACE, "Decoder: Initalizing picture queue\n");
+    dst_dec->picq = picture_queue_init(70, 64);
 
     // allocate packets and frames
     xab_log(LOG_TRACE, "Decoder: Allocating AVPackets and AVFrames\n");
     dst_dec->av_packet = av_packet_alloc();
     dst_dec->av_frame = av_frame_alloc();
+    dst_dec->av_pass_frame = av_frame_alloc();
     dst_dec->raw_av_frame = av_frame_alloc();
     // - check
     if (!dst_dec->av_packet) {
@@ -53,6 +60,19 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     if (av_frame_get_buffer(dst_dec->raw_av_frame, 32)) { // 32-byte alignment
         xab_log(LOG_ERROR, "Decoder: Failed to allocate frame buffer\n");
     }
+    const int raw_av_frame_size = av_image_get_buffer_size(
+        dst_dec->raw_av_frame->format, dst_dec->raw_av_frame->width,
+        dst_dec->raw_av_frame->height, 1);
+
+    if (raw_av_frame_size >= 0)
+        printf("raw frame size: %.2f MB\n",
+               av_image_get_buffer_size(dst_dec->raw_av_frame->format,
+                                        dst_dec->raw_av_frame->width,
+                                        dst_dec->raw_av_frame->height, 1) /
+                   (1024.0 * 1024.0));
+    else
+        printf("%d, %d, %d", dst_dec->raw_av_frame->format,
+               dst_dec->raw_av_frame->width, dst_dec->raw_av_frame->height);
 
     // set the callback function
     xab_log(LOG_TRACE, "Decoder: Setting callback functions\n");
@@ -172,29 +192,39 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     xab_log(LOG_TRACE, "Decoder: Creating threads...\n");
     // initialize mutex and cond
-    pthread_mutex_init(&dst_dec->mutex, NULL);
+    pthread_mutex_init(&dst_dec->packet_mutex, NULL);
+    pthread_mutex_init(&dst_dec->picture_mutex, NULL);
     pthread_cond_init(&dst_dec->cond, NULL);
 
-    pthread_mutex_lock(&dst_dec->mutex);
     // create threads
+
+    // packet worker
+    pthread_mutex_lock(&dst_dec->packet_mutex);
     pthread_create(&dst_dec->packet_worker_tid, NULL, &decoder_packet_worker,
                    dst_dec);
 
-    pthread_mutex_unlock(&dst_dec->mutex);
+    pthread_mutex_unlock(&dst_dec->packet_mutex);
+
+    // picture worker
+    pthread_mutex_lock(&dst_dec->picture_mutex);
+    pthread_create(&dst_dec->picture_worker_tid, NULL, &decoder_picture_worker,
+                   dst_dec);
+
+    pthread_mutex_unlock(&dst_dec->picture_mutex);
 }
 
 static void *decoder_packet_worker(void *ctx) {
     Decoder_t *dec = (Decoder_t *)ctx;
     AVPacket *packet = av_packet_alloc();
 
-    while (!dec->dead) {
-        pthread_mutex_lock(&dec->mutex);
+    while (!dec->packet_dead) {
+        pthread_mutex_lock(&dec->packet_mutex);
 
         // enqueue packets
         av_read_frame(dec->av_format_ctx, packet);
         if (packet->stream_index != dec->video_stream_idx) {
             av_packet_unref(packet);
-            pthread_mutex_unlock(&dec->mutex);
+            pthread_mutex_unlock(&dec->packet_mutex);
             continue;
         }
 
@@ -204,19 +234,19 @@ static void *decoder_packet_worker(void *ctx) {
 
     // haha bad code practices go bRRR
     retry:
-        if (!packet_queue_put(&dec->pq, packet)) {
-            if (!dec->dead) {
+        if (!packet_queue_put(&dec->pacq, packet)) {
+            if (!dec->packet_dead) {
                 pthread_cond_wait(
                     &dec->cond,
-                    &dec->mutex); // wait for the other thread to get
-                                  // some packets from the queue
+                    &dec->packet_mutex); // wait for the other thread to get
+                                         // some packets from the queue
 
                 goto retry;
             }
         }
         av_packet_unref(packet);
 
-        pthread_mutex_unlock(&dec->mutex);
+        pthread_mutex_unlock(&dec->packet_mutex);
     }
 
     xab_log(LOG_DEBUG, "Decoder packet thread: Quitting\n");
@@ -226,90 +256,132 @@ static void *decoder_packet_worker(void *ctx) {
     pthread_exit(0);
 }
 
-void decoder_decode(Decoder_t *dec) {
-    AVCodecContext *av_codec_ctx = dec->av_codec_ctx;
-    int video_stream_idx = dec->video_stream_idx;
-    AVFrame *av_frame = dec->av_frame;
-    AVFrame *raw_av_frame = dec->raw_av_frame;
-    AVPacket *av_packet = dec->av_packet;
+static void *decoder_picture_worker(void *ctx) {
+    Decoder_t *dec = (Decoder_t *)ctx;
 
-    int response;
-    while ((response = avcodec_receive_frame(av_codec_ctx, av_frame))) {
-        pthread_cond_broadcast(&dec->cond);
+    while (!dec->picture_dead) {
+        AVCodecContext *av_codec_ctx = dec->av_codec_ctx;
+        int video_stream_idx = dec->video_stream_idx;
+        AVFrame *av_frame = dec->av_frame;
+        AVFrame *raw_av_frame = dec->raw_av_frame;
+        AVPacket *av_packet = dec->av_packet;
 
-    // haha bad code practices go bRRR
-    retry:
-        if (!packet_queue_get(&dec->pq, av_packet)) {
-            if (!dec->dead) {
-                pthread_mutex_lock(&dec->mutex);
-                pthread_cond_wait(&dec->cond, &dec->mutex);
-                pthread_mutex_unlock(&dec->mutex);
+        int response;
+        while ((response = avcodec_receive_frame(av_codec_ctx, av_frame))) {
+            pthread_cond_broadcast(&dec->cond);
 
-                goto retry;
+        // haha bad code practices go bRRR
+        retry:
+            if (!packet_queue_get(&dec->pacq, av_packet)) {
+                if (!dec->picture_dead) {
+                    pthread_mutex_lock(&dec->picture_mutex);
+                    pthread_cond_wait(&dec->cond, &dec->picture_mutex);
+                    pthread_mutex_unlock(&dec->picture_mutex);
+
+                    goto retry;
+                }
+            }
+
+            if (av_packet->stream_index != video_stream_idx) {
+                av_packet_unref(av_packet);
+                continue;
+            }
+
+            response = avcodec_send_packet(av_codec_ctx, av_packet);
+            if (response < 0) {
+                xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
+                        av_err2str(response));
+            }
+
+            if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+                av_packet_unref(av_packet);
+                continue;
+            } else if (response < 0) {
+                av_packet_unref(av_packet);
+                xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
+                        av_err2str(response));
+                continue;
+            }
+
+            av_packet_unref(av_packet);
+        }
+
+        // TODO: opengl YUV textures (fallback to swsscale if it's not YUV?)
+        if (sws_scale(dec->sws_scaler_ctx,
+                      (const uint8_t *const *)av_frame->data,
+                      av_frame->linesize, 0, av_frame->height,
+                      raw_av_frame->data, raw_av_frame->linesize) <= 0) {
+            xab_log(LOG_ERROR, "Failed to scale YUV to RGB\n");
+        }
+
+        // queue the frame
+    retry2: // yay more bad practices
+        if (!picture_queue_put(&dec->picq, raw_av_frame,
+                               av_image_get_buffer_size(
+                                   raw_av_frame->format, raw_av_frame->width,
+                                   raw_av_frame->height, 1))) {
+            if (!dec->picture_dead) {
+                pthread_mutex_lock(&dec->picture_mutex);
+                pthread_cond_wait(&dec->cond, &dec->picture_mutex);
+                pthread_mutex_unlock(&dec->picture_mutex);
+
+                goto retry2;
             }
         }
 
-        if (av_packet->stream_index != video_stream_idx) {
-            av_packet_unref(av_packet);
-            continue;
-        }
-
-        response = avcodec_send_packet(av_codec_ctx, av_packet);
-        if (response < 0) {
-            xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
-                    av_err2str(response));
-            return;
-        }
-
-        if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-            av_packet_unref(av_packet);
-            continue;
-        } else if (response < 0) {
-            av_packet_unref(av_packet);
-            xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
-                    av_err2str(response));
-            continue;
-        }
-
-        av_packet_unref(av_packet);
+        // TODO: looping
+        // if (av_frame->pts == last_pts) {
+        //     xab_log(LOG_VERBOSE, "looping video\n");
+        //     av_seek_frame(av_format_ctx, video_stream_idx,
+        //                   dec->start_time != AV_NOPTS_VALUE ?
+        //                   dec->start_time : 0, AVSEEK_FLAG_BACKWARD);
+        //     avcodec_flush_buffers(av_codec_ctx);
+        // }
     }
 
-    // TODO: opengl YUV textures (fallback to swsscale if it's not YUV?)
-    if (sws_scale(dec->sws_scaler_ctx, (const uint8_t *const *)av_frame->data,
-                  av_frame->linesize, 0, av_frame->height, raw_av_frame->data,
-                  raw_av_frame->linesize) <= 0) {
-        xab_log(LOG_ERROR, "Failed to scale YUV to RGB");
-        return;
-    }
+    xab_log(LOG_DEBUG, "Decoder picture thread: Quitting\n");
 
-    // call the callback function
+    pthread_exit(0);
+}
+
+void decoder_decode(Decoder_t *dec) {
+    // xab_log(LOG_TRACE, "number of frames: %d\n", dec->picq.picture_count);
+    picture_queue_get(&dec->picq, dec->av_pass_frame);
+    pthread_cond_broadcast(&dec->cond);
+
     if (dec->callback_func)
-        (*dec->callback_func)(raw_av_frame, dec->callback_ctx);
-
-    // TODO: looping
-    // if (av_frame->pts == last_pts) {
-    //     xab_log(LOG_VERBOSE, "looping video\n");
-    //     av_seek_frame(av_format_ctx, video_stream_idx,
-    //                   dec->start_time != AV_NOPTS_VALUE ? dec->start_time :
-    //                   0, AVSEEK_FLAG_BACKWARD);
-    //     avcodec_flush_buffers(av_codec_ctx);
-    // }
+        (*dec->callback_func)(dec->av_pass_frame, dec->callback_ctx);
 }
 
 void decoder_destroy(Decoder_t *dec) {
-    pthread_mutex_lock(&dec->mutex);
-    dec->dead = true;
-    pthread_mutex_unlock(&dec->mutex);
+    pthread_mutex_lock(&dec->packet_mutex);
+    dec->packet_dead = true;
+    pthread_mutex_unlock(&dec->packet_mutex);
     // broadcast so if they're waiting before we set dead to true, they will be
     // waken up
     pthread_cond_broadcast(&dec->cond);
     // wait for thread to terminate
     pthread_join(dec->packet_worker_tid, NULL);
+    pthread_mutex_destroy(&dec->packet_mutex);
+
+    pthread_mutex_lock(&dec->picture_mutex);
+    dec->picture_dead = true;
+    pthread_mutex_unlock(&dec->picture_mutex);
+    // broadcast so if they're waiting before we set dead to true, they will be
+    // waken up
+    pthread_cond_broadcast(&dec->cond);
+    // wait for thread to terminate
+    pthread_join(dec->picture_worker_tid, NULL);
+    pthread_mutex_destroy(&dec->picture_mutex);
+
+    // destroy the cond
     pthread_cond_destroy(&dec->cond);
-    pthread_mutex_destroy(&dec->mutex);
 
     // destroy packet queue
-    packet_queue_free(&dec->pq);
+    packet_queue_free(&dec->pacq);
+
+    // destroy picture queue
+    picture_queue_free(&dec->picq);
 
     // destroy allocated packets
     if (dec->av_packet)
@@ -317,6 +389,8 @@ void decoder_destroy(Decoder_t *dec) {
     if (dec->av_frame)
         av_frame_free(&dec->av_frame);
     if (dec->raw_av_frame)
+        av_frame_free(&dec->av_frame);
+    if (dec->av_pass_frame)
         av_frame_free(&dec->av_frame);
 
     // cleanup ffmpeg things

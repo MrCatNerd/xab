@@ -13,11 +13,13 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+#include "ffmpeg_reader/picture_queue.h"
 #include "packet_queue.h"
 
 // NOTE: to future me, don't deadlock urself with pq mutex + decoder mutex pls
 typedef struct Decoder {
-        packet_queue_t pq;
+        packet_queue_t pacq;
+        picture_queue_t picq;
         /// source (video) width and height
         unsigned int vwidth, vheight;
         /// target width and height
@@ -32,6 +34,7 @@ typedef struct Decoder {
 
         AVStream *video;
         AVFrame *av_frame;
+        AVFrame *av_pass_frame;
         AVFrame *raw_av_frame;
         AVPacket *av_packet;
         size_t frame_size_bytes;
@@ -43,10 +46,22 @@ typedef struct Decoder {
         void (*callback_func)(AVFrame *frame, void *callback_ctx);
         void *callback_ctx;
 
-        pthread_mutex_t mutex;
-        pthread_cond_t cond;
+        // packet queue thread
+        pthread_mutex_t packet_mutex;
         pthread_t packet_worker_tid;
-        bool dead;
+        bool packet_dead;
+
+        // picture queue thread
+        pthread_mutex_t picture_mutex;
+        pthread_t picture_worker_tid;
+        bool picture_dead;
+
+        // common between threads
+        pthread_cond_t
+            cond; // TODO (maybe): 2 conds cuz main thread might broadcast while
+                  // packet worker is waiting for the picture worker the flush
+                  // the packets, and that's inefficient, but im too lazy now
+
 } Decoder_t;
 
 void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
