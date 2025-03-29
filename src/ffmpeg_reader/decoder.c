@@ -216,12 +216,30 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 static void *decoder_packet_worker(void *ctx) {
     Decoder_t *dec = (Decoder_t *)ctx;
     AVPacket *packet = av_packet_alloc();
+    int response = 0;
 
     while (!dec->packet_dead) {
         pthread_mutex_lock(&dec->packet_mutex);
 
         // enqueue packets
-        av_read_frame(dec->av_format_ctx, packet);
+        response = av_read_frame(dec->av_format_ctx, packet);
+
+        // handle looping and read frame errors
+        if (response == AVERROR_EOF) {
+            xab_log(LOG_TRACE, "Decoder: looping video\n");
+            av_seek_frame(dec->av_format_ctx, dec->video_stream_idx,
+                          dec->start_time != AV_NOPTS_VALUE ? dec->start_time
+                                                            : 0,
+                          AVSEEK_FLAG_BACKWARD);
+            avcodec_flush_buffers(dec->av_codec_ctx);
+        } else if (response < 0) {
+            xab_log(LOG_ERROR, "Failed to read frame: %s (%d)\n",
+                    av_err2str(response), response);
+            av_packet_unref(packet);
+            pthread_mutex_unlock(&dec->packet_mutex);
+            continue;
+        }
+
         if (packet->stream_index != dec->video_stream_idx) {
             av_packet_unref(packet);
             pthread_mutex_unlock(&dec->packet_mutex);
@@ -288,18 +306,14 @@ static void *decoder_picture_worker(void *ctx) {
             }
 
             response = avcodec_send_packet(av_codec_ctx, av_packet);
-            if (response < 0) {
-                xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
-                        av_err2str(response));
-            }
-
-            if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+            if (response == AVERROR(EAGAIN) || response == AVERROR_EOF ||
+                response == AVERROR(EINVAL)) {
                 av_packet_unref(av_packet);
                 continue;
             } else if (response < 0) {
                 av_packet_unref(av_packet);
-                xab_log(LOG_ERROR, "Failed to decode packet: %s\n",
-                        av_err2str(response));
+                xab_log(LOG_ERROR, "Failed to decode packet: %s (%d)\n",
+                        av_err2str(response), response);
                 continue;
             }
 
@@ -328,15 +342,6 @@ static void *decoder_picture_worker(void *ctx) {
                 goto retry2;
             }
         }
-
-        // TODO: looping
-        // if (av_frame->pts == last_pts) {
-        //     xab_log(LOG_VERBOSE, "looping video\n");
-        //     av_seek_frame(av_format_ctx, video_stream_idx,
-        //                   dec->start_time != AV_NOPTS_VALUE ?
-        //                   dec->start_time : 0, AVSEEK_FLAG_BACKWARD);
-        //     avcodec_flush_buffers(av_codec_ctx);
-        // }
     }
 
     xab_log(LOG_DEBUG, "Decoder picture thread: Quitting\n");

@@ -32,8 +32,8 @@ bool picture_queue_put(picture_queue_t *pq, AVFrame *src_picture,
 
     // convert frame size to mbs
     const float frame_size_mb = bytes_to_mbs(frame_size_bytes);
-    printf("frames %f/%f mbs + %f mbs\n", pq->sum_framesize_mb, pq->max_size_mb,
-           frame_size_mb);
+    // xab_log(LOG_TRACE, "frames %f/%f mbs + %f mbs\n", pq->sum_framesize_mb,
+    //         pq->max_size_mb, frame_size_mb);
     // return if the size is greater or equal to the max size
     if (pq->sum_framesize_mb + frame_size_mb > pq->max_size_mb) {
         pthread_mutex_unlock(&pq->mutex);
