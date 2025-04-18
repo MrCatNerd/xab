@@ -1,213 +1,80 @@
 #include <libavcodec/packet.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include "packet_queue.h"
 #include "logger.h"
 
-packet_queue_t packet_queue_init(short load_factor, int max_packets) {
-    if (max_packets <= 0)
-        max_packets = 128; // default
+packet_queue_t packet_queue_init(const int packet_count) {
+    packet_queue_t pq = {
+        .queue = calloc(packet_count, sizeof(packet_queue_item_t)),
+        .packet_count = packet_count,
+        .rear_idx = 0,
+        .front_idx = 0,
+    };
 
-    packet_queue_t pq = {.first_packet = NULL,
-                         .last_packet = NULL,
-                         .packet_count = 0,
-                         .load_factor = (float)load_factor / 100,
-                         .max_packets = max_packets,
-                         .mutex = PTHREAD_MUTEX_INITIALIZER,
-                         .size = 0};
-
-    pthread_mutex_init(&pq.mutex, NULL);
+    // av_packet_alloc all of the packets, since putting the packets is simply
+    // refing them
+    for (int i = 0; i < pq.packet_count; i++) {
+        pq.queue[i].packet = av_packet_alloc();
+    }
 
     return pq;
 }
 
 bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet) {
-    if (!src_packet || !pq)
+    if (!pq || !src_packet)
         return false;
-    pthread_mutex_lock(&pq->mutex);
 
-    // return if the size is greater or equal to the max size
-    if (pq->packet_count >= pq->max_packets) {
-        pthread_mutex_unlock(&pq->mutex);
+    // return false if the queue is full
+    if ((pq->front_idx + 1) % pq->packet_count == pq->rear_idx)
         return false;
-    }
-
-    // if set to true and refing the packet goes wrong, the packet will be
-    // cleaned up
-    bool new_packet = false;
-
-    // if there is an unused packet, use it
-    packet_node_t *pnode = NULL;
-    if (pq->packet_count < pq->size) {
-        new_packet = false;
-        pnode = pq->first_packet;
-        for (int i = 0; i < pq->packet_count - 1; i++) {
-            if (!pnode) {
-                break;
-            }
-            pnode = pnode->next;
-        }
-    }
-    // if there isn't create allocate a new node with a packet
-    if (!pnode) {
-        new_packet = true;
-        pnode = calloc(1, sizeof(packet_node_t));
-        if (!pnode) {
-            pthread_mutex_unlock(&pq->mutex);
-            return false;
-        }
-        pnode->packet = av_packet_alloc();
-    }
 
     // ref dat packet
-    if (!pnode->packet) {
-        pthread_mutex_unlock(&pq->mutex);
-        return false;
-    } else if (av_packet_ref(pnode->packet, src_packet) != 0) {
-        if (new_packet) {
-            av_packet_free(&pnode->packet);
-            free(pnode);
-        }
-        pthread_mutex_unlock(&pq->mutex);
+
+    if (av_packet_ref(pq->queue[pq->front_idx].packet, src_packet) < 0) {
+        xab_log(LOG_WARN, "packet queue: refing the packet failed...\n");
         return false;
     }
 
-    packet_node_t *last_used_node = packet_queue_get_last_used_node(pq);
-    if (last_used_node) {
-        last_used_node->next = pnode;
-        // increase used packet count
-        pq->packet_count++;
-    } else // this means there's probably no head, or im kinda dumb
-    {
-        pq->first_packet = pnode;
-        pq->last_packet = pnode;
-        pq->packet_count = 1;
-    }
-    pq->size++;
+    // move front
+    pq->front_idx = (pq->front_idx + 1) % pq->packet_count;
 
-    pthread_mutex_unlock(&pq->mutex);
     return true;
 }
 
 bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
     if (!pq || !dest_packet)
         return false;
-    pthread_mutex_lock(&pq->mutex);
 
-    // get the first packet
-    packet_node_t *pnode = pq->first_packet;
-    if (pnode == NULL) {
-        pthread_mutex_unlock(&pq->mutex);
+    // if the queue is empty, return false
+    if (pq->front_idx == pq->rear_idx)
         return false;
+
+    // ref the dest packet and unref the queue packet
+    if (av_packet_ref(dest_packet, pq->queue[pq->rear_idx].packet) != 0) {
+        xab_log(LOG_WARN,
+                "packet_queue (get): unable te ref the dest packet!\n");
+        // i don't want to return because this will stuck our queue
     }
 
-    // copy the dest packet to the first packet
-    if (av_packet_ref(dest_packet, pnode->packet) != 0) {
-        pthread_mutex_unlock(&pq->mutex);
-        return false;
-    }
+    av_packet_unref(pq->queue[pq->rear_idx].packet);
 
-    // set the head to the next pnode
-    pq->first_packet = pnode->next;
+    // move rear
+    pq->rear_idx = (pq->rear_idx + 1) % pq->packet_count;
 
-    // set the node to the end, only if it's not already at the end so it won't
-    // create a circular link
-    if (pnode != pq->last_packet) {
-        pnode->next = pq->last_packet->next;
-        pq->last_packet->next = pnode;
-    }
-    pq->packet_count--;
-    pq->size--;
-
-    // unref dat node
-    av_packet_unref(pnode->packet);
-
-    // handle load factor so the packets will be fred
-    packet_queue_handle_load_factor(pq);
-
-    // the user is responsible for unrefing the packet with av_packet_unref
-
-    pthread_mutex_unlock(&pq->mutex);
     return true;
 }
 
 void packet_queue_free(packet_queue_t *pq) {
     if (!pq)
         return;
-    pthread_mutex_lock(&pq->mutex);
 
-    packet_node_t *pnode = pq->first_packet;
-    packet_node_t *next = NULL;
-
-    int i = 0;
-    while (pnode != NULL) {
-        if (i < pq->packet_count && pnode->packet)
-            av_packet_unref(pnode->packet);
-
-        next = pnode->next;
-        av_packet_free(&pnode->packet);
-        free(pnode);
-        pnode = next;
-        i++;
-    }
-    pthread_mutex_unlock(&pq->mutex);
-
-    // i must destroy the mutex only when it's unlocked :(, so all of the
-    // threads that use the packet queue must be joined/destroyed before calling
-    // this function... sucks to suck
-    pthread_mutex_destroy(&pq->mutex);
-}
-
-packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq) {
-    packet_node_t *packet = pq->first_packet;
-    for (int i = 0; i < pq->packet_count - 1; i++) {
-        if (!packet) {
-            xab_log(LOG_WARN,
-                    "packet queue: invalid packet node pointer! (%d/%d), "
-                    "fixing packet count...\n",
-                    i, pq->packet_count);
-            // im not sure if i need i-1 or i but think its i
-            pq->packet_count = i;
-            pq->size = i;
-            break;
-        }
-        // if (i < pq->packet_count)
-        //     continue;
-
-        packet = packet->next;
-    }
-
-    return packet;
-}
-
-bool packet_queue_handle_load_factor(packet_queue_t *pq) {
-    float load = (float)(pq->size - pq->packet_count) / pq->size;
-    if (load <= pq->load_factor)
-        return false;
-
-    // deallocate unused packets
-
-    int i = 0;
-    packet_node_t *pnode = pq->first_packet;
-    packet_node_t *next = NULL;
-    packet_node_t *prev = NULL;
-    while (i < pq->size && pnode != NULL) {
-        next = pnode->next;
-        if (i >= pq->packet_count) {
-            // clean the packet
-            av_packet_unref(pnode->packet);
-            av_packet_free(&pnode->packet);
-            free(pnode);
-
-            pnode = NULL;
-            if (prev)
-                prev->next = next;
+    if (pq->queue) {
+        for (int i = 0; i < pq->packet_count; i++) {
+            // i assume all of the packets are unerefed
+            av_packet_free(&pq->queue[i].packet);
         }
 
-        if (pnode)
-            prev = pnode;
-        pnode = next;
-        i++;
+        free(pq->queue);
     }
-
-    return true;
 }

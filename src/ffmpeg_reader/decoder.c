@@ -32,7 +32,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
 
     // initialize packet queue
     xab_log(LOG_TRACE, "Decoder: Initalizing packet queue\n");
-    dst_dec->pacq = packet_queue_init(70, 128);
+    dst_dec->pacq = packet_queue_init(128);
     xab_log(LOG_TRACE, "Decoder: Initalizing picture queue\n");
     dst_dec->picq = picture_queue_init(70, 64);
 

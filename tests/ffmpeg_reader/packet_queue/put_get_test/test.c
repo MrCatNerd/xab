@@ -7,7 +7,7 @@
 int main(void) {
     int ret_code = MESON_OK;
 
-    packet_queue_t pq = packet_queue_init(60, 0);
+    packet_queue_t pq = packet_queue_init(60);
 
     AVPacket *src = av_packet_alloc();
     assert(src != NULL);

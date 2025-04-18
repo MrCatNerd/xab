@@ -13,48 +13,29 @@
 #include <libswscale/swscale.h>
 #include <stdbool.h>
 
-// TODO: multithreading unit tests
-// TODO: maybe packet chucks?
-// TODO: maybe switch to ffmpeg allocation functions for packet_node_t
-
-typedef struct packet_node {
+typedef struct packet_queue_item {
         AVPacket *packet;
-        struct packet_node *next;
-} packet_node_t;
+} packet_queue_item_t;
 
+// we don't need a mutex, since we either access two different indexes at the
+// same time, or the queue is empty, which means we can only push, all of the
+// number stuff is handled automatically by atomic variables
 typedef struct packet_queue {
-        packet_node_t *first_packet;
-        /// actual last packet, not the last used one
-        packet_node_t *last_packet;
-        /// used packets
-        int packet_count;
-        /// actual size
-        int size;
-
-        float load_factor;
-        int max_packets;
-
-        pthread_mutex_t mutex;
+        packet_queue_item_t *queue;
+        _Atomic int
+            packet_count; // idc this is constant, we must have atomic variables
+                          // EVERYWHERE, this is totally not a bad idea
+        _Atomic int front_idx;
+        _Atomic int rear_idx;
 } packet_queue_t;
 
-packet_queue_t packet_queue_init(short load_factor, int max_packets);
+packet_queue_t packet_queue_init(const int packet_count);
+
+// TODO: wait suffix for functions and functions without wait that don't wait if
+// they're full
 
 bool packet_queue_put(packet_queue_t *pq, AVPacket *src_packet);
 /// NOTE: dest_packet must be unrefed using av_packet_unref when ur done
 bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet);
 
 void packet_queue_free(packet_queue_t *pq);
-
-// -- internal --
-
-// TODO: store this as a variable in the packet_queue struct and update it
-
-/// get the last USED node from the packet queue
-/// @warning not mt safe, you must manually lock the packet_queue_t->mutex
-/// before using this function
-packet_node_t *packet_queue_get_last_used_node(packet_queue_t *pq);
-
-/// returns true if any unused nodes were freed
-/// @warning not mt safe, you must manually lock the packet_queue_t->mutex
-/// before using this function
-bool packet_queue_handle_load_factor(packet_queue_t *pq);

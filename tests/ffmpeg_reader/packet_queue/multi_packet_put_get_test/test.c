@@ -11,7 +11,7 @@ int main(void) {
 
     // allocate packet queue
     packet_queue_t pq =
-        packet_queue_init(60, 128); // have at least 100 packets in max packets
+        packet_queue_init(128); // have at least 100 packets in max packets
 
     // allocate destination packet
     AVPacket *dst = av_packet_alloc();
