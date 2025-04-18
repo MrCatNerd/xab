@@ -34,7 +34,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     xab_log(LOG_TRACE, "Decoder: Initalizing packet queue\n");
     dst_dec->pacq = packet_queue_init(128);
     xab_log(LOG_TRACE, "Decoder: Initalizing picture queue\n");
-    dst_dec->picq = picture_queue_init(70, 64);
+    dst_dec->picq = picture_queue_init(64);
 
     // allocate packets and frames
     xab_log(LOG_TRACE, "Decoder: Allocating AVPackets and AVFrames\n");
@@ -321,10 +321,7 @@ static void *decoder_picture_worker(void *ctx) {
 
         // queue the frame
     retry2: // yay more bad practices
-        if (!picture_queue_put(&dec->picq, raw_av_frame,
-                               av_image_get_buffer_size(
-                                   raw_av_frame->format, raw_av_frame->width,
-                                   raw_av_frame->height, 1))) {
+        if (!picture_queue_put(&dec->picq, raw_av_frame)) {
             if (!dec->picture_dead) {
                 pthread_mutex_lock(&dec->picture_mutex);
                 pthread_cond_wait(&dec->cond, &dec->picture_mutex);
