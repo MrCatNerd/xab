@@ -94,7 +94,6 @@ void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
         // model matrix
         mat4 model = GLM_MAT4_IDENTITY_INIT;
 
-        // todo: fullscreen not working
         // xab_log(LOG_INFO, "walx: %d waly: %d width: %d height: %d\n",
         //         wallpaper->x, wallpaper->y, wallpaper->video.vrc.width,
         //         wallpaper->video.vrc.height);

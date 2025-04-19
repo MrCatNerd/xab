@@ -33,11 +33,13 @@ VideoReaderState_t open_video(const char *path,
 
     VRStateInternal_t *internal_state = VR_INTERNAL(state.internal);
 
+    // create a framebuffer
     xab_log(LOG_DEBUG, "Creating video framebuffer\n");
     internal_state->framebuffer = create_framebuffer(
         state.vrc.width * state.vrc.scale, state.vrc.height * state.vrc.scale,
         state.vrc.gl_internal_format, scache);
 
+    // create an mpv handle
     xab_log(LOG_DEBUG, "Initializing mpv handle\n");
     internal_state->mpv_handle = mpv_create();
     if (!internal_state->mpv_handle) {
@@ -45,8 +47,10 @@ VideoReaderState_t open_video(const char *path,
         exit(EXIT_FAILURE);
     }
 
+    // set some options
     set_init_mpv_options(&state);
 
+    // initialize mpv
     int mpv_err = mpv_initialize(internal_state->mpv_handle);
     if (mpv_err < MPV_ERROR_SUCCESS) {
         xab_log(LOG_ERROR, "Failed to initialize mpv: %s",
@@ -77,6 +81,7 @@ VideoReaderState_t open_video(const char *path,
         {MPV_RENDER_PARAM_INVALID, NULL},
     };
 
+    // create render context
     mpv_err =
         mpv_render_context_create(&internal_state->mpv_glcontext,
                                   internal_state->mpv_handle, render_param);
@@ -86,12 +91,14 @@ VideoReaderState_t open_video(const char *path,
         exit(EXIT_FAILURE);
     }
 
+    // set callback functions
     xab_log(LOG_DEBUG, "Setting mpv callbacks\n");
     mpv_set_wakeup_callback(internal_state->mpv_handle, on_mpv_events, NULL);
     mpv_render_context_set_update_callback(internal_state->mpv_glcontext,
                                            on_mpv_render_update,
                                            &internal_state->redraw_wakeup);
 
+    // set some more options
     xab_log(LOG_DEBUG, "Setting mpv options\n");
 #ifndef NDEBUG
     mpv_request_log_messages(internal_state->mpv_handle, "debug");
@@ -129,6 +136,11 @@ VideoReaderState_t open_video(const char *path,
         xab_log(LOG_VERBOSE, "Video hardware acceleration: %s\n", hwdec_opt);
         mpv_set_option_string(internal_state->mpv_handle, "hwdec", hwdec_opt);
     }
+
+    // mpv must resize the video to the framebuffer without padding/keeping the
+    // aspect ratio
+    mpv_set_option_string(internal_state->mpv_handle, "video-unscaled", "yes");
+    mpv_set_option_string(internal_state->mpv_handle, "keepaspect", "no");
 
     // mpv must never idle, or the universe will end
     mpv_command_async(internal_state->mpv_handle, 0,
@@ -189,8 +201,8 @@ void render_video(VideoReaderState_t *state) {
                 {MPV_RENDER_PARAM_OPENGL_FBO,
                  &(mpv_opengl_fbo){
                      .fbo = internal_state->framebuffer.fbo_id,
-                     .w = internal_state->framebuffer.width * state->vrc.scale,
-                     .h = internal_state->framebuffer.height * state->vrc.scale,
+                     .w = internal_state->framebuffer.width,
+                     .h = internal_state->framebuffer.height,
                      .internal_format =
                          internal_state->framebuffer.gl_internal_format,
                  }},
