@@ -10,7 +10,7 @@ typedef struct Shader {
 
 Shader_t create_shader(const char *vertex_path, const char *fragment_path);
 
-extern inline void use_shader(Shader_t *shader);
+void use_shader(Shader_t *shader);
 
 // i think caching uniform locations is a little bit overkill for xab at the
 // moment
