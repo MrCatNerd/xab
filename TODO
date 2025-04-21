@@ -2,7 +2,7 @@
 will be implemented (probably)
 
 * general
-- use damage rendering for the background with xcb-damage (also look into GLX_EXT_buffer_age)
+- use damage rendering for the background with xcb-damage (also look into EGL_EXT_buffer_age)
 - texture abstraction
 - mt safe logging
 - tests (meson test system) with with a dummy root window and stuff + unit tests
