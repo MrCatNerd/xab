@@ -101,6 +101,7 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
                          AVCodecContext *av_codec_ctx) {
     int error = 0;
 
+    // init device
     if ((error = av_hwdevice_ctx_create(
              &hwa_ctx->hw_device_ctx, hwa_ctx->dev_type, NULL, NULL, 0)) < 0) {
         xab_log(LOG_ERROR, "Decoder: Failed to create specified HW device\n");
@@ -108,6 +109,30 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
     }
 
     av_codec_ctx->hw_device_ctx = av_buffer_ref(hwa_ctx->hw_device_ctx);
+
+    // check if it is possible to convert the GPU pixel format to something
+    // valid
+    AVHWFramesConstraints *hw_frames_constraints =
+        av_hwdevice_get_hwframe_constraints(hwa_ctx->hw_device_ctx, NULL);
+
+    if (!hw_frames_constraints)
+        return AVERROR(EINVAL);
+
+    enum AVPixelFormat *pixfmt = (enum AVPixelFormat *)AV_PIX_FMT_NONE;
+    for (pixfmt = hw_frames_constraints->valid_sw_formats;
+         *pixfmt != AV_PIX_FMT_NONE; pixfmt++) {
+        if (*pixfmt == AV_PIX_FMT_YUV420P)
+            break;
+    }
+    av_hwframe_constraints_free(&hw_frames_constraints);
+
+    // if the GPU is unable to convert to YUV420p then give up and let down
+    if (*pixfmt == AV_PIX_FMT_NONE) {
+        xab_log(LOG_ERROR,
+                "Decoder: your device is unable to convert to YUV420p :(\n");
+        return AVERROR(EINVAL);
+    }
+
     return error;
 }
 
