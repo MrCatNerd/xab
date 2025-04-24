@@ -1,14 +1,20 @@
 #pragma once
 
 // -- color macros -- //
-/// they don't support pure black lmao
 #define TRACY_NOCOLOR 0x000000
-#define TRACY_COLOR_GREY 0x808080
+/// they don't support pure black lmao
 #define TRACY_COLOR_BLACK 0x000001
 #define TRACY_COLOR_WHITE 0xffffff
+#define TRACY_COLOR_GREY 0x808080
 #define TRACY_COLOR_RED 0xff0000
 #define TRACY_COLOR_GREEN 0x00ff00
 #define TRACY_COLOR_BLUE 0x0000ff
+/// 1-byte ints (0->255) color rgb to hex color rgb
+#define TRACY_COLOR_RGB(red, green, blue) ((red << 16) | (green << 8) | (blue))
+/// normalized floats (0->1) rgb to hex color rgb
+#define TRACY_COLOR_RGBF(red, green, blue)                                     \
+    (((int)(red * 255) << 16) | ((int)(green * 255) << 8) | ((int)(blue * 255)))
+// ------------------ //
 
 // only if tracy is enabled
 #ifdef TRACY_ENABLE
@@ -16,13 +22,6 @@
 #include <tracy/TracyC.h>
 
 #define ON_TRACY(stuff) stuff
-
-/// 1-byte ints (0->255) color rgb to hex color rgb
-#define TRACY_COLOR_RGB(red, green, blue) ((red << 16) | (green << 8) | (blue))
-/// normalized floats (0->1) rgb to hex color rgb
-#define TRACY_COLOR_RGBF(red, green, blue)                                     \
-    (((int)(red * 255) << 16) | ((int)(green * 255) << 8) | ((int)(blue * 255)))
-// ------------------ //
 
 #else // TRACY_ENABLE
 

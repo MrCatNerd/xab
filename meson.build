@@ -78,8 +78,9 @@ if video_library == 'mpv'
   src_files += files('src/mpv_reader.c')
   video_reader_deps += dependency('mpv')
 elif video_library == 'ffmpeg'
-  src_files += files('src/ffmpeg_reader.c')
+  subdir('src/ffmpeg_reader')
   video_reader_deps += [
+    dependency('threads'),
     dependency('libavcodec'),
     dependency('libavutil'),
     dependency('libavformat'),
@@ -192,3 +193,8 @@ executable(
   include_directories: project_include_dirs,
   install: true,
 )
+
+# --- tests ---
+if not meson.is_subproject()
+  subdir('tests')
+endif

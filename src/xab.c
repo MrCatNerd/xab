@@ -51,7 +51,6 @@ static void mainloop(void) {
 
     ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Mainloop`\n");)
     TracyCZoneNC(tracy_ctx, "Mainloop", TRACY_COLOR_WHITE, true);
-    printf("%d", LOG_LEVEL);
 
     // set up the signal handler (so the program would gracefully exit on
     // Ctrl+c)
