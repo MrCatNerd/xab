@@ -30,14 +30,14 @@ option(
 )
 
 option(
-  'enable_opengl_debug_callback',
+  'opengl_debug_callback',
   type: 'feature',
   value: 'auto',
   description: 'Enable OpenGL debug callback',
 )
 
 option(
-  'enable_ansii_log',
+  'ansii_log',
   type: 'boolean',
   value: true,
   description: 'Enable ANSII terminal colors for logging',

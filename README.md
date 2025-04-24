@@ -194,7 +194,7 @@ meson configure build -Dnobce=true
 meson configure build -Dnopch=true
 
 # disable ANSII colored logging
-meson configure build -Denable_ansii_log=false
+meson configure build -Dansii_log=false
 ```
 
 ---
@@ -212,7 +212,7 @@ im not gonna fully document this so ummm deal with it
 xab uses tracy for profiling:
 ```sh
 meson setup tbuild --buildtype=debugoptimized \
-    -Dlog=trace -Denable_opengl_debug_callback=disabled -Dtracy_enable=true
+    -Dlog=trace -Dopengl_debug_callback=disabled -Dtracy_enable=true
 meson compile -C tbuild
 
 ```

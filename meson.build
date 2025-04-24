@@ -26,7 +26,7 @@ extra_link_args = []
 # --- logging and stuff ---
 
 log_level = get_option('log')
-should_enable_ansii_colors = get_option('enable_ansii_log')
+should_enable_ansii_colors = get_option('ansii_log')
 
 if should_enable_ansii_colors
   add_project_arguments('-DLOG_ANSII_COLORS', language: 'c')
@@ -123,7 +123,7 @@ if tracy_enable
 endif
 
 # --- OpenGL stuff ---
-enable_opengl_debug_callback = get_option('enable_opengl_debug_callback')
+enable_opengl_debug_callback = get_option('opengl_debug_callback')
 # auto and debug or less or enabled
 if (enable_opengl_debug_callback.auto() and log_num <= 2) or enable_opengl_debug_callback.enabled()
   add_project_arguments('-DENABLE_OPENGL_DEBUG_CALLBACK', language: 'c')
