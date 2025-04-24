@@ -169,8 +169,6 @@ static void cleanup(
     // clean up framebuffer
     delete_framebuffer(&context.framebuffer, &context.scache);
 
-    cleanup_monitors(context.monitor_count, context.monitors);
-
     // clean up shader cache
     shader_cache_cleanup(&context.scache);
 

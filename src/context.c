@@ -267,10 +267,10 @@ context_t context_create(struct argument_options *opts) {
     // if no monitors/randr, use default monitor
     if (context.monitors == NULL || context.monitor_count <= 0) {
         context.monitor_count = 1;
-        context.monitors = malloc(sizeof(monitor_t **));
-        *context.monitors = create_monitor("fullscreen-monitor", 0, true, 0, 0,
-                                           context.screen->width_in_pixels,
-                                           context.screen->height_in_pixels);
+        context.monitors = calloc(1, sizeof(monitor_t));
+        create_monitor(context.monitors, "fullscreen-monitor", 0, true, 0, 0,
+                       context.screen->width_in_pixels,
+                       context.screen->height_in_pixels);
     }
 
     // TODO: verbose macro ifdef thingy
@@ -292,9 +292,10 @@ context_t context_create(struct argument_options *opts) {
                                              GL_RGBA, &context.scache);
 
     // load the videos
-    monitor_t *fullscreen_monitor = create_monitor(
-        "fullscreen-monitor", 0, true, 0, 0, context.screen->width_in_pixels,
-        context.screen->height_in_pixels);
+    monitor_t fullscreen_monitor;
+    create_monitor(&fullscreen_monitor, "fullscreen-monitor", 0, true, 0, 0,
+                   context.screen->width_in_pixels,
+                   context.screen->height_in_pixels);
 
     for (int i = 0; i < context.wallpaper_count; i++) {
         int idx = opts->wallpaper_options[i].monitor;
@@ -307,10 +308,9 @@ context_t context_create(struct argument_options *opts) {
         }
         monitor_t *monitor = NULL;
         if (idx < 0)
-            monitor = fullscreen_monitor;
-        else {
+            monitor = &fullscreen_monitor;
+        else
             monitor = context.monitors[idx - 1];
-        }
 
         wallpaper_init(1.0f, monitor->width, monitor->height,
                        monitor->x + opts->wallpaper_options[i].offset_x,
@@ -320,8 +320,9 @@ context_t context_create(struct argument_options *opts) {
                        &context.wallpapers[i], opts->hw_accel, &context.scache);
     }
 
-    free(fullscreen_monitor); // TODO: remove malloc from the init
-                              // function
+    // cleanup the monitors cuz we just copied the monitor data to the wallpaper
+    // thingy
+    cleanup_monitors(context.monitor_count, context.monitors);
 
     return context;
 }

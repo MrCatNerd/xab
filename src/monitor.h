@@ -10,8 +10,8 @@ typedef struct monitor {
         int x, y;
 } monitor_t;
 
-monitor_t *create_monitor(char *name, int id, bool primary, int x, int y,
-                          int width, int height);
+void create_monitor(monitor_t *dst_monitor, char *name, int id, bool primary,
+                    int x, int y, int width, int height);
 
 monitor_t *find_monitor_by_id(monitor_t **monitors, int count, int id);
 

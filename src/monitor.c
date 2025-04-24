@@ -2,27 +2,22 @@
 
 #include "monitor.h"
 #include "logger.h"
+#include <stdlib.h>
 
-monitor_t *create_monitor(char *name, int id, bool primary, int x, int y,
-                          int width, int height) {
+void create_monitor(monitor_t *dst_monitor, char *name, int id, bool primary,
+                    int x, int y, int width, int height) {
+    if (!dst_monitor)
+        return;
     xab_log(LOG_DEBUG, "Creating monitor %s size %dx%dpx\n", name, width,
             height);
-    // TODO: remove malloc from the init function
-    monitor_t *monitor = malloc(sizeof(monitor_t));
-    if (!monitor) {
-        xab_log(LOG_FATAL, "Failed to allocate memory for monitor\n");
-        exit(EXIT_FAILURE);
-    }
 
-    monitor->name = name;
-    monitor->id = id;
-    monitor->primary = primary;
-    monitor->x = x;
-    monitor->y = y;
-    monitor->width = width;
-    monitor->height = height;
-
-    return monitor;
+    dst_monitor->name = name;
+    dst_monitor->id = id;
+    dst_monitor->primary = primary;
+    dst_monitor->x = x;
+    dst_monitor->y = y;
+    dst_monitor->width = width;
+    dst_monitor->height = height;
 }
 
 monitor_t *find_monitor_by_id(monitor_t **monitors, int count, int id) {
@@ -60,14 +55,14 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
     if (!monitors_reply)
         return ret;
 
-    int monitor_count = xcb_randr_get_monitors_monitors_length(monitors_reply);
+    const int monitor_count =
+        xcb_randr_get_monitors_monitors_length(monitors_reply);
     monitors = calloc(sizeof(monitor_t *), monitor_count);
 
     // iterate through monitors and set the appropriate values
     xcb_randr_monitor_info_iterator_t monitors_iter =
         xcb_randr_get_monitors_monitors_iterator(monitors_reply);
-    int i = 0;
-    while (monitors_iter.rem) {
+    for (int i = 0; monitors_iter.rem > 0; i++) {
         xcb_randr_monitor_info_t *monitor_info = monitors_iter.data;
         xcb_get_atom_name_reply_t *name_reply = xcb_get_atom_name_reply(
             connection, xcb_get_atom_name(connection, monitor_info->name),
@@ -77,12 +72,12 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
         char *name = xcb_get_atom_name_name(name_reply);
         name[xcb_get_atom_name_name_length(name_reply)] = '\0';
 
-        monitors[i] = create_monitor(name, i, monitor_info->primary > 0,
-                                     monitor_info->x, monitor_info->y,
-                                     monitor_info->width, monitor_info->height);
+        monitors[i] = calloc(sizeof(monitor_t), 1);
+        create_monitor(monitors[i], name, i, monitor_info->primary > 0,
+                       monitor_info->x, monitor_info->y, monitor_info->width,
+                       monitor_info->height);
 
         free(name_reply);
-        i++;
     }
 
     free(monitors_reply);
