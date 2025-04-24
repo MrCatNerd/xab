@@ -1,5 +1,5 @@
-#include <epoxy/gl_generated.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include <libavcodec/avcodec.h>
@@ -17,14 +17,12 @@
 #include "video_reader_interface.h"
 #include "ffmpeg_reader/decoder.h"
 #include "logger.h"
-#include "utils.h"
 
 static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx);
 
 #define VR_INTERNAL(vrs) ((VRStateInternal_t *)vrs)
 typedef struct VRStateInternal {
         Decoder_t decoder;
-        unsigned int width, height;
         unsigned int texture_id;
 } VRStateInternal_t;
 
@@ -41,17 +39,10 @@ VideoReaderState_t open_video(const char *path,
 
     VRStateInternal_t *internal_state = VR_INTERNAL(state.internal);
 
-    if (state.vrc.hw_accel == VR_HW_ACCEL_YES) {
-        xab_log(LOG_WARN,
-                "'xab_custom' (ffmpeg) video reader does not currently "
-                "support hardware acceleration\n");
-        state.vrc.hw_accel = VR_HW_ACCEL_NO;
-    }
     if (state.vrc.gl_internal_format != GL_RGBA &&
         state.vrc.gl_internal_format != GL_RGB) {
-        xab_log(LOG_WARN,
-                "'xab_custom' (ffmpeg) video reader does not currently "
-                "support any texture format other than RGB/RGBA");
+        xab_log(LOG_WARN, "ffmpeg video reader does not currently "
+                          "support any texture format other than RGB/RGBA");
         state.vrc.gl_internal_format = GL_RGB;
         // currently im just ignoring the alpha channel but i might not in the
         // future if i won't be not lazy
@@ -60,7 +51,7 @@ VideoReaderState_t open_video(const char *path,
     xab_log(LOG_DEBUG, "Reading video file: %s\n", path);
     decoder_init(&internal_state->decoder, path, state.vrc.width,
                  state.vrc.height, state.vrc.pixelated, &decoder_callback_ctx,
-                 &internal_state->texture_id);
+                 internal_state, vr_config.hw_accel);
 
     // Texture
     xab_log(LOG_DEBUG, "Creating video texture: %dx%dpx\n",
@@ -74,14 +65,10 @@ VideoReaderState_t open_video(const char *path,
                     state.vrc.pixelated ? GL_NEAREST : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
     glTexImage2D(GL_TEXTURE_2D, 0, state.vrc.gl_internal_format,
                  state.vrc.width, state.vrc.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
                  0); // set all to black
-
-    // unbind stuff
     glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     return state;
 }
@@ -93,19 +80,18 @@ void render_video(VideoReaderState_t *state) {
 
     decoder_decode(&internal_state->decoder);
 
-    // unmap stuff
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     TracyCZoneEnd(tracy_ctx);
 
     // profit
 }
 
 static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx) {
-    unsigned int texture_id = *(unsigned int *)callback_ctx;
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    VRStateInternal_t *internal_state = VR_INTERNAL(callback_ctx);
+    glBindTexture(GL_TEXTURE_2D, internal_state->texture_id);
+
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width, frame->height, GL_RGB,
                     GL_UNSIGNED_BYTE, frame->data[0]);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

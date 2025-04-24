@@ -1,16 +1,22 @@
-#include "ffmpeg_reader/decoder.h"
-#include "ffmpeg_reader/packet_queue.h"
-#include "ffmpeg_reader/picture_queue.h"
-#include "logger.h"
+#include <libavcodec/codec.h>
 #include <libavcodec/packet.h>
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
-#include <libavutil/rational.h>
+#include <libavutil/hwcontext.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/rational.h>
+#include <libswscale/swscale.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#include "ffmpeg_reader/decoder.h"
+#include "ffmpeg_reader/packet_queue.h"
+#include "ffmpeg_reader/picture_queue.h"
+#include "ffmpeg_reader/hw_accel_dec.h"
+#include "logger.h"
 
 static void *decoder_packet_worker(void *ctx);
 static void *decoder_picture_worker(void *ctx);
@@ -18,7 +24,7 @@ static void *decoder_picture_worker(void *ctx);
 void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
                   unsigned int height, bool pixelated,
                   void (*callback_func)(AVFrame *frame, void *callback_ctx),
-                  void *callback_ctx) {
+                  void *callback_ctx, enum VR_HW_ACCEL hw_accel) {
     // -- initalize struct --
     memset(dst_dec, 0, sizeof(*dst_dec));
 
@@ -119,6 +125,37 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     dst_dec->vwidth = dst_dec->av_codecpar->width;
     dst_dec->vheight = dst_dec->av_codecpar->height;
 
+    // hw accel stuff
+    bool try_hw_accel;
+    switch (hw_accel) {
+    default:
+    case VR_HW_ACCEL_AUTO: // attempt hw_accel, if it fails, then fallback to
+                           // software decoding
+        try_hw_accel = true;
+        break;
+    case VR_HW_ACCEL_YES: // attempt hw_acccel, if it fails, then error
+        try_hw_accel = true;
+        break;
+    case VR_HW_ACCEL_NO: // use software decoding
+        try_hw_accel = false;
+        break;
+    }
+    if (try_hw_accel) {
+        xab_log(LOG_TRACE, "Decoder: attempting HW accel\n");
+        xab_log(LOG_TRACE, "Allocating HW context\n");
+        dst_dec->hw_ctx = calloc(1, sizeof(DecoderHW_ctx_t));
+
+        xab_log(LOG_TRACE, "Initalizing HW accel\n");
+        // init hardware accceleration, if it fails, free the HW context thingy
+        if (!hw_accel_init(dst_dec->hw_ctx, dst_dec->av_codec)) {
+            xab_log(LOG_INFO, "Decoder: HW accel initialization failed. "
+                              "falling back to software decoding\n");
+            free(dst_dec->hw_ctx);
+            dst_dec->hw_ctx = NULL;
+        }
+    } else
+        dst_dec->hw_ctx = NULL; // ensure hw ctx is NULL
+
     // -- allocate a codec context and fill it --
     dst_dec->av_codec_ctx = avcodec_alloc_context3(dst_dec->av_codec);
     if (!dst_dec->av_format_ctx) {
@@ -130,7 +167,18 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
         xab_log(LOG_ERROR, "Couldn't initialize AVCodecContext\n");
     }
 
-    // TODO: hw_accel
+    // more hw accel stuff
+    if (dst_dec->hw_ctx) {
+        hw_accel_set_avcontext_pixfmt_callback(dst_dec->hw_ctx,
+                                               dst_dec->av_codec_ctx);
+        // initalize the device thingy
+        if (hw_accel_init_device(dst_dec->hw_ctx, dst_dec->av_codec_ctx) < 0) {
+            xab_log(LOG_INFO, "Decoder: HW accel initialization failed. "
+                              "falling back to software decoding\n");
+            free(dst_dec->hw_ctx);
+            dst_dec->hw_ctx = NULL;
+        }
+    }
 
     // -- open codec --
     if (avcodec_open2(dst_dec->av_codec_ctx, dst_dec->av_codec, NULL) < 0) {
@@ -141,21 +189,20 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     xab_log(LOG_VERBOSE, "File format long name: %s\n",
             dst_dec->av_format_ctx->iformat->long_name);
 
-    if (dst_dec->av_codec_ctx->hwaccel != NULL) {
-        xab_log(LOG_VERBOSE,
-                "Decoder: HW acceleration in use for video "
-                "reading: %s\n",
-                dst_dec->av_codec_ctx->hwaccel->name);
+    if (dst_dec->hw_ctx != NULL) {
+        xab_log(LOG_DEBUG, "Decoder: HW acceleration in use for video for "
+                           "video decoding good luck gpu\n");
     } else {
-        xab_log(LOG_VERBOSE, "Decoder: no HW acceleration in "
-                             "use for video decoding :( good luck "
-                             "cpu\n");
+        xab_log(LOG_DEBUG, "Decoder: no HW acceleration in "
+                           "use for video decoding :( good luck "
+                           "cpu\n");
     }
 
     // -- create sws_scaler_ctx --
     // for pixelated option
     xab_log(LOG_TRACE, "Decoder: Creating sws frame scaler\n");
-    enum SwsFlags flags = -1;
+
+    int flags = -1;
     if (pixelated)
         flags = SWS_POINT;
     else
@@ -241,7 +288,7 @@ static void *decoder_packet_worker(void *ctx) {
 
         pthread_cond_broadcast(&dec->cond);
 
-    // haha bad code practices go bRRR
+        // haha bad code practices go bRRR
     retry:
         if (!packet_queue_put(&dec->pacq, packet)) {
             if (!dec->packet_dead) {
@@ -268,6 +315,19 @@ static void *decoder_packet_worker(void *ctx) {
 static void *decoder_picture_worker(void *ctx) {
     Decoder_t *dec = (Decoder_t *)ctx;
 
+    // if hardware accceleration is enabled, allocate a software frame
+    AVFrame *sw_frame = NULL;
+    if (dec->hw_ctx) {
+        sw_frame = av_frame_alloc();
+        sw_frame->format = AV_PIX_FMT_YUV420P; // assume YUV420
+        sw_frame->width = dec->vwidth;
+        sw_frame->height = dec->vheight;
+        if (av_frame_get_buffer(sw_frame, 32) < 0) {
+            av_frame_free(&sw_frame);
+            sw_frame = NULL;
+        }
+    }
+
     while (!dec->picture_dead) {
         AVCodecContext *av_codec_ctx = dec->av_codec_ctx;
         int video_stream_idx = dec->video_stream_idx;
@@ -276,6 +336,7 @@ static void *decoder_picture_worker(void *ctx) {
         AVPacket *av_packet = dec->av_packet;
 
         int response;
+        // get a frame (until the frame is finished)
         while ((response = avcodec_receive_frame(av_codec_ctx, av_frame))) {
             pthread_cond_broadcast(&dec->cond);
 
@@ -303,7 +364,8 @@ static void *decoder_picture_worker(void *ctx) {
                 continue;
             } else if (response < 0) {
                 av_packet_unref(av_packet);
-                xab_log(LOG_ERROR, "Failed to decode packet: %s (%d)\n",
+                xab_log(LOG_ERROR,
+                        "Decoder: Failed to decode packet: %s (%d)\n",
                         av_err2str(response), response);
                 continue;
             }
@@ -311,12 +373,38 @@ static void *decoder_picture_worker(void *ctx) {
             av_packet_unref(av_packet);
         }
 
-        // TODO: opengl YUV textures (fallback to swsscale if it's not YUV?)
-        if (sws_scale(dec->sws_scaler_ctx,
-                      (const uint8_t *const *)av_frame->data,
-                      av_frame->linesize, 0, av_frame->height,
-                      raw_av_frame->data, raw_av_frame->linesize) <= 0) {
-            xab_log(LOG_ERROR, "Failed to scale YUV to RGB\n");
+        // TODO: instead of transfer the frame back to a sw frame and than
+        // uploading it to a texture, just upload the frame to a texture from
+        // the gpu directly
+
+        // now that we have the frame, if we have hardware acceleration enabled,
+        // and the frame's pixel format matches the hw accel's pixel format then
+        // we need to transfer the frame from the gpu to the cpu
+        if (dec->hw_ctx && sw_frame) {
+            if (av_frame->format == dec->hw_ctx->hw_pix_fmt) {
+                if (av_hwframe_transfer_data(sw_frame, av_frame, 0) < 0) {
+                    xab_log(LOG_ERROR, "Decoder: error transferring the data "
+                                       "to system memory\n");
+                    // TODO: fallback to software decoding or smh
+                }
+            }
+
+            // TODO: remove this duplicate and implement some not garbage code
+            if (sws_scale(dec->sws_scaler_ctx,
+                          (const uint8_t *const *)sw_frame->data,
+                          sw_frame->linesize, 0, sw_frame->height,
+                          raw_av_frame->data, raw_av_frame->linesize) <= 0) {
+                xab_log(LOG_ERROR, "Decoder: Failed to scale YUV to RGB\n");
+            }
+        } else {
+
+            // TODO: opengl YUV textures (fallback to swsscale if it's not YUV?)
+            if (sws_scale(dec->sws_scaler_ctx,
+                          (const uint8_t *const *)av_frame->data,
+                          av_frame->linesize, 0, av_frame->height,
+                          raw_av_frame->data, raw_av_frame->linesize) <= 0) {
+                xab_log(LOG_ERROR, "Decoder: Failed to scale YUV to RGB\n");
+            }
         }
 
         // queue the frame
@@ -332,18 +420,20 @@ static void *decoder_picture_worker(void *ctx) {
         }
     }
 
+    if (sw_frame)
+        av_frame_free(&sw_frame);
+
     xab_log(LOG_DEBUG, "Decoder picture thread: Quitting\n");
 
     pthread_exit(0);
 }
 
 void decoder_decode(Decoder_t *dec) {
-    // xab_log(LOG_TRACE, "number of frames: %d\n", dec->picq.picture_count);
     picture_queue_get(&dec->picq, dec->av_pass_frame);
-    pthread_cond_broadcast(&dec->cond);
 
     if (dec->callback_func)
         (*dec->callback_func)(dec->av_pass_frame, dec->callback_ctx);
+    pthread_cond_broadcast(&dec->cond);
 }
 
 void decoder_destroy(Decoder_t *dec) {
@@ -382,9 +472,9 @@ void decoder_destroy(Decoder_t *dec) {
     if (dec->av_frame)
         av_frame_free(&dec->av_frame);
     if (dec->raw_av_frame)
-        av_frame_free(&dec->av_frame);
+        av_frame_free(&dec->raw_av_frame);
     if (dec->av_pass_frame)
-        av_frame_free(&dec->av_frame);
+        av_frame_free(&dec->av_pass_frame);
 
     // cleanup ffmpeg things
     if (dec->sws_scaler_ctx)
@@ -395,4 +485,11 @@ void decoder_destroy(Decoder_t *dec) {
     }
     if (dec->av_codec_ctx)
         avcodec_free_context(&dec->av_codec_ctx);
+
+    // close and free hwaccel
+    if (dec->hw_ctx) {
+        hw_accel_close(dec->hw_ctx);
+        free(dec->hw_ctx);
+        dec->hw_ctx = NULL;
+    }
 }

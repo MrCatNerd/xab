@@ -35,16 +35,17 @@ will be implemented (probably)
 - fullscreen monitor (--monitor=-1) doesn't work with libmpv specifically
 
 * ffmpeg video reader
-- use opengl textures instead of AVFrames for the picture queue (scale in the picture worker)
+- look into AVHWFramesContext
+- don't convert the hw_frame back to a software frame and than upload it to an opengl texture, instead just queue the hw frame directoly, and use yuv shaders
+- yuv texture rendering ^
 - tracy zones for the new threads
 - picture queue tests
 - mt tests for packet queue
 - one packet/frame thread for multiple videos or smh (not sure if this is a good idea)
 - good frame timing and stuff
 - video frame dropping (can be turned off as an option/flag, on by default)
-- proper hardware acceleration for video decoding
-- libavdevice stuff ^
-- fix my bad ffmpeg reader implementation with a new shiny one (if this is the only one left than delete)
+- enter draining mode and call avcodec_flush_buffers when looping a video (https://ffmpeg.org/doxygen/trunk/group__lavc__encdec.html)
+- fix my bad ffmpeg reader implementation with a new shiny one (if this is the only one left then delete)
 
 
 --- IDEA LIST ---

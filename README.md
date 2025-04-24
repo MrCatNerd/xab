@@ -124,7 +124,7 @@ i made this video reader for educational purposes,
 this is an ffmpeg-based video reader, it is way less performant compared to the the other options,
 this is my fault because i suck at ffmpeg,
 also many of the features are not implemented (yet?) like frame timing,
-frame dropping and hardware acceleration
+frame dropping
 
 i am also planning to add libVLC support
 
