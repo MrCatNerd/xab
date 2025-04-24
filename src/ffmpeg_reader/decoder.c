@@ -105,7 +105,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     xab_log(LOG_TRACE, "Decoder: Finding video stream index\n", path);
     dst_dec->video_stream_idx =
         av_find_best_stream(dst_dec->av_format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1,
-                            &dst_dec->av_codec, 0);
+                            (const AVCodec **)(&dst_dec->av_codec), 0);
 
     if (dst_dec->video_stream_idx < 0) {
         dst_dec->av_codec = NULL;
@@ -429,7 +429,8 @@ static void *decoder_picture_worker(void *ctx) {
 }
 
 void decoder_decode(Decoder_t *dec) {
-    picture_queue_get(&dec->picq, dec->av_pass_frame);
+    if (!picture_queue_get(&dec->picq, dec->av_pass_frame))
+        return;
 
     if (dec->callback_func)
         (*dec->callback_func)(dec->av_pass_frame, dec->callback_ctx);
