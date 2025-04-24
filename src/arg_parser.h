@@ -9,7 +9,6 @@ struct wallpaper_argument_options {
         int offset_x;
         int offset_y;
         bool pixelated;
-        int hw_accel;
 };
 
 struct argument_options {
@@ -17,6 +16,7 @@ struct argument_options {
         int n_wallpaper_options;
 
         bool vsync;
+        enum VR_HW_ACCEL hw_accel;
         int max_framerate; // unfinished
 };
 

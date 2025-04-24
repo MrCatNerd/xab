@@ -54,15 +54,15 @@ xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
 global options:
 | Option | Description | default |
 |--------|-------------|---------|
-| `-M=n`, `--monitor=n` | which monitor to use ([optional dependencies](#optional-dependencies) required) | -1 (fullscreen) |
 | `-v=0\|1`, `--vsync=0\|1` | synchronize framerate to monitor framerate | 1 |
+| `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
 <!-- | `--max_framerate=0\|n` | limit framerate to n fps (overrides vsync) | 0 | -->
 
 per video/monitor options:
 | Option | Description | default |
 |--------|-------------|---------|
 | `-p=0\|1`, `--pixelated=0\|1` | use point instead of bilinear filtering for rendering the background | 0 (bilinear) |
-| `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
+| `-M=n`, `--monitor=n` | which monitor to use ([optional dependencies](#optional-dependencies) required) | -1 (fullscreen) |
 | `-x, --offset_x=n`    | offset wallpaper x coordinate | 0 |
 | `-y, --offset_y=n`    | offset wallpaper y coordinate | 0 |
 

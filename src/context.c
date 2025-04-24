@@ -317,8 +317,7 @@ context_t context_create(struct argument_options *opts) {
                        monitor->y + opts->wallpaper_options[i].offset_y,
                        opts->wallpaper_options[i].pixelated,
                        opts->wallpaper_options[i].video_path,
-                       &context.wallpapers[i],
-                       opts->wallpaper_options[i].hw_accel, &context.scache);
+                       &context.wallpapers[i], opts->hw_accel, &context.scache);
     }
 
     free(fullscreen_monitor); // TODO: remove malloc from the init

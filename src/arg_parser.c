@@ -89,8 +89,7 @@ struct argument_options parse_args(int argc, char *argv[]) {
 
             const int current_background = opts.n_wallpaper_options - 1;
             opts.wallpaper_options[current_background].video_path = strdup(key);
-            opts.wallpaper_options[current_background].hw_accel =
-                VR_HW_ACCEL_AUTO;
+            opts.hw_accel = VR_HW_ACCEL_AUTO;
 
             opts.wallpaper_options[current_background].monitor = -1;
 
@@ -107,22 +106,14 @@ struct argument_options parse_args(int argc, char *argv[]) {
         } else if (!strcmp(key, "--hw_accel")) {
             // hmmm switch statement of the first character?, nahhhh
 
-            // TODO: decide if i want hw_accel global or per video
-
-            const int current_background = opts.n_wallpaper_options - 1;
-
             if (!strcmp(value, "no"))
-                opts.wallpaper_options[current_background].hw_accel =
-                    VR_HW_ACCEL_NO;
+                opts.hw_accel = VR_HW_ACCEL_NO;
             else if (!strcmp(value, "yes"))
-                opts.wallpaper_options[current_background].hw_accel =
-                    VR_HW_ACCEL_YES;
+                opts.hw_accel = VR_HW_ACCEL_YES;
             else if (!strcmp(value, "auto"))
-                opts.wallpaper_options[current_background].hw_accel =
-                    VR_HW_ACCEL_AUTO;
+                opts.hw_accel = VR_HW_ACCEL_AUTO;
             else // use auto
-                opts.wallpaper_options[current_background].hw_accel =
-                    VR_HW_ACCEL_AUTO;
+                opts.hw_accel = VR_HW_ACCEL_AUTO;
         } else if (!strcmp(key, "--monitor") || !strcmp(key, "-M")) {
             const int current_background = opts.n_wallpaper_options - 1;
 #ifdef HAVE_LIBXRANDR
