@@ -312,8 +312,10 @@ context_t context_create(struct argument_options *opts) {
             monitor = context.monitors[idx - 1];
         }
 
-        wallpaper_init(1.0f, monitor->width, monitor->height, monitor->x,
-                       monitor->y, opts->wallpaper_options[i].pixelated,
+        wallpaper_init(1.0f, monitor->width, monitor->height,
+                       monitor->x + opts->wallpaper_options[i].offset_x,
+                       monitor->y + opts->wallpaper_options[i].offset_y,
+                       opts->wallpaper_options[i].pixelated,
                        opts->wallpaper_options[i].video_path,
                        &context.wallpapers[i],
                        opts->wallpaper_options[i].hw_accel, &context.scache);

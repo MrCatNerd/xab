@@ -147,6 +147,12 @@ struct argument_options parse_args(int argc, char *argv[]) {
         } else if (!strcmp(key, "--pixelated") || !strcmp(key, "-p")) {
             opts.wallpaper_options[opts.n_wallpaper_options - 1].pixelated =
                 atoi(value) != 0;
+        } else if (!strcmp(key, "--offset_x") || !strcmp(key, "-x")) {
+            opts.wallpaper_options[opts.n_wallpaper_options - 1].offset_x =
+                atoi(value);
+        } else if (!strcmp(key, "--offset_y") || !strcmp(key, "-y")) {
+            opts.wallpaper_options[opts.n_wallpaper_options - 1].offset_y =
+                atoi(value);
         }
     }
 

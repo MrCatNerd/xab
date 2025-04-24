@@ -6,6 +6,8 @@ struct wallpaper_argument_options {
         char *video_path;
         int monitor;
 
+        int offset_x;
+        int offset_y;
         bool pixelated;
         int hw_accel;
 };

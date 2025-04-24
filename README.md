@@ -63,9 +63,8 @@ per video/monitor options:
 |--------|-------------|---------|
 | `-p=0\|1`, `--pixelated=0\|1` | use point instead of bilinear filtering for rendering the background | 0 (bilinear) |
 | `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
-<!-- TODO (not implemented yet)-->
-<!-- * -x, --offset_x=n    | offset wallpaper x coordinate (default: 0) -->
-<!-- * -y, --offset_y=n    | offset wallpaper y coordinate (default: 0) -->
+| `-x, --offset_x=n`    | offset wallpaper x coordinate | 0 |
+| `-y, --offset_y=n`    | offset wallpaper y coordinate | 0 |
 
 ## Prerequisites
 
