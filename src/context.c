@@ -268,8 +268,8 @@ context_t context_create(struct argument_options *opts) {
     if (context.monitors == NULL || context.monitor_count <= 0) {
         context.monitor_count = 1;
         context.monitors = calloc(1, sizeof(monitor_t));
-        create_monitor(context.monitors, "fullscreen-monitor", 0, true, 0, 0,
-                       context.screen->width_in_pixels,
+        create_monitor((monitor_t *)context.monitors, "fullscreen-monitor", 0,
+                       true, 0, 0, context.screen->width_in_pixels,
                        context.screen->height_in_pixels);
     }
 
