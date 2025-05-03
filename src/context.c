@@ -206,10 +206,17 @@ context_t context_create(struct argument_options *opts) {
 
     // create EGL context
     {
-        // clang-format off
+
+        const struct {
+                int major, minor;
+        } gl_versions[] = {{4, 6}, {4, 5}, {4, 4}, {4, 3},
+                           {4, 2}, {4, 1}, {4, 0}, {3, 3}};
+        for (unsigned int i = 0; i < sizeof(gl_versions) / sizeof(*gl_versions);
+             i++) {
+            // clang-format off
         EGLint attr[] = {
-            EGL_CONTEXT_MAJOR_VERSION, 3, // opengl version 3.3 core profile
-            EGL_CONTEXT_MINOR_VERSION, 3,
+            EGL_CONTEXT_MAJOR_VERSION, gl_versions[i].major, // opengl version 3.3 core profile
+            EGL_CONTEXT_MINOR_VERSION, gl_versions[i].minor,
             EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
 #ifndef NDEBUG
             // ask for debug context for non "Release" builds
@@ -218,13 +225,21 @@ context_t context_create(struct argument_options *opts) {
 #endif
             EGL_NONE,
         };
-        // clang-format on
+            // clang-format on
 
-        context.context =
-            eglCreateContext(context.display, config, EGL_NO_CONTEXT, attr);
+            context.context =
+                eglCreateContext(context.display, config, EGL_NO_CONTEXT, attr);
+
+            if (context.context != EGL_NO_CONTEXT) {
+                xab_log(LOG_DEBUG, "Created an EGL OpenGL %d.%d Context\n",
+                        gl_versions[i].major, gl_versions[i].minor);
+                break;
+            }
+        }
+
         if (context.context == EGL_NO_CONTEXT) {
             xab_log(LOG_FATAL,
-                    "Cannot create EGL context, OpenGL 3.3 not supported?\n");
+                    "Cannot create EGL context, OpenGL 3.3+ not supported?\n");
         }
     }
 

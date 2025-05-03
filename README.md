@@ -69,7 +69,7 @@ per video/monitor options:
 ## Prerequisites
 
 ### Hardware requirements
-Anything that supports OpenGL 3.3
+Anything that supports OpenGL 3.3+
 
 ### Dependencies
 
