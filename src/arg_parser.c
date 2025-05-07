@@ -4,6 +4,7 @@
 #include "video_reader_interface.h"
 #include "wallpaper.h"
 #include "logger.h"
+#include "version.h"
 
 // spaghetti code go bRRR
 
@@ -18,7 +19,7 @@ static void help(const char *program_name) {
         "Usage: %s <path/to/file.mp4> [options]\n\n"
         "options:\n"
         "* -h, --help                  | print this help\n"
-        "* -V, --version               | print version\n"
+        "* -V, --version               | print version info\n"
         "* -M, --monitor=n             | which monitor to use             "
         "                                           (default: -1)\n"
         "* --vsync=0|1                 | synchronize framerate to monitor "
@@ -56,12 +57,14 @@ struct argument_options parse_args(int argc, char *argv[]) {
         const char *value = strtok(NULL, "=");
 
         if (!strcmp(token, "--version") || !strcmp(token, "-V")) {
-#ifdef XAB_VERSION
-            printf("%s\n", XAB_VERSION);
-#else
-#warning "XAB_VERSION macro is not set"
+#ifndef VERSION
+#warning "VERSION macro is not set"
             printf("no version was specified while building\n");
+            exit(EXIT_SUCCESS);
 #endif
+
+            printf("%s (git %s:%s)\n", VERSION, GIT_BRANCH, GIT_COMMIT);
+
             exit(EXIT_SUCCESS);
         }
         if (!strcmp(token, "--help") || !strcmp(token, "-h")) {

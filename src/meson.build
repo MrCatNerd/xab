@@ -16,3 +16,7 @@ src_files += files(
   'wallpaper.c',
   'xab.c',
 )
+
+
+# configure the file
+configure_file(input:'version.h.in', output:  'version.h', configuration: version_conf)

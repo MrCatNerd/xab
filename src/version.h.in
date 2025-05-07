@@ -1,0 +1,3 @@
+#define VERSION "@version@"
+#define GIT_BRANCH "@branch@"
+#define GIT_COMMIT "@commit@"

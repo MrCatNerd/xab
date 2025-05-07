@@ -9,6 +9,26 @@ project(
   ],
 )
 
+# -- set version and git information -- #
+
+# get the git info
+git_prog = find_program('git', required: false)
+if git_prog.found()
+  git_branch = run_command(git_prog,'rev-parse','--abbrev-ref','HEAD', check: false).stdout().strip()
+  git_commit = run_command(git_prog,'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
+else
+  git_branch = 'null'
+  git_commit = 'null'
+endif
+
+# set the configuration data
+version_conf = configuration_data()
+version_conf.set('version', meson.project_version())
+version_conf.set('branch',git_branch)
+version_conf.set('commit',git_commit)
+
+# i configure the file in src/meson.build cuz i can't set output with path segments :(
+
 # --- general ---
 c_compiler = meson.get_compiler('c')
 if c_compiler.get_id() not in ['gcc']
@@ -184,9 +204,6 @@ subdir('src')
 executable(
   meson.project_name(),
   src_files,
-  c_args: [
-    '-DXAB_VERSION="' + meson.project_version() + '"',
-  ],
   c_pch: pch_files,
   link_args: extra_link_args,
   dependencies: deps,
