@@ -3,10 +3,13 @@
 # __X11 Animated Background__
 
 > [!WARNING]
-> THIS PROJECT IS HIGHLY EXPERIMENTAL
+> THIS PROJECT IS EXPERIMENTAL
 
 > [!WARNING]
 > If you are using a picom compositor, using the `egl` backend is *highly* recommended
+
+> [!WARNING]
+> Performance currently kinda sucks, im trying my best
 
 ---
 
@@ -225,3 +228,9 @@ to run the tests:
 ```sh
 meson test -C build
 ```
+
+## Contributing
+yes
+
+## License
+xab is licensed under the MIT license
