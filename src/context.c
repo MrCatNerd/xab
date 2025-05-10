@@ -77,14 +77,15 @@ context_t context_create(struct argument_options *opts) {
             context.screen->width_in_pixels, context.screen->height_in_pixels,
             context.screen->root_depth);
 
+    xab_log(LOG_DEBUG, "Initializing atom manager\n");
+    atom_manager_init();
+
+    xab_log(LOG_DEBUG, "Loading atom list\n");
+    load_atom_list(context.connection, true);
+
     // create a pixmap than turn it into the root's pixmap
     xab_log(LOG_DEBUG, "Setting up background...\n");
     setup_background(&context);
-
-    xab_log(LOG_DEBUG, "Getting unloaded X server atoms\n");
-    load_atoms(&context,
-               NULL); // loads the rest of the unloaded atoms (if there are any)
-                      // or creates atoms with XCB_ATOM_NONE
 
     xab_log(LOG_DEBUG, "Initializing EGL\n");
     // initialize EGL
@@ -344,6 +345,9 @@ context_t context_create(struct argument_options *opts) {
     // cleanup the monitors cuz we just copied the monitor data to the wallpaper
     // thingy
     cleanup_monitors(context.monitor_count, context.monitors);
+
+    xab_log(LOG_DEBUG, "Freeing atom manager\n");
+    atom_manager_free();
 
     return context;
 }

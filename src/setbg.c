@@ -52,12 +52,11 @@ void setup_background(context_t *context) {
     xab_log(LOG_VERBOSE, "Setting background atoms\n");
 
     // free the old background if exists
-    const char *atom_filters[] = {"_XROOTPMAP", "ESETROOT_PMAP_ID"};
-    load_atoms_config_t config = {.only_if_exists = true,
-                                  .filters = atom_filters,
-                                  .filter_len = 2,
-                                  .override = true};
-    load_atoms(context, &config);
+    const char *atoms[] = {"_XROOTPMAP_ID", "ESETROOT_PMAP_ID"};
+    load_atoms(context->connection, atoms, 2, true);
+    _XROOTPMAP_ID = get_atom_or_fallback("_XROOTPMAP_ID", &_XROOTPMAP_ID);
+    ESETROOT_PMAP_ID =
+        get_atom_or_fallback("ESETROOT_PMAP_ID", &ESETROOT_PMAP_ID);
 
     if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
         (_XROOTPMAP_ID != XCB_ATOM_NONE)) {
@@ -70,6 +69,7 @@ void setup_background(context_t *context) {
         void *data_xroot = xcb_get_property_value(reply_xroot);
 
         // kill background
+        xab_log(LOG_INFO, "Huan\n");
         if (reply_xroot->type == XCB_ATOM) {
             xcb_get_property_reply_t *reply_esetroot = xcb_get_property_reply(
                 context->connection,
@@ -94,8 +94,10 @@ void setup_background(context_t *context) {
             free(reply_xroot);
     }
 
-    config.only_if_exists = false;
-    load_atoms(context, &config);
+    load_atoms(context->connection, atoms, 2, false);
+    _XROOTPMAP_ID = get_atom_or_fallback("_XROOTPMAP", &_XROOTPMAP_ID);
+    ESETROOT_PMAP_ID =
+        get_atom_or_fallback("ESETROOT_PMAP_ID", &ESETROOT_PMAP_ID);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
         xab_log(LOG_FATAL, "Creation of background pixmap property failed!\n");
@@ -159,14 +161,13 @@ static void set_background_pixmap(context_t *context) {
 
 static xcb_window_t *find_desktop(context_t *context) {
     xab_log(LOG_VERBOSE, "Finding desktop background window\n");
-    const char *atom_filters[] = {"_NET_WM_WINDOW_TYPE",
-                                  "_NET_WM_WINDOW_TYPE_DESKTOP"};
-
-    load_atoms_config_t config = {.only_if_exists = true,
-                                  .filters = atom_filters,
-                                  .filter_len = 2,
-                                  .override = true};
-    load_atoms(context, &config);
+    const char *atoms[] = {"_NET_WM_WINDOW_TYPE",
+                           "_NET_WM_WINDOW_TYPE_DESKTOP"};
+    load_atoms(context->connection, atoms, 2, true);
+    _NET_WM_WINDOW_TYPE =
+        get_atom_or_fallback("_NET_WM_WINDOW_TYPE", &_NET_WM_WINDOW_TYPE);
+    _NET_WM_WINDOW_TYPE_DESKTOP = get_atom_or_fallback(
+        "_NET_WM_WINDOW_TYPE_DESKTOP", &_NET_WM_WINDOW_TYPE_DESKTOP);
 
     if (!_NET_WM_WINDOW_TYPE) {
         xab_log(LOG_DEBUG,

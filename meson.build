@@ -166,6 +166,8 @@ xcb_deps = [
 epoxy_dep = dependency('epoxy')
 egl_dep = dependency('egl')
 
+hashmap_c_dep = dependency('hashmap.c')
+
 # --- optional dependencies ---
 multimonitor_feature = get_option('multimonitor')
 
@@ -184,6 +186,7 @@ deps = xcb_deps + [
   egl_dep,
   cglm_dep,
   xrandr_dep,
+  hashmap_c_dep,
   c_compiler.find_library('m'),
   video_reader_deps,
   tracy_dep,

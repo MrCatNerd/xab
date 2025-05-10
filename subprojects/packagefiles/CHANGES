@@ -6,3 +6,6 @@
 
 * bce-1.3:
 - i assigned a variable to the executable thingy so i can use get_variable from a meson subproject thingy
+
+* hashmap.c:
+- added a meson.build file

@@ -1,0 +1,11 @@
+
+[wrap-git]
+directory = hashmap.c
+
+url = https://github.com/tidwall/hashmap.c.git
+revision = 1c139923fe08f36143ecc0ba37cd674684f87f9c
+depth = 1
+patch_directory = hashmap.c
+
+[provide]
+dependency_names = hashmap.c

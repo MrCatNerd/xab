@@ -21,7 +21,6 @@ will be implemented (probably)
 - dummy video player or smh
 - optimize the hell out of xab and decrease cpu usage as much as i can
 - pause rendering: https://github.com/glouw/paperview/issues/7
-- remake atom system
 - trace logs for more stuff
 - (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
 - use a c testing library instead of abusing meson's testing system, and use meson's testing system for different parts of xab (such as video readers, x11, opengl, etc)
