@@ -75,8 +75,10 @@ static void mainloop(void) {
     xcb_void_cookie_t cookie =
         xcb_map_window_checked(context.connection, context.screen->root);
     if ((error = xcb_request_check(context.connection, cookie)) != NULL) {
+        xab_log(LOG_FATAL, "Failed to map the root pixmap\n");
         free(error);
-        exit(-1);
+        xcb_disconnect(context.connection);
+        exit(EXIT_FAILURE);
     }
 
     struct timespec c1;

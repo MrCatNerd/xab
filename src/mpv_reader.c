@@ -43,7 +43,7 @@ VideoReaderState_t open_video(const char *path,
     xab_log(LOG_DEBUG, "Initializing mpv handle\n");
     internal_state->mpv_handle = mpv_create();
     if (!internal_state->mpv_handle) {
-        xab_log(LOG_ERROR, "Failed to create mpv context");
+        xab_log(LOG_FATAL, "Failed to create mpv context");
         exit(EXIT_FAILURE);
     }
 
@@ -53,7 +53,7 @@ VideoReaderState_t open_video(const char *path,
     // initialize mpv
     int mpv_err = mpv_initialize(internal_state->mpv_handle);
     if (mpv_err < MPV_ERROR_SUCCESS) {
-        xab_log(LOG_ERROR, "Failed to initialize mpv: %s",
+        xab_log(LOG_FATAL, "Failed to initialize mpv: %s",
                 mpv_error_string(mpv_err));
         exit(EXIT_FAILURE);
     }
@@ -86,7 +86,7 @@ VideoReaderState_t open_video(const char *path,
         mpv_render_context_create(&internal_state->mpv_glcontext,
                                   internal_state->mpv_handle, render_param);
     if (mpv_err < MPV_ERROR_SUCCESS) {
-        xab_log(LOG_ERROR, "Failed to initialize mpv GL context, %s",
+        xab_log(LOG_FATAL, "Failed to initialize mpv GL context, %s",
                 mpv_error_string(mpv_err));
         exit(EXIT_FAILURE);
     }
@@ -217,7 +217,7 @@ void render_video(VideoReaderState_t *state) {
             int mpv_err = mpv_render_context_render(
                 internal_state->mpv_glcontext, render_params);
             if (mpv_err < MPV_ERROR_SUCCESS) {
-                xab_log(LOG_ERROR, "Failed to render frame with mpv, %s",
+                xab_log(LOG_FATAL, "Failed to render frame with mpv, %s",
                         mpv_error_string(mpv_err));
                 exit(EXIT_FAILURE);
             }

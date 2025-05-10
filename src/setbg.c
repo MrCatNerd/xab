@@ -97,7 +97,8 @@ void setup_background(context_t *context) {
     load_atoms(context, &config);
 
     if (_XROOTPMAP_ID == XCB_ATOM_NONE || ESETROOT_PMAP_ID == XCB_ATOM_NONE) {
-        xab_log(LOG_ERROR, "Creation of background pixmap property failed!\n");
+        xab_log(LOG_FATAL, "Creation of background pixmap property failed!\n");
+        xcb_disconnect(context->connection);
         exit(EXIT_FAILURE);
     }
 
@@ -219,6 +220,7 @@ static xcb_window_t *find_desktop_recursive(context_t *context,
         NULL);
     if (!reply) {
         xab_log(LOG_FATAL, "xcb_query_tree failed!\n");
+        xcb_disconnect(context->connection);
         exit(EXIT_FAILURE);
     }
 

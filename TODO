@@ -2,6 +2,7 @@
 will be implemented (probably)
 
 * general
+- gracefully shut down on fatal errors
 - use damage rendering for the background with xcb-damage (also look into EGL_EXT_buffer_age)
 - texture abstraction
 - mt safe logging

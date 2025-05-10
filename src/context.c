@@ -3,6 +3,7 @@
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
+#include <stdlib.h>
 
 // libepoxy havn't updated their khoronos registry yet, there is an unmerged
 // pull request about it and I got nothing to about it until it gets merged :(
@@ -148,7 +149,12 @@ context_t context_create(struct argument_options *opts) {
 
     // choose OpenGL API for EGL, by default it uses OpenGL ES
     EGLBoolean ok = eglBindAPI(EGL_OPENGL_API);
-    Assert(ok == EGL_TRUE && "Failed to select OpenGL API for EGL");
+    if (ok != EGL_TRUE) {
+        xab_log(LOG_FATAL, "Failed to select an OpenGL API for EGL\n");
+        // TODO: gracefully shut down
+        xcb_disconnect(context.connection);
+        exit(EXIT_FAILURE);
+    }
 
     // choose EGL configuration
     EGLConfig config;
