@@ -50,6 +50,7 @@ void setup_background(context_t *context) {
         context->desktop_window = &context->screen->root;
 
     xab_log(LOG_VERBOSE, "Setting background atoms\n");
+
     // free the old background if exists
     const char *atom_filters[] = {"_XROOTPMAP", "ESETROOT_PMAP_ID"};
     load_atoms_config_t config = {.only_if_exists = true,
@@ -58,7 +59,7 @@ void setup_background(context_t *context) {
                                   .override = true};
     load_atoms(context, &config);
 
-    /* if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
+    if ((ESETROOT_PMAP_ID != XCB_ATOM_NONE) &&
         (_XROOTPMAP_ID != XCB_ATOM_NONE)) {
         xcb_get_property_reply_t *reply_xroot = xcb_get_property_reply(
             context->connection,
@@ -91,7 +92,7 @@ void setup_background(context_t *context) {
 
         if (reply_xroot)
             free(reply_xroot);
-    } */
+    }
 
     config.only_if_exists = false;
     load_atoms(context, &config);
