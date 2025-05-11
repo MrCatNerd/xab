@@ -1,4 +1,3 @@
-#include "logger.h"
 #include "pch.h"
 
 #include <stdint.h>
@@ -15,6 +14,7 @@ ATOMS(X)
 #undef X
 
 static int atom_manager_compare(const void *a, const void *b, void *udata) {
+    (void)(udata);
     const atom_item_t *atom_item_a = (const atom_item_t *)a;
     const atom_item_t *atom_item_b = (const atom_item_t *)b;
     return strcmp(atom_item_a->name, atom_item_b->name);
