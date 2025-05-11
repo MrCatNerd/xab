@@ -47,7 +47,7 @@ static void setup(struct argument_options *opts) {
 }
 
 static void mainloop(void) {
-    xab_log(LOG_DEBUG, "Runninng main loop...\n");
+    xab_log(LOG_DEBUG, "Running main loop...\n");
 
     ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Mainloop`\n");)
     TracyCZoneNC(tracy_ctx, "Mainloop", TRACY_COLOR_WHITE, true);
