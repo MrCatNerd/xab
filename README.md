@@ -87,7 +87,7 @@ Assuming you already have the building tools installed (e.g. gcc, meson, ninja, 
 
 for video reading, you must have one of the following:
 - mpv video reader (default):
-    * mpv (libmpv)
+    * libmpv
 - ffmpeg video reader:
     * libavutil
     * libavcodec
@@ -226,6 +226,7 @@ more comprehensive test for *all of the compenents of xab are (probably) on thei
 
 to run the tests:
 ```sh
+meson configure build -Dtests=true
 meson test -C build
 ```
 
