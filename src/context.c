@@ -351,3 +351,42 @@ context_t context_create(struct argument_options *opts) {
 
     return context;
 }
+
+void context_free(context_t *context) {
+    // close and clean up the videos
+    for (int i = 0; i < context->wallpaper_count; i++)
+        wallpaper_close(&context->wallpapers[i], &context->scache);
+    free(context->wallpapers);
+
+    // clean up framebuffer
+    delete_framebuffer(&context->framebuffer, &context->scache);
+
+    // clean up shader cache
+    shader_cache_cleanup(&context->scache);
+
+    // destroy the EGL context, surface, and display
+    xab_log(LOG_DEBUG, "Cleaning up EGL stuff\n");
+    if (context->context != EGL_NO_CONTEXT) {
+        eglMakeCurrent(context->display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                       EGL_NO_CONTEXT);
+        eglDestroyContext(context->display, context->context);
+    }
+    if (context->surface != EGL_NO_SURFACE) {
+        eglDestroySurface(context->display, context->surface);
+    }
+    if (context->display != EGL_NO_DISPLAY) {
+        eglTerminate(context->display);
+    }
+
+    // clean up background pixmap
+    xab_log(LOG_DEBUG, "Freeing the background pixmap\n");
+    xcb_free_pixmap(
+        context->connection,
+        context->background_pixmap); // i'm not sure if im supposed to clean
+                                     // this up cuz of the preserve thingy
+
+    // disconnect from the X server
+    xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
+    if (context->connection)
+        xcb_disconnect(context->connection);
+}

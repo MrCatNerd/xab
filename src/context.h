@@ -26,10 +26,11 @@ typedef struct context {
         monitor_t **monitors;
         int monitor_count;
 
-        ShaderCache_t scache; // TODO: use it
+        ShaderCache_t scache;
         FrameBuffer_t framebuffer;
         wallpaper_t *wallpapers;
         int wallpaper_count;
 } context_t;
 
 context_t context_create(struct argument_options *opts);
+void context_free(context_t *context);
