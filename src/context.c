@@ -306,7 +306,7 @@ context_t context_create(struct argument_options *opts) {
     context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
 
     // allocate the shader cache
-    context.scache = create_shader_cache(2); // reserve 2 shaders in the cache
+    context.scache = create_shader_cache();
 
     // create main framebuffer
     context.framebuffer = create_framebuffer(context.screen->width_in_pixels,

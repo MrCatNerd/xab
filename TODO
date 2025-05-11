@@ -7,7 +7,6 @@ will be implemented (probably)
 - mt safe logging
 - tests (meson test system) with with a dummy root window and stuff + unit tests
 - add more tracy zones and stuff
-- make the shader cache thingy delete the shader even if there is only 1 left and make it allocate a new head when it needs to
 - same video on multiple monitors
 - lazy rendering - (toggleable), if there are no new frames to draw than don't redraw - this will be on by default and can be turned off so if you have a time based shader or smh it'll still look good
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
