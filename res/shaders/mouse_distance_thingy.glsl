@@ -1,3 +1,4 @@
+// MODULES:mouse:u_mouse_pixel_pos|resolution:u_resolution|custom_vec3:u_mouse_color
 // fragment
 
 #version 330 core

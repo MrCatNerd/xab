@@ -8,7 +8,6 @@
 #include <libavutil/rational.h>
 #include <libswscale/swscale.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

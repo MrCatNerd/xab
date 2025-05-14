@@ -181,12 +181,20 @@ if xrandr_dep.found()
   add_project_arguments('-DHAVE_LIBXRANDR', language: 'c')
 endif
 
+module_system_feature = get_option('module_sys')
+pluginator_dep = dependency('pluginator', fallback: ['pluginator'], required: module_system_feature)
+if pluginator_dep.found()
+  add_project_arguments('-DHAVE_PLUGINATOR', language: 'c')
+endif
+
+
 deps = xcb_deps + [
   epoxy_dep,
   egl_dep,
   cglm_dep,
   xrandr_dep,
   hashmap_c_dep,
+  pluginator_dep,
   c_compiler.find_library('m'),
   video_reader_deps,
   tracy_dep,

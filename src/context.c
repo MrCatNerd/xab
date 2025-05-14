@@ -1,3 +1,4 @@
+#include "module.h"
 #include "pch.h"
 
 #include <epoxy/common.h>
@@ -348,6 +349,12 @@ context_t context_create(struct argument_options *opts) {
 
     xab_log(LOG_DEBUG, "Freeing atom manager\n");
     atom_manager_free();
+
+    xab_log(LOG_DEBUG, "Loading dummy module\n");
+    Module_t module = MODULE_INITIALIZER;
+    load_module(&module, "./modules/libdummy.so", &context);
+    module_dispatch(&module);
+    unload_module(&module);
 
     return context;
 }

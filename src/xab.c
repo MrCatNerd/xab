@@ -17,9 +17,7 @@
 #include "video_reader_interface.h"
 #include "logger.h"
 #include "framebuffer.h"
-#include "shader_cache.h"
 #include "setbg.h"
-#include "monitor.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
 

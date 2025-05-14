@@ -7,6 +7,7 @@ src_files += files(
   'egl_stuff.c',
   'framebuffer.c',
   'logger.c',
+  'module.c',
   'monitor.c',
   'mouse.c',
   'setbg.c',
@@ -20,3 +21,6 @@ src_files += files(
 
 # configure the file
 configure_file(input:'version.h.in', output:  'version.h', configuration: version_conf)
+
+# build all of the built in modules
+subdir('modules')

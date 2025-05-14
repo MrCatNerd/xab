@@ -3,6 +3,9 @@
 #include "pch.h"
 #include "length_string.h"
 
+#define FUNCTION_PTR(type, name, value, ...)                                   \
+    type (*name)(__VA_ARGS__) = (type (*)(__VA_ARGS__))(value)
+
 // replace this with your favorite Assert() implementation
 #define Assert(cond) assert(cond)
 

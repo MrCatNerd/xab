@@ -1,0 +1,10 @@
+[wrap-git]
+directory = pluginator
+
+url = https://github.com/MrCatNerd/pluginator.git
+# version 0.1.0
+revision = 3b250c1d9124b83b147f4878c3b03a85c4f89afd
+depth = 1
+
+[provide]
+dependency_names = pluginator

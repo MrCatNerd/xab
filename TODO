@@ -2,6 +2,7 @@
 will be implemented (probably)
 
 * general
+- document the whole module system
 - gracefully shut down on fatal errors
 - texture abstraction
 - mt safe logging

@@ -8,6 +8,20 @@ option(
 )
 
 option(
+  'module_sys',
+  type: 'feature',
+  value: 'auto',
+  description: 'Enable module system',
+)
+
+option(
+  'moduledir',
+  type: 'string',
+  value: '/usr/share/xab/',
+  description: 'Where the built in modules of xab exist',
+)
+
+option(
   'multimonitor',
   type: 'feature',
   value: 'auto',
