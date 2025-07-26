@@ -32,7 +32,6 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
         AV_HWDEVICE_TYPE_QSV,
         AV_HWDEVICE_TYPE_VULKAN,
         AV_HWDEVICE_TYPE_OPENCL,
-        AV_HWDEVICE_TYPE_D3D12VA,
         AV_HWDEVICE_TYPE_MEDIACODEC,
     };
     // clang-format on
