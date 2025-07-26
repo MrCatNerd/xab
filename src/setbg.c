@@ -69,7 +69,6 @@ void setup_background(context_t *context) {
         void *data_xroot = xcb_get_property_value(reply_xroot);
 
         // kill background
-        xab_log(LOG_INFO, "Huan\n");
         if (reply_xroot->type == XCB_ATOM) {
             xcb_get_property_reply_t *reply_esetroot = xcb_get_property_reply(
                 context->connection,
