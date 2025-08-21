@@ -26,7 +26,7 @@
 #include "camera.h"
 
 context_t context_create(struct argument_options *opts) {
-    context_t context;
+    context_t context = {0};
 
     xab_log(LOG_DEBUG, "Checking EGL extensions...\n");
     {
