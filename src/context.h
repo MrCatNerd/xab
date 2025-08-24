@@ -8,20 +8,16 @@
 #include "shader_cache.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
+#include "window.h"
+#include "x_data.h"
 
 typedef struct context {
-        xcb_connection_t *connection;
-        xcb_screen_t *screen;
-        int screen_nbr;
+        x_data_t xdata;
 
-        xcb_window_t *desktop_window;
-        xcb_pixmap_t background_pixmap;
-
-        EGLSurface *surface;
         EGLDisplay display;
-        EGLContext *context;
+        Window_t window;
 
-        camera_t camera;
+        Camera_t camera;
 
         monitor_t **monitors;
         int monitor_count;

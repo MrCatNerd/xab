@@ -137,12 +137,12 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     // second pass
     glBindFramebuffer(GL_FRAMEBUFFER, dest);
 
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glDisable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     // shader stuff
     glActiveTexture(GL_TEXTURE0);

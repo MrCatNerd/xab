@@ -1,3 +1,5 @@
-#define VERSION "@version@"
+#define VERSION_MAJOR "@version_major@"
+#define VERSION_MINOR "@version_minor@"
+#define VERSION_PATCH "@version_patch@"
 #define GIT_BRANCH "@branch@"
 #define GIT_COMMIT "@commit@"

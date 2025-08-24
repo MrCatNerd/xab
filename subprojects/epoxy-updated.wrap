@@ -1,0 +1,10 @@
+[wrap-git]
+directory = epoxy-updated
+
+url = https://github.com/MrCatNerd/libepoxy-updated.git
+revision = master
+depth = 1
+patch_directory = epoxy-updated
+
+[provide]
+dependency_names = epoxy

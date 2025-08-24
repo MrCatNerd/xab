@@ -9,3 +9,6 @@
 
 * hashmap.c:
 - added a meson.build file
+
+* epoxy-updated:
+- disabled tests in meson_options.txt

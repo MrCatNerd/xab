@@ -51,7 +51,7 @@ void wallpaper_init(float scale, int width, int height, int x, int y,
     dest->video = open_video(video_path, vrc, scache);
 }
 
-void wallpaper_render(wallpaper_t *wallpaper, camera_t *camera,
+void wallpaper_render(wallpaper_t *wallpaper, Camera_t *camera,
                       FrameBuffer_t *fbo_dest) {
     TracyCZoneNC(tracy_ctx, "WP_RENDER", TRACY_COLOR_WHITE, true);
 

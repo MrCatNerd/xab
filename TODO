@@ -2,6 +2,7 @@
 will be implemented (probably)
 
 * general
+- gracefully shut down when pressing the X button on XWINDOW (WM_DELETE_WINDOW?)
 - gracefully shut down on fatal errors
 - texture abstraction
 - mt safe logging

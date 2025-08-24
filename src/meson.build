@@ -1,7 +1,9 @@
 # list source files
 src_files += files(
   'arg_parser.c',
+  'x_data.c',
   'atom.c',
+  'window.c',
   'camera.c',
   'context.c',
   'egl_stuff.c',

@@ -11,6 +11,12 @@ project(
 
 # -- set version and git information -- #
 
+# parse version
+split_version = meson.project_version().split('.')
+version_major = split_version[0].to_int()
+version_minor = split_version[1].to_int()
+version_patch = split_version[2].to_int()
+
 # get the git info
 git_prog = find_program('git', required: false)
 if git_prog.found()
@@ -23,7 +29,9 @@ endif
 
 # set the configuration data
 version_conf = configuration_data()
-version_conf.set('version', meson.project_version())
+version_conf.set('version_major', version_major)
+version_conf.set('version_minor', version_minor)
+version_conf.set('version_patch', version_patch)
 version_conf.set('branch',git_branch)
 version_conf.set('commit',git_commit)
 
@@ -163,10 +171,9 @@ xcb_deps = [
   dependency('xproto'),
   dependency('xcb-util'),
 ]
-epoxy_dep = dependency('epoxy')
+epoxy_dep = dependency('epoxy-updated', fallback: 'epoxy-updated')
 egl_dep = dependency('egl')
-
-hashmap_c_dep = dependency('hashmap.c')
+hashmap_c_dep = dependency('hashmap.c', fallback: 'hashmap.c')
 
 # --- optional dependencies ---
 multimonitor_feature = get_option('multimonitor')

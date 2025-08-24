@@ -9,8 +9,8 @@
 
 #include "camera.h"
 
-camera_t create_camera(float x, float y, float rotation, ViewPortConfig_t vpc) {
-    camera_t camera = {
+Camera_t create_camera(float x, float y, float rotation, ViewPortConfig_t vpc) {
+    Camera_t camera = {
         .x = x,
         .y = y,
         .rotation = rotation,
@@ -23,25 +23,25 @@ camera_t create_camera(float x, float y, float rotation, ViewPortConfig_t vpc) {
     return camera;
 }
 
-void camera_move_and_rotate(camera_t *camera, float x, float y, float angle) {
+void camera_move_and_rotate(Camera_t *camera, float x, float y, float angle) {
     camera->x = x;
     camera->y = y;
     camera->rotation = angle;
     recalculate_view_matrix(camera);
 }
 
-void camera_move(camera_t *camera, float x, float y) {
+void camera_move(Camera_t *camera, float x, float y) {
     camera->x = x;
     camera->y = y;
     recalculate_view_matrix(camera);
 }
 
-void camera_rotate(camera_t *camera, float angle) {
+void camera_rotate(Camera_t *camera, float angle) {
     camera->rotation = angle;
     recalculate_view_matrix(camera);
 }
 
-void camera_reset_gl_viewport(camera_t *camera) {
+void camera_reset_gl_viewport(Camera_t *camera) {
     TracyCZoneNC(tracy_ctx, "CAMERA_RESET_GL_VP", TRACY_COLOR_GREY, true);
 
     // im not sure if this is accurate but it gets the job done
@@ -52,12 +52,12 @@ void camera_reset_gl_viewport(camera_t *camera) {
     TracyCZoneEnd(tracy_ctx);
 }
 
-void camera_change_viewport_config(camera_t *camera, ViewPortConfig_t vpc) {
+void camera_change_viewport_config(Camera_t *camera, ViewPortConfig_t vpc) {
     camera->vpc = vpc;
     recalculate_ortho_matrix(camera);
 }
 
-void recalculate_ortho_matrix(camera_t *camera) {
+void recalculate_ortho_matrix(Camera_t *camera) {
 #ifdef HAVE_LIBCGLM
     glm_ortho(camera->vpc.left, camera->vpc.right, camera->vpc.bottom,
               camera->vpc.top, camera->vpc.near, camera->vpc.far,
@@ -67,7 +67,7 @@ void recalculate_ortho_matrix(camera_t *camera) {
 #endif
 }
 
-void recalculate_view_matrix(camera_t *camera) {
+void recalculate_view_matrix(Camera_t *camera) {
 #ifdef HAVE_LIBCGLM
     mat4 transform;
 

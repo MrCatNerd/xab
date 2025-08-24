@@ -1,25 +1,11 @@
 #include "pch.h"
 #include <stdio.h>
 
-// libepoxy havn't updated their khoronos registry yet, there is an unmerged
-// pull request about it and I got nothing to about it until it gets merged :(
-#ifndef EGL_EXT_platform_xcb
-#define EGL_EXT_platform_xcb 1
-#endif /* EGL_EXT_platform_xcb */
-#ifndef EGL_PLATFORM_XCB_EXT
-#define EGL_PLATFORM_XCB_EXT 0x31DC
-#endif /* EGL_PLATFORM_XCB_EXT */
-#ifndef EGL_PLATFORM_XCB_SCREEN_EXT
-#define EGL_PLATFORM_XCB_SCREEN_EXT 0x31DE
-#endif /* EGL_PLATFORM_XCB_SCREEN_EXT */
-
 #include "context.h"
 #include "video_reader_interface.h"
 #include "logger.h"
 #include "framebuffer.h"
-#include "shader_cache.h"
 #include "setbg.h"
-#include "monitor.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
 
@@ -42,8 +28,8 @@ static void setup(struct argument_options *opts) {
 
     context = context_create(opts);
 
-    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Setup`\n");)
     TracyCZoneEnd(tracy_ctx);
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Setup`\n");)
 }
 
 static void mainloop(void) {
@@ -72,12 +58,12 @@ static void mainloop(void) {
 
     xcb_generic_error_t *error;
 
-    xcb_void_cookie_t cookie =
-        xcb_map_window_checked(context.connection, context.screen->root);
-    if ((error = xcb_request_check(context.connection, cookie)) != NULL) {
+    xcb_void_cookie_t cookie = xcb_map_window_checked(
+        context.xdata.connection, context.xdata.screen->root);
+    if ((error = xcb_request_check(context.xdata.connection, cookie)) != NULL) {
         xab_log(LOG_FATAL, "Failed to map the root pixmap\n");
         free(error);
-        xcb_disconnect(context.connection);
+        xcb_disconnect(context.xdata.connection);
         exit(EXIT_FAILURE);
     }
 
@@ -99,10 +85,10 @@ static void mainloop(void) {
         c1 = c2;
         da_time += delta;
 
-        xcb_get_geometry_cookie_t geometry_cookie =
-            xcb_get_geometry(context.connection, context.screen->root);
-        xcb_get_geometry_reply_t *geometry =
-            xcb_get_geometry_reply(context.connection, geometry_cookie, NULL);
+        xcb_get_geometry_cookie_t geometry_cookie = xcb_get_geometry(
+            context.xdata.connection, context.xdata.screen->root);
+        xcb_get_geometry_reply_t *geometry = xcb_get_geometry_reply(
+            context.xdata.connection, geometry_cookie, NULL);
         const int width = (int)geometry->width;
         const int height = (int)geometry->height;
 
@@ -139,10 +125,20 @@ static void mainloop(void) {
                 report_swap_video(&context.wallpapers[i].video);
 
             // swap the buffers to show output
-            if (!eglSwapBuffers(context.display, context.surface))
+            if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
 
-            update_background(&context);
+            switch (context.window.window_type) {
+            default:
+                break;
+            case XBACKGROUND:
+                update_background(&context.window.xpixmap, &context.xdata,
+                                  context.window.desktop_window);
+                break;
+            case XWINDOW:
+                break;
+            }
+
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
@@ -151,8 +147,8 @@ static void mainloop(void) {
         TracyCFrameMarkEnd("FrameRender");
     }
 
-    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Mainloop`\n");)
     TracyCZoneEnd(tracy_ctx);
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Mainloop`\n");)
 }
 
 static void cleanup(
@@ -168,8 +164,8 @@ static void cleanup(
     // todo: maybe i can free some of the memory earlier
     clean_opts(opts);
 
-    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Cleanup`\n");)
     TracyCZoneEnd(tracy_ctx);
+    ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Cleanup`\n");)
 
     printf("xab has shut down gracefully\n");
 }

@@ -8,7 +8,6 @@
 #include <libavutil/rational.h>
 #include <libswscale/swscale.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -105,7 +104,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     xab_log(LOG_TRACE, "Decoder: Finding video stream index\n", path);
     dst_dec->video_stream_idx =
         av_find_best_stream(dst_dec->av_format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1,
-                            (const AVCodec **)(&dst_dec->av_codec), 0);
+                            (AVCodec **)(&dst_dec->av_codec), 0);
 
     if (dst_dec->video_stream_idx < 0) {
         dst_dec->av_codec = NULL;
@@ -190,8 +189,8 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
             dst_dec->av_format_ctx->iformat->long_name);
 
     if (dst_dec->hw_ctx != NULL) {
-        xab_log(LOG_DEBUG, "Decoder: HW acceleration in use for video for "
-                           "video decoding good luck gpu\n");
+        xab_log(LOG_DEBUG, "Decoder: HW acceleration in use for video decoding "
+                           "good luck gpu\n");
     } else {
         xab_log(LOG_DEBUG, "Decoder: no HW acceleration in "
                            "use for video decoding :( good luck "

@@ -3,6 +3,8 @@
 #include "pch.h"
 #include "length_string.h"
 
+#include <assert.h>
+
 // replace this with your favorite Assert() implementation
 #define Assert(cond) assert(cond)
 

@@ -57,13 +57,14 @@ struct argument_options parse_args(int argc, char *argv[]) {
         const char *value = strtok(NULL, "=");
 
         if (!strcmp(token, "--version") || !strcmp(token, "-V")) {
-#ifndef VERSION
-#warning "VERSION macro is not set"
+#if defined(VERSION_MAJOR) && defined(VERSION_MINOR) && defined(VERSION_PATCH)
+            printf("%s.%s.%s (git %s:%s)\n", VERSION_MAJOR, VERSION_MINOR,
+                   VERSION_PATCH, GIT_BRANCH, GIT_COMMIT);
+#else
+#warning "VERSION macros are not set"
             printf("no version was specified while building\n");
             exit(EXIT_SUCCESS);
 #endif
-
-            printf("%s (git %s:%s)\n", VERSION, GIT_BRANCH, GIT_COMMIT);
 
             exit(EXIT_SUCCESS);
         }

@@ -80,7 +80,6 @@ Assuming you already have the building tools installed (e.g. gcc, meson, ninja, 
 * xcb
 * xcb-util
 * xproto
-* libepoxy
 * libGL
 * libEGL
 * video reader dependencies
@@ -99,7 +98,7 @@ for video reading, you must have one of the following:
 <summary>Debian distributions (e.g. Ubuntu) with apt</summary>
 
 ```sh
-sudo apt-get install libepoxy-dev libxcb1-dev libxcb-util0-dev x11proto-dev \
+sudo apt-get install libxcb1-dev libxcb-util0-dev x11proto-dev \
     libgl1-mesa-dev libegl1-mesa-dev
 
 # mpv video reader:
