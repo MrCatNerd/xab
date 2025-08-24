@@ -136,7 +136,7 @@ context_t context_create(struct argument_options *opts) {
     }
 
     // initialize window
-    context.window = init_window(XWINDOW, context.display, &context.xdata);
+    context.window = init_window(XBACKGROUND, context.display, &context.xdata);
 
 #ifdef ENABLE_OPENGL_DEBUG_CALLBACK
     // enable debug callback
