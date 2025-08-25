@@ -171,6 +171,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
         }
     }
 
+    xab_log(LOG_DEBUG, "Making window's EGL surface current\n");
     if (!eglMakeCurrent(display, win.surface, win.surface, win.context))
         xab_log(LOG_FATAL, "Failed to make EGL surface current: %s",
                 get_EGL_error_string(eglGetError())); // TODO: handle the error
