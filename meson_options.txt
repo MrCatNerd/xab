@@ -51,6 +51,13 @@ option(
 )
 
 option(
+  'experimental',
+  type: 'boolean',
+  value: false,
+  description: 'Enable experimental changes',
+)
+
+option(
   'nopch',
   type: 'boolean',
   value: false,

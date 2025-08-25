@@ -163,6 +163,12 @@ if disable_bce
   add_project_arguments('-DDISABLE_BCE', language: 'c')
 endif
 
+# --- experimental changes ---
+enable_experimental_changes = get_option('experimental')
+if enable_experimental_changes
+  add_project_arguments('-DENABLE_EXPERIMENTAL_CHANGES', language: 'c')
+endif
+
 # --- dependencies ---
 xcb_deps = [
   dependency('xcb'),
