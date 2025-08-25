@@ -100,7 +100,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
         }
     }
 
-    // create/get the window's pixmap
+    // create/get the window's pixmap/window
     switch (win.window_type) {
     default:
         xab_log(LOG_WARN, "Unknown window type! defaulting to XWINDOW\n");
@@ -191,9 +191,6 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
                win.xwindow != NULL && "Invalid xcb window/pixmap");
         switch (win.window_type) {
         case XBACKGROUND:
-            win.surface =
-                eglCreateWindowSurface(display, config, win.xpixmap, attr);
-            break;
         case XWINDOW:
         default:
             win.surface =
