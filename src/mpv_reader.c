@@ -47,6 +47,13 @@ VideoReaderState_t open_video(const char *path,
         exit(EXIT_FAILURE);
     }
 
+    {
+        // reverse of MPV_MAKE_VERSION
+        unsigned long mpv_version = mpv_client_api_version();
+        xab_log(LOG_DEBUG, "libmpv version: %d.%d\n", mpv_version >> 16,
+                mpv_version & 0xFFFF);
+    }
+
     // set some options
     set_init_mpv_options(&state);
 
@@ -100,7 +107,7 @@ VideoReaderState_t open_video(const char *path,
 
     // set some more options
     xab_log(LOG_DEBUG, "Setting mpv options\n");
-#ifndef NDEBUG
+#if false // I'm too lazy to make an option
     mpv_request_log_messages(internal_state->mpv_handle, "debug");
 #else
     mpv_request_log_messages(internal_state->mpv_handle, "no");
@@ -164,17 +171,15 @@ static void set_init_mpv_options(VideoReaderState_t *state) {
 
     // loop the video
     mpv_set_option_string(internal_state->mpv_handle, "loop", "yes");
-    // mpv_set_option_string(internal_state->mpv_handle, "loop-playlist",
-    // "yes"); // hmmmmmm
+// mpv_set_option_string(internal_state->mpv_handle, "loop-playlist",
+// "yes"); // hmmmmmm
 
-    // print annoying stuff to the terminal in debug mode
-#ifndef NDEBUG
+// print annoying stuff to the terminal in debug mode
+#if false // I'm too lazy to make an option
     mpv_set_option_string(internal_state->mpv_handle, "terminal", "yes");
 #else
-    // mpv_set_option_string(internal_state->mpv_handle, "terminal",
-    //                       "yes"); // todo: change to no when done doing stuff
     mpv_set_option_string(internal_state->mpv_handle, "terminal", "no");
-#endif /* ifndef NDEBUG */
+#endif
 
     // do not load config from ~/.config/mpv/
     // mpv_set_option_string(

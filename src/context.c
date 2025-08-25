@@ -119,11 +119,14 @@ context_t context_create(struct argument_options *opts) {
 #endif /* HAVE_LIBXRANDR */
 
         // don't assert not on debug mode
-#ifndef NDEBUG
-        pretty_print_egl_check(false, "eglInitialize call");
+        pretty_print_egl_check(
+#ifdef ENABLE_OPENGL_DEBUG_CALLBACK
+            // true, // TODO: fix weird libmpv stuff
+            false,
 #else
-        pretty_print_egl_check(true, "eglInitialize call");
+            false,
 #endif
+            "eglInitialize call");
     }
 
     // choose OpenGL API for EGL, by default it uses OpenGL ES

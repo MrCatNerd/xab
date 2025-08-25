@@ -5,6 +5,9 @@
 #include "logger.h"
 #include "utils.h"
 
+/// Return a description of the specified EGL error
+const char *get_EGL_error_string(EGLint error);
+
 void pretty_print_egl_check(int do_assert_on_failure, const char *message);
 
 #ifdef ENABLE_OPENGL_DEBUG_CALLBACK

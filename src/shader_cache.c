@@ -47,7 +47,7 @@ ShaderCache_t create_shader_cache(void) {
     ShaderCache_t scache = {
         .cache = hashmap_new(sizeof(ShaderItem_t), 0, 0, 0, shader_cache_hash,
                              shader_cache_compare, NULL, NULL)};
-    Assert(scache->cache != NULL);
+    Assert(scache.cache != NULL);
 
     return scache;
 }
@@ -87,7 +87,8 @@ Shader_t *shader_cache_create_or_cache_shader(const char *vertex_path,
     shader_item = (ShaderItem_t *)hashmap_get(
         scache->cache,
         &(ShaderItem_t){.shader.paths = {vertex_path, fragment_path}});
-    Assert(shader != NULL && "Shader is NULL for some strange reason, rip\n");
+    Assert(shader_item != NULL &&
+           "Shader is NULL for some strange reason, rip\n");
 
     return &shader_item->shader;
 }

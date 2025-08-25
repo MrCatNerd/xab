@@ -2,6 +2,7 @@
 #include <xcb/xproto.h>
 
 #include "window.h"
+#include "egl_stuff.h"
 #include "logger.h"
 #include "setbg.h"
 
@@ -72,7 +73,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
             EGL_CONTEXT_MAJOR_VERSION, gl_versions[i].major,
             EGL_CONTEXT_MINOR_VERSION, gl_versions[i].minor,
             EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
-#ifndef NDEBUG
+#ifdef ENABLE_OPENGL_DEBUG_CALLBACK 
             // ask for debug context for non "Release" builds
             // this is so we can enable debug callback
             EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
@@ -171,8 +172,8 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
     }
 
     if (!eglMakeCurrent(display, win.surface, win.surface, win.context))
-        xab_log(LOG_FATAL, "Failed to make EGL surface current (%d)",
-                eglGetError()); // TODO: handle the error
+        xab_log(LOG_FATAL, "Failed to make EGL surface current: %s",
+                get_EGL_error_string(eglGetError())); // TODO: handle the error
 
     return win;
 }
