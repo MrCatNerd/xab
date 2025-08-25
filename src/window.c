@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
@@ -103,7 +104,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
     switch (win.window_type) {
     default:
         xab_log(LOG_WARN, "Unknown window type! defaulting to XWINDOW\n");
-    case XWINDOW:;
+    case XWINDOW: {
         xab_log(LOG_DEBUG, "Creating window's xcb window\n");
         win.xwindow = xcb_generate_id(xdata->connection);
         const uint32_t mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -120,9 +121,17 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
         xcb_map_window(xdata->connection, win.xwindow);
         // TODO: gracefully shut down when pressing the X button
         // (WM_DELETE_WINDOW?)
-        break;
+    } break;
     case XBACKGROUND:
-        xab_log(LOG_DEBUG, "Creating window's xcb pixmap\n");
+        // i still wanna explore the pixmap option more in the future so imma
+        // leave it here
+        //
+        // NOTE: to future self if using pixmap option:
+        // replace eglCreateWindowSurface with eglCreatePixmapSurface
+        // remove: EGL_RENDER_BUFFER, EGL_BACK_BUFFER - at the EGL surface
+        // attribute
+        //
+        /* xab_log(LOG_DEBUG, "Creating window's xcb pixmap\n");
         win.xpixmap = xcb_generate_id(xdata->connection);
         xcb_create_pixmap(xdata->connection, xdata->screen->root_depth,
                           win.xpixmap, xdata->screen->root,
@@ -130,10 +139,36 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
                           xdata->screen->height_in_pixels);
         xcb_clear_area(xdata->connection, 0, win.xpixmap, 0, 0,
                        xdata->screen->width_in_pixels,
-                       xdata->screen->height_in_pixels);
+                       xdata->screen->height_in_pixels); */
 
-        xab_log(LOG_DEBUG, "Setting up and finding background window\n");
-        win.desktop_window = setup_background(win.xpixmap, xdata);
+        {
+            xab_log(LOG_DEBUG, "Creating window's xcb background window\n");
+            win.xwindow = xcb_generate_id(xdata->connection);
+
+            xcb_create_window(
+                xdata->connection, XCB_COPY_FROM_PARENT, win.xwindow,
+                xdata->screen->root, 0, 0, xdata->screen->width_in_pixels,
+                xdata->screen->height_in_pixels, 0,
+                XCB_WINDOW_CLASS_INPUT_OUTPUT, xdata->screen->root_visual,
+                XCB_CW_BACK_PIXMAP | XCB_CW_OVERRIDE_REDIRECT |
+                    XCB_CW_EVENT_MASK,
+                (uint32_t[]){
+                    XCB_NONE,
+                    true, // important:  XCB_CW_OVERRIDE_REDIRECT makes the WM
+                          // "ignore" the window (rtfm)
+                    XCB_EVENT_MASK_EXPOSURE,
+                });
+
+            // configure the window to be at the back
+            xcb_configure_window(xdata->connection, win.xwindow,
+                                 XCB_CONFIG_WINDOW_STACK_MODE,
+                                 (uint32_t[]){XCB_STACK_MODE_BELOW});
+
+            xcb_map_window(xdata->connection, win.xwindow);
+
+            xab_log(LOG_DEBUG, "Setting up and finding background window\n");
+            win.desktop_window = setup_background(win.xpixmap, xdata);
+        }
         break;
     }
     Assert(win.xwindow != NULL &&

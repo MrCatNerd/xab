@@ -127,18 +127,6 @@ static void mainloop(void) {
             // swap the buffers to show output
             if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
-
-            switch (context.window.window_type) {
-            default:
-                break;
-            case XBACKGROUND:
-                update_background(&context.window.xpixmap, &context.xdata,
-                                  context.window.desktop_window);
-                break;
-            case XWINDOW:
-                break;
-            }
-
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
