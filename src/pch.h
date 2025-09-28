@@ -36,6 +36,7 @@
 #include "ansii_colors.h"
 #include "vertex.h"
 #include "tracy.h"
+#include "x_data.h"
 
 // these ones might be a bad idea
 #include "framebuffer.h"
