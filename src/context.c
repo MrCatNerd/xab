@@ -85,7 +85,7 @@ context_t context_create(struct argument_options *opts) {
             xab_log(LOG_FATAL, "Cannot initialize EGL display.\n");
             exit(EXIT_FAILURE);
         }
-        if (major < 1 || minor < 5) {
+        if (major * 10 + minor < 15) {
             xab_log(LOG_FATAL,
                     "EGL version 1.5 or higher required. you are "
                     "currently on version: %d.%d\n",
