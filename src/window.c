@@ -151,11 +151,6 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
         win.desktop_window = setup_background(win.xwindow, xdata);
     } break;
     case XPIXMAP_BACKGROUND:
-        // NOTE: to future self if using pixmap option:
-        // replace eglCreateWindowSurface with eglCreatePixmapSurface
-        // remove: EGL_RENDER_BUFFER, EGL_BACK_BUFFER - at the EGL surface
-        // attribute
-        //
         xab_log(LOG_DEBUG, "Creating window's xcb pixmap\n");
         win.xpixmap = xcb_generate_id(xdata->connection);
         xcb_create_pixmap(xdata->connection, xdata->screen->root_depth,
@@ -178,24 +173,15 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
 
     Assert(win.xpixmap != NULL ||
            win.xwindow != NULL && "Invalid xcb window/pixmap");
-    switch (win.window_type) {
-    case XPIXMAP_BACKGROUND:;
-        // clang-format off
+
+    // clang-format off
         const EGLint pixmap_attr[] = {
 #ifdef EGL_KHR_gl_colorspace
             EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_SRGB,
 #endif
             EGL_NONE,
         };
-        // clang-format on
 
-        win.surface =
-            eglCreatePixmapSurface(display, config, win.xpixmap, pixmap_attr);
-        break;
-    case XWINDOW_BACKGROUND:
-    case XWINDOW:
-    default:;
-        // clang-format off
         const EGLint window_attr[] = {
 #ifdef EGL_KHR_gl_colorspace
             EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_SRGB,
@@ -203,7 +189,16 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
             EGL_RENDER_BUFFER, EGL_BACK_BUFFER,
             EGL_NONE,
         };
-        // clang-format on
+    // clang-format on
+
+    switch (win.window_type) {
+    case XPIXMAP_BACKGROUND:;
+        win.surface =
+            eglCreateWindowSurface(display, config, win.xpixmap, pixmap_attr);
+        break;
+    case XWINDOW_BACKGROUND:
+    case XWINDOW:
+    default:;
         win.surface =
             eglCreateWindowSurface(display, config, win.xwindow, window_attr);
         break;
