@@ -139,7 +139,8 @@ context_t context_create(struct argument_options *opts) {
     }
 
     // initialize window
-    context.window = init_window(XBACKGROUND, context.display, &context.xdata);
+    context.window =
+        init_window(XWINDOW_BACKGROUND, context.display, &context.xdata);
 
 #ifdef ENABLE_OPENGL_DEBUG_CALLBACK
     // enable debug callback
@@ -230,8 +231,8 @@ context_t context_create(struct argument_options *opts) {
                        &context.wallpapers[i], opts->hw_accel, &context.scache);
     }
 
-    // cleanup the monitors cuz we just copied the monitor data to the wallpaper
-    // thingy
+    // cleanup the monitors cuz we just copied the monitor data to the
+    // wallpaper thingy
     cleanup_monitors(context.monitor_count, context.monitors);
 
     xab_log(LOG_DEBUG, "Freeing atom manager\n");

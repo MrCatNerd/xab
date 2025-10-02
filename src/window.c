@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
@@ -26,7 +27,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
 
     // choose EGL configuration
     xab_log(LOG_DEBUG, "Choosing window's EGL configuration\n");
-    EGLConfig config;
+    EGLConfig config = NULL;
     {
         const unsigned int red_size = count_bits(xdata->visual->red_mask);
         const unsigned int green_size = count_bits(xdata->visual->green_mask);
@@ -122,16 +123,40 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
         // TODO: gracefully shut down when pressing the X button
         // (WM_DELETE_WINDOW?)
     } break;
-    case XBACKGROUND:
-        // i still wanna explore the pixmap option more in the future so imma
-        // leave it here
-        //
+    case XWINDOW_BACKGROUND: {
+        xab_log(LOG_DEBUG, "Creating window's xcb background window\n");
+        win.xwindow = xcb_generate_id(xdata->connection);
+
+        xcb_create_window(
+            xdata->connection, XCB_COPY_FROM_PARENT, win.xwindow,
+            xdata->screen->root, 0, 0, xdata->screen->width_in_pixels,
+            xdata->screen->height_in_pixels, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            xdata->screen->root_visual,
+            XCB_CW_BACK_PIXMAP | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK,
+            (uint32_t[]){
+                XCB_NONE,
+                true, // important:  XCB_CW_OVERRIDE_REDIRECT makes the WM
+                      // "ignore" the window (rtfm)
+                XCB_EVENT_MASK_EXPOSURE,
+            });
+
+        // configure the window to be at the back
+        xcb_configure_window(xdata->connection, win.xwindow,
+                             XCB_CONFIG_WINDOW_STACK_MODE,
+                             (uint32_t[]){XCB_STACK_MODE_BELOW});
+
+        xcb_map_window(xdata->connection, win.xwindow);
+
+        xab_log(LOG_DEBUG, "Setting up and finding background window\n");
+        win.desktop_window = setup_background(win.xwindow, xdata);
+    } break;
+    case XPIXMAP_BACKGROUND:
         // NOTE: to future self if using pixmap option:
         // replace eglCreateWindowSurface with eglCreatePixmapSurface
         // remove: EGL_RENDER_BUFFER, EGL_BACK_BUFFER - at the EGL surface
         // attribute
         //
-        /* xab_log(LOG_DEBUG, "Creating window's xcb pixmap\n");
+        xab_log(LOG_DEBUG, "Creating window's xcb pixmap\n");
         win.xpixmap = xcb_generate_id(xdata->connection);
         xcb_create_pixmap(xdata->connection, xdata->screen->root_depth,
                           win.xpixmap, xdata->screen->root,
@@ -139,36 +164,10 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
                           xdata->screen->height_in_pixels);
         xcb_clear_area(xdata->connection, 0, win.xpixmap, 0, 0,
                        xdata->screen->width_in_pixels,
-                       xdata->screen->height_in_pixels); */
+                       xdata->screen->height_in_pixels);
 
-        {
-            xab_log(LOG_DEBUG, "Creating window's xcb background window\n");
-            win.xwindow = xcb_generate_id(xdata->connection);
-
-            xcb_create_window(
-                xdata->connection, XCB_COPY_FROM_PARENT, win.xwindow,
-                xdata->screen->root, 0, 0, xdata->screen->width_in_pixels,
-                xdata->screen->height_in_pixels, 0,
-                XCB_WINDOW_CLASS_INPUT_OUTPUT, xdata->screen->root_visual,
-                XCB_CW_BACK_PIXMAP | XCB_CW_OVERRIDE_REDIRECT |
-                    XCB_CW_EVENT_MASK,
-                (uint32_t[]){
-                    XCB_NONE,
-                    true, // important:  XCB_CW_OVERRIDE_REDIRECT makes the WM
-                          // "ignore" the window (rtfm)
-                    XCB_EVENT_MASK_EXPOSURE,
-                });
-
-            // configure the window to be at the back
-            xcb_configure_window(xdata->connection, win.xwindow,
-                                 XCB_CONFIG_WINDOW_STACK_MODE,
-                                 (uint32_t[]){XCB_STACK_MODE_BELOW});
-
-            xcb_map_window(xdata->connection, win.xwindow);
-
-            xab_log(LOG_DEBUG, "Setting up and finding background window\n");
-            win.desktop_window = setup_background(win.xpixmap, xdata);
-        }
+        xab_log(LOG_DEBUG, "Setting up and finding background window\n");
+        win.desktop_window = setup_background(win.xpixmap, xdata);
         break;
     }
     Assert(win.xwindow != NULL &&
@@ -176,37 +175,51 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
 
     // create EGL surface
     xab_log(LOG_DEBUG, "Creating window's EGL surface\n");
-    {
+
+    Assert(win.xpixmap != NULL ||
+           win.xwindow != NULL && "Invalid xcb window/pixmap");
+    switch (win.window_type) {
+    case XPIXMAP_BACKGROUND:;
         // clang-format off
-        const EGLint attr[] = {
+        const EGLint pixmap_attr[] = {
 #ifdef EGL_KHR_gl_colorspace
-                EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_SRGB,
+            EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_SRGB,
+#endif
+            EGL_NONE,
+        };
+        // clang-format on
+
+        win.surface =
+            eglCreatePixmapSurface(display, config, win.xpixmap, pixmap_attr);
+        break;
+    case XWINDOW_BACKGROUND:
+    case XWINDOW:
+    default:;
+        // clang-format off
+        const EGLint window_attr[] = {
+#ifdef EGL_KHR_gl_colorspace
+            EGL_GL_COLORSPACE, EGL_GL_COLORSPACE_SRGB,
 #endif
             EGL_RENDER_BUFFER, EGL_BACK_BUFFER,
             EGL_NONE,
         };
         // clang-format on
-
-        Assert(win.xpixmap != NULL ||
-               win.xwindow != NULL && "Invalid xcb window/pixmap");
-        switch (win.window_type) {
-        case XBACKGROUND:
-        case XWINDOW:
-        default:
-            win.surface =
-                eglCreateWindowSurface(display, config, win.xwindow, attr);
-            break;
-        }
-        if (win.surface == EGL_NO_SURFACE) {
-            xab_log(LOG_FATAL, "Cannot create EGL surface\n");
-            // TODO: handle the error
-        }
+        win.surface =
+            eglCreateWindowSurface(display, config, win.xwindow, window_attr);
+        break;
+    }
+    if (win.surface == EGL_NO_SURFACE) {
+        xab_log(LOG_FATAL, "Cannot create EGL surface: %s\n",
+                get_EGL_error_string(eglGetError()));
+        // TODO: handle the error - imma just exit for now
+        exit(EXIT_FAILURE);
     }
 
     xab_log(LOG_DEBUG, "Making window's EGL surface current\n");
-    if (!eglMakeCurrent(display, win.surface, win.surface, win.context))
+    if (!eglMakeCurrent(display, win.surface, win.surface, win.context)) {
         xab_log(LOG_FATAL, "Failed to make EGL surface current: %s",
                 get_EGL_error_string(eglGetError())); // TODO: handle the error
+    }
 
     return win;
 }
@@ -220,7 +233,7 @@ void destroy_window(Window_t *win, EGLDisplay display, x_data_t *xdata) {
         break;
     case XWINDOW:
         break;
-    case XBACKGROUND:
+    case XWINDOW_BACKGROUND:
         xcb_free_pixmap(xdata->connection, win->xpixmap);
         break;
     }

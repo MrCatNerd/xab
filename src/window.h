@@ -2,8 +2,9 @@
 
 #include "x_data.h"
 typedef enum WindowType {
-    XBACKGROUND = 0,
-    XWINDOW = 1,
+    XWINDOW_BACKGROUND = 0,
+    XPIXMAP_BACKGROUND = 1,
+    XWINDOW = 2,
 } WindowType_e;
 
 typedef struct Window {
@@ -12,7 +13,7 @@ typedef struct Window {
                 xcb_window_t xwindow;
                 xcb_pixmap_t xpixmap;
         };
-        /// NOTE: NULL on XBACKGROUND
+        /// NOTE: NULL on XWINDOW
         xcb_window_t *desktop_window;
         EGLSurface *surface;
         EGLContext *context;

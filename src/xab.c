@@ -8,6 +8,7 @@
 #include "setbg.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
+#include "window.h"
 
 static context_t context;
 static bool keep_running = true;
@@ -123,6 +124,17 @@ static void mainloop(void) {
             // swap the buffers to show output
             if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
+
+            switch (context.window.window_type) {
+            case XPIXMAP_BACKGROUND:
+                update_background(&context.window.xpixmap, &context.xdata,
+                                  context.window.desktop_window);
+                break;
+            default:
+            case XWINDOW_BACKGROUND:
+            case XWINDOW:
+                break;
+            }
 
             // don't ask
             for (int i = 0; i < context.wallpaper_count; i++)

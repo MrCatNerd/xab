@@ -90,8 +90,11 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
 #endif /* HAVE_LIBXRANDR */
 
 void cleanup_monitors(int count, monitor_t **monitors) {
+    Assert(monitors != NULL);
     xab_log(LOG_DEBUG, "Freeing %d monitors\n", count);
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < count; i++) {
+        Assert(monitors[i] != NULL);
         free(monitors[i]);
+    }
     free(monitors); // free the array
 }
