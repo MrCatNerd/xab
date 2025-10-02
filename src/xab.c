@@ -120,13 +120,13 @@ static void mainloop(void) {
             // framebuffer end
             render_framebuffer_end_render(&context.framebuffer, 0, da_time);
 
-            // don't ask
-            for (int i = 0; i < context.wallpaper_count; i++)
-                report_swap_video(&context.wallpapers[i].video);
-
             // swap the buffers to show output
             if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
+
+            // don't ask
+            for (int i = 0; i < context.wallpaper_count; i++)
+                report_swap_video(&context.wallpapers[i].video);
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);

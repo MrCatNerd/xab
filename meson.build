@@ -152,8 +152,8 @@ endif
 
 # --- OpenGL stuff ---
 enable_opengl_debug_callback = get_option('opengl_debug_callback')
-# auto and debug or less or enabled
-if (enable_opengl_debug_callback.auto() and log_num <= 2) or enable_opengl_debug_callback.enabled()
+# mpv has some weird openGL errors, i need to look into it more
+if (enable_opengl_debug_callback.auto() and video_library != 'mpv') or enable_opengl_debug_callback.enabled()
   add_project_arguments('-DENABLE_OPENGL_DEBUG_CALLBACK', language: 'c')
 endif
 

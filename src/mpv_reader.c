@@ -16,11 +16,13 @@ typedef struct VRStateInternal {
         mpv_render_context *mpv_glcontext;
         FrameBuffer_t framebuffer;
         bool redraw_wakeup;
+        bool pending_event;
 } VRStateInternal_t;
 
 static void *(get_proc_address_mpv)(void *ctx, const char *name);
 static void on_mpv_render_update(void *ctx);
 static void on_mpv_events(void *ctx);
+static void handle_mpv_events(VRStateInternal_t *internal_state);
 static void set_init_mpv_options(VideoReaderState_t *state);
 
 VideoReaderState_t open_video(const char *path,
@@ -43,7 +45,7 @@ VideoReaderState_t open_video(const char *path,
     xab_log(LOG_DEBUG, "Initializing mpv handle\n");
     internal_state->mpv_handle = mpv_create();
     if (!internal_state->mpv_handle) {
-        xab_log(LOG_FATAL, "Failed to create mpv context");
+        xab_log(LOG_FATAL, "Failed to create mpv context\n");
         exit(EXIT_FAILURE);
     }
 
@@ -60,7 +62,7 @@ VideoReaderState_t open_video(const char *path,
     // initialize mpv
     int mpv_err = mpv_initialize(internal_state->mpv_handle);
     if (mpv_err < MPV_ERROR_SUCCESS) {
-        xab_log(LOG_FATAL, "Failed to initialize mpv: %s",
+        xab_log(LOG_FATAL, "Failed to initialize mpv: %s\n",
                 mpv_error_string(mpv_err));
         exit(EXIT_FAILURE);
     }
@@ -82,7 +84,7 @@ VideoReaderState_t open_video(const char *path,
     mpv_render_param render_param[] = {
         {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
         {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-         &(mpv_opengl_init_params){get_proc_address_mpv, NULL}},
+         &(mpv_opengl_init_params){get_proc_address_mpv, NULL, NULL}},
         {MPV_RENDER_PARAM_ADVANCED_CONTROL, &(int){1}},
         {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME, &(int){0}},
         {MPV_RENDER_PARAM_INVALID, NULL},
@@ -100,29 +102,31 @@ VideoReaderState_t open_video(const char *path,
 
     // set callback functions
     xab_log(LOG_DEBUG, "Setting mpv callbacks\n");
-    mpv_set_wakeup_callback(internal_state->mpv_handle, on_mpv_events, NULL);
+    mpv_set_wakeup_callback(internal_state->mpv_handle, on_mpv_events,
+                            state.internal);
     mpv_render_context_set_update_callback(internal_state->mpv_glcontext,
                                            on_mpv_render_update,
                                            &internal_state->redraw_wakeup);
 
     // set some more options
-    xab_log(LOG_DEBUG, "Setting mpv options\n");
+    xab_log(LOG_DEBUG, "Setting mpv log level\n");
 #if false // I'm too lazy to make an option
     mpv_request_log_messages(internal_state->mpv_handle, "debug");
 #else
-    mpv_request_log_messages(internal_state->mpv_handle, "no");
+    mpv_request_log_messages(internal_state->mpv_handle, "error");
 #endif
 
     // load the video file
+    xab_log(LOG_DEBUG, "Loading the video file\n");
     const char *cmd[] = {"loadfile", path, NULL};
     mpv_command(internal_state->mpv_handle, cmd);
 
-    // automatically decide whether to use hw decoding or not
-    mpv_set_option_string(internal_state->mpv_handle, "hwdec", "auto");
-
     // gpu api stuff
-    mpv_set_option_string(internal_state->mpv_handle, "gpu-context", "opengl");
-    mpv_set_option_string(internal_state->mpv_handle, "gpu-api", "opengl");
+    // mpv_set_option_string(internal_state->mpv_handle, "gpu-context",
+    // "x11egl");
+    // mpv_set_option_string(internal_state->mpv_handle, "gpu-context",
+    // "opengl");
+    // mpv_set_option_string(internal_state->mpv_handle, "gpu-api", "opengl");
 
     // enable / disable hardware acceleration
     {
@@ -195,6 +199,10 @@ void render_video(VideoReaderState_t *state) {
     TracyCZoneNC(tracy_ctx, "VIDEO_RENDER", TRACY_COLOR_GREEN, true);
 
     VRStateInternal_t *internal_state = VR_INTERNAL(state->internal);
+
+    // performance impact shouldn't noticable at all even when handling events
+    // so I didn't bother creating a thread that would sleep 99% of the time
+    handle_mpv_events(internal_state);
 
     // if mpv has a new frame, render it
     if (internal_state->redraw_wakeup) {
@@ -300,9 +308,40 @@ static void on_mpv_render_update(void *ctx) {
 }
 
 static void on_mpv_events(void *ctx) {
-    // i will do events later, probably, im not sure if i even need events
-    (void)ctx;
-    xab_log(LOG_VERBOSE, "%s was called\n", __func__);
+    if (!ctx) {
+        xab_log(LOG_ERROR, "mpv event callback context is NULL!");
+        return;
+    }
+    VR_INTERNAL(ctx)->pending_event = true;
+}
+
+static void handle_mpv_events(VRStateInternal_t *internal_state) {
+    Assert(internal_state != NULL && "Invalid internal state pointer!");
+    if (!internal_state->pending_event)
+        return;
+    internal_state->pending_event = false;
+    mpv_event *event = NULL;
+    while ((event = mpv_wait_event(internal_state->mpv_handle, 0))) {
+        if (!event)
+            break;
+        if (event->event_id == MPV_EVENT_NONE)
+            break;
+
+        switch (event->event_id) {
+        case MPV_EVENT_LOG_MESSAGE:
+            xab_log(LOG_VERBOSE, "Mpv log message: `%s`\n", event->data);
+            break;
+        case MPV_EVENT_IDLE:
+            xab_log(LOG_DEBUG, "Mpv state: idle\n");
+            break;
+        case MPV_EVENT_FILE_LOADED:
+            xab_log(LOG_DEBUG, "Mpv state: file loaded\n");
+            break;
+        case MPV_EVENT_NONE:
+        default:
+            break;
+        }
+    }
 }
 
 // dunno why i did that... don't care
