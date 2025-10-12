@@ -37,20 +37,21 @@
 > IPC is WIP!
 
 ## About this branch
-this is the ipc branch, which implements ipc through unix domain sockets
-you can use this with [xab-gui](https://github.com/MRcatNerd/xab-gui)
+this is the ipc branch, which implements ipc through unix domain sockets,
+you can use this with [xab-gui](https://github.com/MRcatNerd/xab-gui),
 it will be merged to main when all features are complete and stable enough
 
 > [!NOTE]
 > i will not raise the xab ipc protcol version in the spec until i merge to main!
 
 (planned / implemented) featuers:
-[x] version compatibilty check
-[x] epolls
-[x] multiple clients
-[ ] ipc message spec implementation
-[ ] add an event system to xab
-[ ] dynamic client context memory resizing (don't worry bout it)
+- [x] version compatibilty check
+- [x] epolls
+- [x] multiple clients
+- [ ] ipc message spec implementation
+- [ ] add an event system to xab
+- [ ] dynamic client context memory resizing (don't worry bout it)
+- [ ] other things lol
 
 ## Introduction
 xab (X11 Animated Background) is an overkill animated wallpaper setter for X11 that
