@@ -48,11 +48,10 @@ IPC_handle_t ipc_init(const char *name) {
             sizeof(handle.server_addr.sun_path) - 1);
 
     struct stat st = {0};
-    xab_log(LOG_DEBUG, "Creating IPC directory if missing: `%s`\n", IPC_DIR);
+    xab_log(LOG_DEBUG, "Creating directory if missing: `%s`\n", IPC_DIR);
     if (stat("/tmp/xab", &st) == -1) {
         if (mkdir(IPC_DIR, 1777) < 0)
-            xab_log(LOG_ERROR, "Failed creating IPC directory: `%s`\n",
-                    IPC_DIR);
+            xab_log(LOG_ERROR, "Failed creating directory: `%s`\n", IPC_DIR);
     }
 
     // bind socket
@@ -71,7 +70,7 @@ IPC_handle_t ipc_init(const char *name) {
         // TODO: handle error
     }
 
-    // edge-triggered epoll and stuff
+    // epoll and stuff
     if ((handle.epoll_fd = epoll_create1(0)) < 0) {
         xab_log(LOG_ERROR, "Failed to create epoll!\n");
         // TODO: handle the error
