@@ -92,27 +92,25 @@ static void mainloop(void) {
         c1 = c2;
         da_time += delta;
 
-        xcb_get_geometry_cookie_t geometry_cookie = xcb_get_geometry(
-            context.xdata.connection, context.xdata.screen->root);
-        xcb_get_geometry_reply_t *geometry = xcb_get_geometry_reply(
-            context.xdata.connection, geometry_cookie, NULL);
-        const int width = (int)geometry->width;
-        const int height = (int)geometry->height;
-        free(geometry);
-
         TracyCZoneEnd(tracy_ctx2);
 
-        // render only if window size is non-zero (minimized)
-        if (width != 0 && height != 0) {
-            // TODO: poll every 10 frames with modulo operator
+        if (context.window.width != 0 && context.window.height != 0) {
+            // poll ipc events
             ipc_poll_events(&ipc_handle, &context);
 
-            // TODO: either control ipc events from the context or create an
-            // event manager
+            // poll xcb events
+            xcb_generic_event_t *event = NULL;
+            while ((event = xcb_poll_for_event(context.xdata.connection))) {
+                uint8_t rt = event->response_type & ~0x80;
+                window_handle_xcb_event(&context.window, event, rt);
+                free(event);
+            }
 
             // setup output size covering all client area of window
-            glViewport(0, 0, width,
-                       height); // we have to set the Viewport on every cycle
+            glViewport(
+                0, 0, context.window.width,
+                context.window
+                    .height); // we have to set the Viewport on every cycle
 
             // clear screen
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -155,6 +153,7 @@ static void mainloop(void) {
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
+            printf("steve!\n");
         }
 
         TracyCFrameMarkEnd("FrameRender");

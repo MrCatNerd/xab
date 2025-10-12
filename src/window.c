@@ -216,7 +216,27 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
                 get_EGL_error_string(eglGetError())); // TODO: handle the error
     }
 
+    xcb_get_geometry_cookie_t geometry_cookie =
+        xcb_get_geometry(xdata->connection, xdata->screen->root);
+    xcb_get_geometry_reply_t *geometry =
+        xcb_get_geometry_reply(xdata->connection, geometry_cookie, NULL);
+    if (geometry) {
+        win.width = geometry->width;
+        win.height = geometry->height;
+        free(geometry);
+    }
+
     return win;
+}
+
+void window_handle_xcb_event(Window_t *win, xcb_generic_event_t *event,
+                             uint8_t rt) {
+    Assert(win != NULL && "Invalid window pointer!");
+
+    if (rt == XCB_CONFIGURE_NOTIFY) {
+        win->width = ((xcb_configure_notify_event_t *)event)->width;
+        win->height = ((xcb_configure_notify_event_t *)event)->height;
+    }
 }
 
 void destroy_window(Window_t *win, EGLDisplay display, x_data_t *xdata) {
