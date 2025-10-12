@@ -1,5 +1,6 @@
 # list source files
 src_files += files(
+  'ipc.c',
   'arg_parser.c',
   'x_data.c',
   'atom.c',

@@ -231,10 +231,6 @@ context_t context_create(struct argument_options *opts) {
                        &context.wallpapers[i], opts->hw_accel, &context.scache);
     }
 
-    // cleanup the monitors cuz we just copied the monitor data to the
-    // wallpaper thingy
-    cleanup_monitors(context.monitor_count, context.monitors);
-
     xab_log(LOG_DEBUG, "Freeing atom manager\n");
     atom_manager_free();
 
@@ -242,6 +238,9 @@ context_t context_create(struct argument_options *opts) {
 }
 
 void context_free(context_t *context) {
+    // can't clean up monitors right after init cuz IPC might request them
+    cleanup_monitors(context->monitor_count, context->monitors);
+
     // close and clean up the videos
     for (int i = 0; i < context->wallpaper_count; i++)
         wallpaper_close(&context->wallpapers[i], &context->scache);
@@ -267,4 +266,6 @@ void context_free(context_t *context) {
     xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
     if (context->xdata.connection)
         xcb_disconnect(context->xdata.connection);
+
+    exit(0);
 }

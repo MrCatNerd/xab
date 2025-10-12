@@ -88,7 +88,7 @@ Shader_t *shader_cache_create_or_cache_shader(const char *vertex_path,
         scache->cache,
         &(ShaderItem_t){.shader.paths = {vertex_path, fragment_path}});
     Assert(shader_item != NULL &&
-           "Shader is NULL for some strange reason, rip\n");
+           "Shader is NULL for some strange reason, rip");
 
     return &shader_item->shader;
 }

@@ -9,9 +9,14 @@
 #include "wallpaper.h"
 #include "arg_parser.h"
 #include "window.h"
+#include "ipc.h"
+#include "ipc_spec.h"
 
+// auuugggghh global variables scary
 static context_t context;
+static IPC_handle_t ipc_handle;
 static bool keep_running = true;
+
 static void handle_sigint(int sig);
 
 static void setup(struct argument_options *opts) {
@@ -27,6 +32,7 @@ static void setup(struct argument_options *opts) {
             "Currently in release mode\n"); // idk why i did that lol
 #endif
 
+    ipc_handle = ipc_init(IPC_PATH);
     context = context_create(opts);
 
     TracyCZoneEnd(tracy_ctx);
@@ -98,6 +104,12 @@ static void mainloop(void) {
 
         // render only if window size is non-zero (minimized)
         if (width != 0 && height != 0) {
+            // TODO: poll every 10 frames with modulo operator
+            ipc_poll_events(&ipc_handle, &context);
+
+            // TODO: either control ipc events from the context or create an
+            // event manager
+
             // setup output size covering all client area of window
             glViewport(0, 0, width,
                        height); // we have to set the Viewport on every cycle
@@ -179,6 +191,8 @@ int main(int argc, char *argv[]) {
     setup(&opts);
     mainloop();
     cleanup(&opts);
+
+    ipc_close(&ipc_handle);
 
     return EXIT_SUCCESS;
 }
