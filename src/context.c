@@ -267,5 +267,5 @@ void context_free(context_t *context) {
     if (context->xdata.connection)
         xcb_disconnect(context->xdata.connection);
 
-    exit(0);
+    xab_log(LOG_DEBUG, "Context was freed sucessfully\n");
 }
