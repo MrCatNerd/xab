@@ -336,7 +336,7 @@ void ipc_close(IPC_handle_t *handle) {
         handle->path = NULL;
     }
 
-    xab_log(LOG_DEBUG, "IPC connection has shut down gracefully\n");
+    xab_log(LOG_DEBUG, "IPC handle has shut down gracefully\n");
 }
 
 static int set_nonblocking(int sockfd) {
