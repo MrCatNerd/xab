@@ -92,6 +92,7 @@ static void mainloop(void) {
             context.xdata.connection, geometry_cookie, NULL);
         const int width = (int)geometry->width;
         const int height = (int)geometry->height;
+        free(geometry);
 
         TracyCZoneEnd(tracy_ctx2);
 
