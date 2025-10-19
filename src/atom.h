@@ -25,13 +25,16 @@ xcb_atom_t get_atom_or_fallback(const char *name, xcb_atom_t *fallback);
 void atom_manager_free(void);
 
 // these atoms will be accessible everywhere, without the need to call get_atom
-#define ATOM_COUNT 4
 #define ATOMS(X)                                                               \
     X(_XROOTPMAP_ID)                                                           \
     X(ESETROOT_PMAP_ID)                                                        \
     X(_NET_WM_WINDOW_TYPE)                                                     \
     X(_NET_WM_WINDOW_TYPE_DESKTOP)                                             \
     X(_NET_WM_DESKTOP)
+
+#define X +1
+#define ATOM_COUNT ATOMS(X)
+#undef X
 
 // the actuall atoms are created in atoms.c
 #define X(atom_name) extern xcb_atom_t atom_name;
