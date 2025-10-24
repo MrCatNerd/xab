@@ -1,9 +1,8 @@
-#include "pch.h"
-#include "hashmap.h"
+#include <hashmap.h>
 
-#include "shader_cache.h"
+#include "render/shader_cache.h"
 #include "logger.h"
-#include "shader.h"
+#include "render/shader.h"
 #include "utils.h"
 
 // TODO: find a way to print shorter filepaths (e.g. r/s/framebuffer_vertex.glsl

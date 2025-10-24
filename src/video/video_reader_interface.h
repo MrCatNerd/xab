@@ -1,8 +1,6 @@
 #pragma once
 
-#include "pch.h"
-
-#include "shader_cache.h"
+#include "render/shader_cache.h"
 
 // TODO: maybe expose the actual video with and height from the struct (not the
 // target width and height from VideoReaderRenderConfig)

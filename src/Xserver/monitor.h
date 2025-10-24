@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 typedef struct monitor {
         char *name;
         int id;

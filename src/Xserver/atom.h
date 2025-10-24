@@ -1,9 +1,8 @@
 #pragma once
 
-#include "length_string.h"
-#include "pch.h"
+#include <hashmap.h>
 
-#include "hashmap.h"
+#include "length_string.h"
 
 typedef struct atom_manager {
         struct hashmap *cache;

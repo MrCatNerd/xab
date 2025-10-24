@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 #include <xcb/xcb.h>
 
 typedef struct x_data {

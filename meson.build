@@ -103,10 +103,10 @@ add_project_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
 video_library = get_option('video_reader')
 video_reader_deps = []
 if video_library == 'mpv'
-  src_files += files('src/mpv_reader.c')
+  src_files += files('src/video/mpv_reader.c')
   video_reader_deps += dependency('mpv')
 elif video_library == 'ffmpeg'
-  subdir('src/ffmpeg_reader')
+  subdir('src/video/ffmpeg_reader')
   video_reader_deps += [
     dependency('threads'),
     dependency('libavcodec'),
@@ -205,13 +205,6 @@ deps = xcb_deps + [
   tracy_dep,
 ]
 
-# --- pch ---
-
-pch_files = [join_paths('src', 'pch.h')]
-if (get_option('nopch'))
-  pch_files = []
-endif
-
 # --- source files ---
 subdir('res/shaders')
 subdir('src')
@@ -220,7 +213,7 @@ subdir('src')
 executable(
   meson.project_name(),
   src_files,
-  c_pch: pch_files,
+  c_pch: get_option('nopch') ? [] : [join_paths('src', 'pch', 'pch.h')],
   link_args: extra_link_args,
   dependencies: deps,
   include_directories: project_include_dirs,

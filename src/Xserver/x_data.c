@@ -1,5 +1,6 @@
-#include "x_data.h"
+#include "Xserver/x_data.h"
 #include "logger.h"
+#include "utils.h"
 
 x_data_t x_data_from_xcb_connection(xcb_connection_t *connection,
                                     int screen_nbr) {

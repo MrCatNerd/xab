@@ -1,6 +1,4 @@
-#include "pch.h"
-
-#include "shader.h"
+#include "render/shader.h"
 #include "logger.h"
 #include "utils.h"
 

@@ -1,10 +1,12 @@
-#include "pch.h"
+#include <stdlib.h>
+#include <epoxy/gl.h>
 
-#include "framebuffer.h"
+#include "render/framebuffer.h"
 #include "logger.h"
-#include "shader.h"
-#include "shader_cache.h"
-#include "vertex.h"
+#include "render/shader.h"
+#include "render/shader_cache.h"
+#include "render/vertex.h"
+#include "tracy.h"
 
 // clang-format off
 static const Vertex_t vertices[] = {

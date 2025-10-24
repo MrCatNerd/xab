@@ -5,7 +5,6 @@
 #define LOG_LEVEL 3
 #endif
 
-#include "pch.h"
 #include "ansii_colors.h"
 
 typedef enum log_level {

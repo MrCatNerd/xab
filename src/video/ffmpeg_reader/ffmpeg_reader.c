@@ -11,8 +11,8 @@
 #include <libavformat/avio.h>
 #include <libavutil/pixfmt.h>
 
-#include "shader_cache.h"
-#include "video_reader_interface.h"
+#include "render/shader_cache.h"
+#include "video/video_reader_interface.h"
 #include "ffmpeg_reader/decoder.h"
 #include "logger.h"
 

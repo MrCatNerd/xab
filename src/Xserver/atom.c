@@ -1,10 +1,8 @@
-#include "pch.h"
-
 #include <stdint.h>
 #include <xcb/xproto.h>
 
 #include "hashmap.h"
-#include "atom.h"
+#include "Xserver/atom.h"
 
 atom_manager_t atom_manager = {.cache = NULL};
 

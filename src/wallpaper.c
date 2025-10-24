@@ -1,5 +1,6 @@
-#include "pch.h"
-#include "shader_cache.h"
+#include "render/shader_cache.h"
+
+#include <epoxy/gl.h>
 
 #ifdef HAVE_LIBCGLM
 #ifdef LOG_LEVEL
@@ -15,12 +16,13 @@
 #endif
 
 #include "wallpaper.h"
-#include "camera.h"
-#include "framebuffer.h"
+#include "render/camera.h"
+#include "render/framebuffer.h"
 #include "logger.h"
-#include "shader.h"
-#include "video_reader_interface.h"
-#include "shader_cache.h"
+#include "render/shader.h"
+#include "video/video_reader_interface.h"
+#include "render/shader_cache.h"
+#include "tracy.h"
 
 void wallpaper_init(float scale, int width, int height, int x, int y,
                     bool pixelated, const char *video_path, wallpaper_t *dest,

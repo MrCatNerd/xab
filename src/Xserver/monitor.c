@@ -1,8 +1,15 @@
-#include "pch.h"
+#include "Xserver/monitor.h"
 
-#include "monitor.h"
-#include "logger.h"
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <xcb/xcb.h>
+#ifdef HAVE_LIBXRANDR
+#include <xcb/randr.h>
+#endif /* HAVE_LIBXRANDR */
+
+#include "logger.h"
+#include "utils.h"
 
 void create_monitor(monitor_t *dst_monitor, char *name, int id, bool primary,
                     int x, int y, int width, int height) {

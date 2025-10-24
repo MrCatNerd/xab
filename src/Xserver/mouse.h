@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 typedef struct MousePosition {
         float mousex;
         float mousey;

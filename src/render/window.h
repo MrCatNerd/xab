@@ -1,6 +1,6 @@
 #pragma once
 
-#include "x_data.h"
+#include "Xserver/x_data.h"
 typedef enum WindowType {
     XWINDOW_BACKGROUND = 0,
     XPIXMAP_BACKGROUND = 1,

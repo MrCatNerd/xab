@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "render/camera.h"
+
 #ifdef HAVE_LIBCGLM
 #include <cglm/call.h>
 #include <cglm/cam.h>
@@ -7,7 +8,7 @@
 #include <cglm/util.h>
 #endif
 
-#include "camera.h"
+#include "tracy.h"
 
 Camera_t create_camera(float x, float y, float rotation, ViewPortConfig_t vpc) {
     Camera_t camera = {

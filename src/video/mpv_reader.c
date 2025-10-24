@@ -1,13 +1,16 @@
-#include "pch.h"
-
+#include <stdlib.h>
+#include <string.h>
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
+#include <epoxy/egl.h>
 
-#include "shader_cache.h"
-#include "video_reader_interface.h"
+#include "render/shader_cache.h"
+#include "video/video_reader_interface.h"
 #include "logger.h"
-#include "framebuffer.h"
+#include "render/framebuffer.h"
+#include "utils.h"
+#include "tracy.h"
 
 // im too lazy to type 5 extra characters
 #define VR_INTERNAL(vrs) ((VRStateInternal_t *)vrs)
@@ -67,9 +70,6 @@ VideoReaderState_t open_video(const char *path,
         exit(EXIT_FAILURE);
     }
 
-    // run again after mpv_initialize to override options in config files
-    set_init_mpv_options(&state);
-
     // force libmpv vo as nothing else will work
     char *vo_option =
         mpv_get_property_string(internal_state->mpv_handle, "options/vo");
@@ -79,6 +79,9 @@ VideoReaderState_t open_video(const char *path,
                     "xab does not support any other mpv vo than \"libmpv\"\n");
         mpv_set_option_string(internal_state->mpv_handle, "vo", "libmpv");
     }
+
+    // run again after mpv_initialize to override options in config files
+    set_init_mpv_options(&state);
 
     xab_log(LOG_DEBUG, "Initializing mpv render context\n");
     mpv_render_param render_param[] = {
@@ -121,33 +124,6 @@ VideoReaderState_t open_video(const char *path,
     const char *cmd[] = {"loadfile", path, NULL};
     mpv_command(internal_state->mpv_handle, cmd);
 
-    // gpu api stuff
-    // mpv_set_option_string(internal_state->mpv_handle, "gpu-context",
-    // "x11egl");
-    // mpv_set_option_string(internal_state->mpv_handle, "gpu-context",
-    // "opengl");
-    // mpv_set_option_string(internal_state->mpv_handle, "gpu-api", "opengl");
-
-    // enable / disable hardware acceleration
-    {
-        // 'auto' is the default
-        char *hwdec_opt = "auto";
-        switch (vr_config.hw_accel) {
-        case VR_HW_ACCEL_NO:
-            hwdec_opt = "no";
-            break;
-        case VR_HW_ACCEL_YES:
-            hwdec_opt = "yes";
-            break;
-        default:
-        case VR_HW_ACCEL_AUTO:
-            hwdec_opt = "auto";
-            break;
-        }
-        xab_log(LOG_VERBOSE, "Video hardware acceleration: %s\n", hwdec_opt);
-        mpv_set_option_string(internal_state->mpv_handle, "hwdec", hwdec_opt);
-    }
-
     // mpv must resize the video to the framebuffer without padding/keeping the
     // aspect ratio
     mpv_set_option_string(internal_state->mpv_handle, "video-unscaled", "yes");
@@ -162,6 +138,27 @@ VideoReaderState_t open_video(const char *path,
 
 static void set_init_mpv_options(VideoReaderState_t *state) {
     VRStateInternal_t *internal_state = VR_INTERNAL(state->internal);
+
+    // enable / disable hardware acceleration
+    {
+        // 'auto' is the default
+        char *hwdec_opt = "auto";
+        switch (state->vrc.hw_accel) {
+        case VR_HW_ACCEL_NO:
+            hwdec_opt = "no";
+            break;
+        case VR_HW_ACCEL_YES:
+            hwdec_opt = "yes";
+            break;
+        default:
+        case VR_HW_ACCEL_AUTO:
+            hwdec_opt = "auto";
+            break;
+        }
+        // TODO: prevent log twice
+        xab_log(LOG_VERBOSE, "Video hardware acceleration: %s\n", hwdec_opt);
+        mpv_set_option_string(internal_state->mpv_handle, "hwdec", hwdec_opt);
+    }
 
     // point filtering (pixelated video)
     if (state->vrc.pixelated) {
@@ -287,11 +284,7 @@ void report_swap_video(VideoReaderState_t *state) {
     // function. If you use it inconsistently, expect bad video playback. If
     // this is called while no video is initialized, it is ignored. */
     // - from mpv_render_context_report_swap doc
-    VRStateInternal_t *internal_state = VR_INTERNAL(state->internal);
-    if (internal_state->redraw_wakeup) {
-        mpv_render_context_report_swap(
-            VR_INTERNAL(state->internal)->mpv_glcontext);
-    }
+    mpv_render_context_report_swap(VR_INTERNAL(state->internal)->mpv_glcontext);
 
     TracyCZoneEnd(tracy_ctx);
 }

@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "utils.h"
 #include "length_string.h"
 #include "logger.h"

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pch.h"
 #include "length_string.h"
 
 #include <assert.h>

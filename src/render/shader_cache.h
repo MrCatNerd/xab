@@ -1,7 +1,6 @@
 #pragma once
 
-#include "pch.h"
-#include "shader.h"
+#include "render/shader.h"
 #include "hashmap.h"
 
 // is caching just communism?

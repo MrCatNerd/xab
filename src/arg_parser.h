@@ -1,6 +1,8 @@
 #pragma once
 
-#include "pch.h"
+#include <stdbool.h>
+
+#include "video/video_reader_interface.h"
 
 struct wallpaper_argument_options {
         char *video_path;

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "camera.h"
-#include "shader.h"
-#include "framebuffer.h"
-#include "shader_cache.h"
-#include "video_reader_interface.h"
+#include "render/camera.h"
+#include "render/shader.h"
+#include "render/framebuffer.h"
+#include "render/shader_cache.h"
+#include "video/video_reader_interface.h"
 
 // for the arg parser, not the init
 typedef struct wallpaper_options {

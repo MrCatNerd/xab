@@ -1,7 +1,10 @@
-#include "pch.h"
-
 #include "arg_parser.h"
-#include "video_reader_interface.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "video/video_reader_interface.h"
 #include "wallpaper.h"
 #include "logger.h"
 #include "version.h"

@@ -1,11 +1,13 @@
-#include "pch.h"
+#include "Xserver/setbg.h"
 
-#include "setbg.h"
+#include <stdlib.h>
 
 #include "context.h"
-#include "atom.h"
+#include "Xserver/atom.h"
 #include "logger.h"
-#include "x_data.h"
+#include "Xserver/x_data.h"
+#include "utils.h"
+#include "tracy.h"
 
 // i still need to test these on other wms than awesomewm
 

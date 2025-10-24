@@ -1,22 +1,20 @@
-#include "pch.h"
-
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
 #include <stdlib.h>
 
 #include "context.h"
-#include "x_data.h"
-#include "egl_stuff.h"
+#include "Xserver/x_data.h"
+#include "render/egl_stuff.h"
 #include "logger.h"
-#include "atom.h"
+#include "Xserver/atom.h"
 #include "wallpaper.h"
-#include "framebuffer.h"
-#include "shader_cache.h"
-#include "monitor.h"
+#include "render/framebuffer.h"
+#include "render/shader_cache.h"
+#include "Xserver/monitor.h"
 #include "utils.h"
-#include "camera.h"
-#include "window.h"
+#include "render/camera.h"
+#include "render/window.h"
 
 context_t context_create(struct argument_options *opts) {
     context_t context = {0};

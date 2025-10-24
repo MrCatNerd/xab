@@ -1,16 +1,20 @@
-#include "pch.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <epoxy/gl.h>
+#include <epoxy/egl.h>
 
 #include "context.h"
-#include "video_reader_interface.h"
+#include "video/video_reader_interface.h"
 #include "logger.h"
-#include "framebuffer.h"
-#include "setbg.h"
+#include "render/framebuffer.h"
+#include "Xserver/setbg.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
-#include "window.h"
+#include "render/window.h"
 #include "ipc.h"
 #include "ipc_spec.h"
+#include "tracy.h"
 
 // auuugggghh global variables scary
 static context_t context;
@@ -47,9 +51,8 @@ static void mainloop(void) {
 
     // set up the signal handler (so the program would gracefully exit on
     // Ctrl+c)
-    struct sigaction sa;
+    struct sigaction sa = {0};
     sa.sa_handler = handle_sigint;
-    sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask); // no additional signals blocked during handler
     sigaction(SIGINT, &sa, NULL);
 

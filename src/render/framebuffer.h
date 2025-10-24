@@ -1,7 +1,7 @@
 #pragma once
 
-#include "shader.h"
-#include "shader_cache.h"
+#include "render/shader.h"
+#include "render/shader_cache.h"
 
 typedef struct FrameBuffer {
         unsigned int width, height;

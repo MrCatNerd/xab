@@ -1,7 +1,5 @@
 #include "logger.h"
 
-#include "pch.h"
-
 void xab_log(log_level level, const char *format, ...) {
     if (level < LOG_LEVEL)
         return;

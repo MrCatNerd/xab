@@ -1,12 +1,15 @@
+#include "render/window.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
+#include <epoxy/egl.h>
 
-#include "window.h"
-#include "egl_stuff.h"
+#include "Xserver/setbg.h"
+#include "render/egl_stuff.h"
 #include "logger.h"
-#include "setbg.h"
+#include "utils.h"
 
 static int count_bits(uint32_t mask) {
     int bits = 0;

@@ -1,8 +1,6 @@
-#include "pch.h"
-
 #include "utils.h"
 #include "logger.h"
-#include "egl_stuff.h"
+#include "render/egl_stuff.h"
 
 const char *get_EGL_error_string(EGLint error) {
     switch (error) {
