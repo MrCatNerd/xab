@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/codec_par.h>

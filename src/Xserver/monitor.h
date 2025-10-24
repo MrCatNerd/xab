@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdbool.h>
+#include <xcb/xcb.h>
+
 typedef struct monitor {
         char *name;
         int id;

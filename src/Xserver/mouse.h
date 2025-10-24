@@ -1,5 +1,7 @@
 #pragma once
 
+#include <xcb/xcb.h>
+
 typedef struct MousePosition {
         float mousex;
         float mousey;

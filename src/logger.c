@@ -1,5 +1,8 @@
 #include "logger.h"
 
+#include <stdio.h>
+#include <stdarg.h>
+
 void xab_log(log_level level, const char *format, ...) {
     if (level < LOG_LEVEL)
         return;

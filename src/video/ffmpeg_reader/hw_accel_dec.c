@@ -1,7 +1,10 @@
 #include "hw_accel_dec.h"
-#include "logger.h"
+
+#include <stdbool.h>
 #include <libavutil/buffer.h>
 #include <libavutil/hwcontext.h>
+
+#include "logger.h"
 
 static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
                                         const enum AVPixelFormat *pix_fmts);

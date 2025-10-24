@@ -1,8 +1,7 @@
 #pragma once
 
+#include <xcb/xcb_atom.h>
 #include <hashmap.h>
-
-#include "length_string.h"
 
 typedef struct atom_manager {
         struct hashmap *cache;

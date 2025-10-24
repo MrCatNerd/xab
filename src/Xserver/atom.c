@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <xcb/xproto.h>
 
 #include "hashmap.h"

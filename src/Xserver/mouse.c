@@ -1,4 +1,7 @@
 #include "mouse.h"
+
+#include <stdlib.h>
+
 #include "logger.h"
 
 MousePosition_t get_mouse_position(xcb_connection_t *connection,

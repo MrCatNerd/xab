@@ -108,6 +108,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
     switch (win.window_type) {
     default:
         xab_log(LOG_WARN, "Unknown window type! defaulting to XWINDOW\n");
+        /* fall through */
     case XWINDOW: {
         xab_log(LOG_DEBUG, "Creating window's xcb window\n");
         win.xwindow = xcb_generate_id(xdata->connection);

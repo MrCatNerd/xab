@@ -2,6 +2,10 @@
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
 #include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_LIBXRANDR
+#include <xcb/randr.h>
+#endif /* HAVE_LIBXRANDR */
 
 #include "context.h"
 #include "Xserver/x_data.h"

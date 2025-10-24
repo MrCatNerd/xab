@@ -1,5 +1,6 @@
 #include "render/camera.h"
 
+#include <epoxy/gl.h>
 #ifdef HAVE_LIBCGLM
 #include <cglm/call.h>
 #include <cglm/cam.h>

@@ -1,4 +1,5 @@
 #include <hashmap.h>
+#include <string.h>
 
 #include "render/shader_cache.h"
 #include "logger.h"

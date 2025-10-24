@@ -1,9 +1,10 @@
 #pragma once
 
-#include <epoxy/gl.h>
-
+#include <epoxy/egl.h>
+#ifdef ENABLE_OPENGL_DEBUG_CALLBACK
 #include "logger.h"
 #include "utils.h"
+#endif /* ENABLE_OPENGL_DEBUG_CALLBACK */
 
 /// Return a description of the specified EGL error
 const char *get_EGL_error_string(EGLint error);
@@ -27,4 +28,4 @@ _Pragma("GCC diagnostic push")
 }
 
 _Pragma("GCC diagnostic pop")
-#endif
+#endif /* ENABLE_OPENGL_DEBUG_CALLBACK */

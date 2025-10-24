@@ -1,15 +1,18 @@
 #include "render/shader.h"
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <epoxy/gl.h>
+
 #include "logger.h"
+#include "length_string.h"
 #include "utils.h"
 
-#include "length_string.h"
-
 #ifndef DISABLE_BCE
+#include <string.h>
 #include "bce_files.h"
-#endif
 
 // very spaghett
-#ifndef DISABLE_BCE
 static length_string_t search_bce_shaders(const char *path);
 #endif
 typedef struct free_file {

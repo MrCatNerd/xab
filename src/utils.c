@@ -3,6 +3,7 @@
 #include "logger.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 length_string_t ReadFile(const char *path) {
     xab_log(LOG_TRACE, "Reading file: %s\n", path);

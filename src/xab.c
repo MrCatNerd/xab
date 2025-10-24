@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
+#include <unistd.h>
 
 #include "context.h"
 #include "video/video_reader_interface.h"
