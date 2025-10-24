@@ -1,5 +1,5 @@
 #include <time.h>
-
+#include <epoxy/gl.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/codec_par.h>
@@ -13,8 +13,9 @@
 
 #include "render/shader_cache.h"
 #include "video/video_reader_interface.h"
-#include "ffmpeg_reader/decoder.h"
+#include "video/ffmpeg_reader/decoder.h"
 #include "logger.h"
+#include "tracy.h"
 
 static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx);
 

@@ -11,11 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ffmpeg_reader/decoder.h"
-#include "ffmpeg_reader/packet_queue.h"
-#include "ffmpeg_reader/picture_queue.h"
-#include "ffmpeg_reader/hw_accel_dec.h"
+#include "video/video_reader_interface.h"
+#include "video/ffmpeg_reader/decoder.h"
+#include "video/ffmpeg_reader/packet_queue.h"
+#include "video/ffmpeg_reader/picture_queue.h"
+#include "video/ffmpeg_reader/hw_accel_dec.h"
 #include "logger.h"
+#include "utils.h"
 
 static void *decoder_packet_worker(void *ctx);
 static void *decoder_picture_worker(void *ctx);
