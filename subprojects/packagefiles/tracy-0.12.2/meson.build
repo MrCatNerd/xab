@@ -1,14 +1,9 @@
-project(
-  'tracy',
-  ['cpp'],
-  version: '0.11.2',
-  meson_version: '>=1.3.0',
-  default_options: ['cpp_std=c++11'],
-)
+project('tracy', ['cpp'], version: '0.12.2', meson_version: '>=1.3.0', default_options : ['cpp_std=c++11'])
 
 # disable all of the warnings
 # im not sure if this is the way to do it but it works ig
 add_project_arguments('-w', language: 'cpp')
+
 
 # internal compiler flags
 tracy_compile_args = []
@@ -140,58 +135,62 @@ if host_machine.system() == 'windows'
 endif
 
 includes = [
-  'public/tracy/TracyC.h',
-  'public/tracy/Tracy.hpp',
-  'public/tracy/TracyD3D11.hpp',
-  'public/tracy/TracyD3D12.hpp',
-  'public/tracy/TracyLua.hpp',
-  'public/tracy/TracyOpenCL.hpp',
-  'public/tracy/TracyOpenGL.hpp',
-  'public/tracy/TracyVulkan.hpp',
+    'public/tracy/TracyC.h',
+    'public/tracy/Tracy.hpp',
+    'public/tracy/TracyCUDA.hpp',
+    'public/tracy/TracyD3D11.hpp',
+    'public/tracy/TracyD3D12.hpp',
+    'public/tracy/TracyLua.hpp',
+    'public/tracy/TracyOpenCL.hpp',
+    'public/tracy/TracyOpenGL.hpp',
+    'public/tracy/TracyVulkan.hpp'
 ]
 
 client_includes = [
-  'public/client/tracy_concurrentqueue.h',
-  'public/client/tracy_rpmalloc.hpp',
-  'public/client/tracy_SPSCQueue.h',
-  'public/client/TracyArmCpuTable.hpp',
-  'public/client/TracyCallstack.h',
-  'public/client/TracyCallstack.hpp',
-  'public/client/TracyDebug.hpp',
-  'public/client/TracyDxt1.hpp',
-  'public/client/TracyFastVector.hpp',
-  'public/client/TracyLock.hpp',
-  'public/client/TracyProfiler.hpp',
-  'public/client/TracyRingBuffer.hpp',
-  'public/client/TracyScoped.hpp',
-  'public/client/TracyStringHelpers.hpp',
-  'public/client/TracySysPower.hpp',
-  'public/client/TracySysTime.hpp',
-  'public/client/TracySysTrace.hpp',
-  'public/client/TracyThread.hpp',
+    'public/client/tracy_concurrentqueue.h',
+    'public/client/tracy_rpmalloc.hpp',
+    'public/client/tracy_SPSCQueue.h',
+    'public/client/TracyArmCpuTable.hpp',
+    'public/client/TracyCallstack.h',
+    'public/client/TracyCallstack.hpp',
+    'public/client/TracyDebug.hpp',
+    'public/client/TracyDxt1.hpp',
+    'public/client/TracyFastVector.hpp',
+    'public/client/TracyKCore.hpp',
+    'public/client/TracyLock.hpp',
+    'public/client/TracyProfiler.hpp',
+    'public/client/TracyRingBuffer.hpp',
+    'public/client/TracyScoped.hpp',
+    'public/client/TracyStringHelpers.hpp',
+    'public/client/TracySysPower.hpp',
+    'public/client/TracySysTime.hpp',
+    'public/client/TracySysTrace.hpp',
+    'public/client/TracyThread.hpp'
 ]
 
 common_includes = [
-  'public/common/tracy_lz4.hpp',
-  'public/common/tracy_lz4hc.hpp',
-  'public/common/TracyAlign.hpp',
-  'public/common/TracyAlloc.hpp',
-  'public/common/TracyApi.h',
-  'public/common/TracyColor.hpp',
-  'public/common/TracyForceInline.hpp',
-  'public/common/TracyMutex.hpp',
-  'public/common/TracyProtocol.hpp',
-  'public/common/TracyQueue.hpp',
-  'public/common/TracySocket.hpp',
-  'public/common/TracyStackFrames.hpp',
-  'public/common/TracySystem.hpp',
-  'public/common/TracyUwp.hpp',
-  'public/common/TracyYield.hpp',
+    'public/common/tracy_lz4.hpp',
+    'public/common/tracy_lz4hc.hpp',
+    'public/common/TracyAlign.hpp',
+    'public/common/TracyAlloc.hpp',
+    'public/common/TracyApi.h',
+    'public/common/TracyColor.hpp',
+    'public/common/TracyForceInline.hpp',
+    'public/common/TracyMutex.hpp',
+    'public/common/TracyProtocol.hpp',
+    'public/common/TracyQueue.hpp',
+    'public/common/TracySocket.hpp',
+    'public/common/TracyStackFrames.hpp',
+    'public/common/TracySystem.hpp',
+    'public/common/TracyUwp.hpp',
+    'public/common/TracyYield.hpp'
 ]
 
 tracy_header_files = common_includes + client_includes + includes
 
-tracy_src = ['public/TracyClient.cpp']
+tracy_src = [
+    'public/TracyClient.cpp'
+]
 
 tracy_public_include_dirs = include_directories('public')
 
@@ -206,34 +205,32 @@ tracy_compile_args += tracy_common_args
 
 tracy_deps = [dependency('threads')] + tracy_public_deps
 
-tracy = library(
-  'tracy',
-  tracy_src,
-  tracy_header_files,
-  dependencies: tracy_deps,
-  include_directories: tracy_public_include_dirs,
-  cpp_args: tracy_compile_args,
-  override_options: override_options,
-  install: true,
-)
+tracy = library('tracy', tracy_src, tracy_header_files,
+    dependencies        : tracy_deps,
+    include_directories : tracy_public_include_dirs,
+    cpp_args            : tracy_compile_args,
+    override_options    : override_options,
+    install             : true)
 
-install_headers(includes, subdir: 'tracy')
-install_headers(common_includes, subdir: 'tracy/common')
-install_headers(client_includes, subdir: 'tracy/client')
+install_headers(includes, subdir : 'tracy/tracy')
+install_headers(common_includes, subdir : 'tracy/common')
+install_headers(client_includes, subdir : 'tracy/client')
 
 tracy_dep_compile_args = tracy_common_args
 
 if tracy_shared_libs
-  tracy_dep_compile_args += ['-DTRACY_IMPORTS']
+  tracy_dep_compile_args += [ '-DTRACY_IMPORTS' ]
 endif
 
 pkg = import('pkgconfig')
-pkg.generate(tracy, extra_cflags: tracy_dep_compile_args, requires: tracy_public_deps)
+pkg.generate(tracy,
+  extra_cflags : tracy_dep_compile_args,
+  requires     : tracy_public_deps)
 
 tracy_dep = declare_dependency(
-  compile_args: tracy_dep_compile_args,
-  link_with: tracy,
-  include_directories: tracy_public_include_dirs,
-)
+    compile_args        : tracy_dep_compile_args,
+    link_with           : tracy,
+    include_directories : tracy_public_include_dirs)
 
 meson.override_dependency('tracy', tracy_dep)
+
