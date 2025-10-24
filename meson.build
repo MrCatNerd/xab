@@ -54,9 +54,8 @@ extra_link_args = []
 # --- logging and stuff ---
 
 log_level = get_option('log')
-should_enable_ansii_colors = get_option('ansii_log')
 
-if should_enable_ansii_colors
+if get_option('ansii_log')
   add_project_arguments('-DLOG_ANSII_COLORS', language: 'c')
 endif
 
