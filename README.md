@@ -42,6 +42,9 @@ you can use this with [xab-gui](https://github.com/MRcatNerd/xab-gui),
 it will be merged to main when all features are complete and stable enough
 
 > [!NOTE]
+> make sure to use the --ipc=1 option when running xab
+
+> [!NOTE]
 > i will not raise the xab ipc protcol version in the spec until i merge to main!
 
 (planned / implemented) featuers:
@@ -79,6 +82,7 @@ global options:
 |--------|-------------|---------|
 | `-v=0\|1`, `--vsync=0\|1` | synchronize framerate to monitor framerate | 1 |
 | `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
+| `--ipc=1\|0` | enable IPC for xab | 0 |
 <!-- | `--max_framerate=0\|n` | limit framerate to n fps (overrides vsync) | 0 | -->
 
 per video/monitor options:

@@ -20,6 +20,7 @@ struct argument_options {
         bool vsync;
         enum VR_HW_ACCEL hw_accel;
         int max_framerate; // unfinished
+        bool ipc;
 };
 
 struct argument_options parse_args(int argc, char **argv);

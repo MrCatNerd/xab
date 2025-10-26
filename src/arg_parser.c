@@ -44,6 +44,7 @@ struct argument_options parse_args(int argc, char *argv[]) {
         .n_wallpaper_options = 0,
         .vsync = true,
         .max_framerate = 0,
+        .ipc = false,
     };
 
     const char *program_name = argv[0];
@@ -121,6 +122,8 @@ struct argument_options parse_args(int argc, char *argv[]) {
                 opts.hw_accel = VR_HW_ACCEL_AUTO;
             else // use auto
                 opts.hw_accel = VR_HW_ACCEL_AUTO;
+        } else if (!strcmp(key, "--ipc")) {
+            opts.ipc = atoi(value) != 0;
         } else if (!strcmp(key, "--monitor") || !strcmp(key, "-M")) {
             const int current_background = opts.n_wallpaper_options - 1;
 #ifdef HAVE_LIBXRANDR

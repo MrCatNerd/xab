@@ -15,6 +15,7 @@
 #include "render/window.h"
 #include "ipc.h"
 #include "ipc_spec.h"
+#include "utils.h"
 #include "tracy.h"
 
 // auuugggghh global variables scary
@@ -37,15 +38,17 @@ static void setup(struct argument_options *opts) {
             "Currently in release mode\n"); // idk why i did that lol
 #endif
 
-    ipc_handle = ipc_init(IPC_PATH);
+    if (opts->ipc)
+        ipc_handle = ipc_init(IPC_PATH);
     context = context_create(opts);
 
     TracyCZoneEnd(tracy_ctx);
     ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Setup`\n");)
 }
 
-static void mainloop(void) {
+static void mainloop(struct argument_options *opts) {
     xab_log(LOG_DEBUG, "Running main loop...\n");
+    Assert(opts != NULL && "Invalid opts pointer!");
 
     ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Mainloop`\n");)
     TracyCZoneNC(tracy_ctx, "Mainloop", TRACY_COLOR_WHITE, true);
@@ -100,7 +103,9 @@ static void mainloop(void) {
 
         if (context.window.width != 0 && context.window.height != 0) {
             // poll ipc events
-            ipc_poll_events(&ipc_handle, &context);
+            if (opts->ipc) {
+                ipc_poll_events(&ipc_handle, &context);
+            }
 
             // poll xcb events
             xcb_generic_event_t *event = NULL;
@@ -192,10 +197,11 @@ int main(int argc, char *argv[]) {
     struct argument_options opts = parse_args(argc, argv);
 
     setup(&opts);
-    mainloop();
+    mainloop(&opts);
     cleanup(&opts);
 
-    ipc_close(&ipc_handle);
+    if (opts.ipc)
+        ipc_close(&ipc_handle);
 
     return EXIT_SUCCESS;
 }
