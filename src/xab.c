@@ -103,18 +103,21 @@ static void mainloop(struct argument_options *opts) {
 
         if (context.window.width != 0 && context.window.height != 0) {
             // poll ipc events
-            if (opts->ipc) {
+            if (opts->ipc)
                 ipc_poll_events(&ipc_handle, &context);
-            }
 
             // poll xcb events
+            TracyCZoneNC(tracy_ctx3, "xcb event poll", TRACY_COLOR_BLUE, true);
             xcb_generic_event_t *event = NULL;
             while ((event = xcb_poll_for_event(context.xdata.connection))) {
                 uint8_t rt = event->response_type & ~0x80;
                 window_handle_xcb_event(&context.window, event, rt);
                 free(event);
             }
+            TracyCZoneEnd(tracy_ctx3);
 
+            TracyCZoneNC(tracy_ctx4, "OpenGL render prepare", TRACY_COLOR_BLUE,
+                         true);
             // setup output size covering all client area of window
             glViewport(
                 0, 0, context.window.width,
@@ -125,6 +128,7 @@ static void mainloop(struct argument_options *opts) {
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
                     GL_STENCIL_BUFFER_BIT);
+            TracyCZoneEnd(tracy_ctx4);
 
             // framebuffer start
             render_framebuffer_start_render(&context.framebuffer);
@@ -142,8 +146,11 @@ static void mainloop(struct argument_options *opts) {
             render_framebuffer_end_render(&context.framebuffer, 0, da_time);
 
             // swap the buffers to show output
+            TracyCZoneNC(tracy_ctx5, "EGL swap buffers", TRACY_COLOR_GREY,
+                         true);
             if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
+            TracyCZoneEnd(tracy_ctx5);
 
             switch (context.window.window_type) {
             case XPIXMAP_BACKGROUND:

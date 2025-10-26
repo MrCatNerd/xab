@@ -241,8 +241,17 @@ xab uses tracy for profiling:
 meson setup tbuild --buildtype=debugoptimized \
     -Dlog=trace -Dopengl_debug_callback=disabled -Dtracy_enable=true
 meson compile -C tbuild
-
 ```
+
+to build the profiler, cd to `./subprojects/tracy-x.xx.x/` then run
+```sh
+# tracy only supports cmake to actually build the profiler so deal with it
+cmake -B profiler/build -S profiler -DCMAKE_BUILD_TYPE=Release -DLEGACY=true
+cd profiler/build
+make
+```
+profiler binary should be found at `profiler/build/tracy-profiler`
+for more information go to [wolfpld/tracy](https://github.com/wolfpld/tracy) and read the docs
 
 ### Testing
 currently, xab has only tests for some components of the `ffmpeg` video reader,

@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "ipc_utils.h"
 #include "utils.h"
+#include "tracy.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -144,6 +145,7 @@ static int negotiate_with_new_client(IPC_client_t *client) {
 }
 
 void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
+    TracyCZoneNC(tracy_ctx, "IPC event poll", TRACY_COLOR_BLUE, true);
     Assert(handle != NULL && "IPC handle pointer is NULL!");
     struct epoll_event events[8] = {0};
     int n = epoll_wait(handle->epoll_fd, events, 8, 0);
@@ -264,6 +266,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
             }
         }
     }
+    TracyCZoneEnd(tracy_ctx);
 }
 
 static void ipc_client_close(IPC_client_t *client, int epoll_fd) {
