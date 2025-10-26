@@ -28,7 +28,7 @@ static void help(const char *program_name) {
         "* --vsync=0|1                 | synchronize framerate to monitor "
         "framerate                                  (default: 0)\n"
         "* --max_framerate=0|n         | limit framerate to n fps (overrides "
-        "vsync)                                  (default: 0)\n"
+        "vsync)                                  (default: 1)\n"
         "\nper video/monitor options:\n"
         "* -p=0|1, --pixelated=0|1     | use point instead of bilinear "
         "filtering for rendering the background        (default: 0 - "
