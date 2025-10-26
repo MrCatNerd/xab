@@ -97,15 +97,13 @@ static int negotiate_with_new_client(IPC_client_t *client) {
     Assert(client != NULL && "Client pointer is NULL!");
 
     // send xab IPC protocl version
-    {
-        xab_log(LOG_DEBUG, "Sending xab IPC protocol version\n");
-        int ipc_proto_version = htonl(IPC_PROTO_VERSION);
-        if (send(client->fd, &ipc_proto_version, sizeof(ipc_proto_version), 0) <
-            0) {
-            xab_log(LOG_ERROR, "An error occured while sending the xab IPC "
-                               "protocol version to the IPC client!\n");
-            // TODO: handle error
-        }
+    xab_log(LOG_DEBUG, "Sending xab IPC protocol version\n");
+    const int ipc_proto_version = htonl(IPC_PROTO_VERSION);
+    if (send(client->fd, &ipc_proto_version, sizeof(ipc_proto_version), 0) <
+        0) {
+        xab_log(LOG_ERROR, "An error occured while sending the xab IPC "
+                           "protocol version to the IPC client!\n");
+        // TODO: handle error
     }
 
     // verify client version matches - disconnect if it doesn't
