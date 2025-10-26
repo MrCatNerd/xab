@@ -10,6 +10,7 @@
 
 > [!WARNING]
 > Performance currently kinda sucks, im trying my best
+> Update: performance sucks less on GPUs less than 12 years old lol
 
 ---
 
