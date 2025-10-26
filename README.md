@@ -250,7 +250,7 @@ cmake -B profiler/build -S profiler -DCMAKE_BUILD_TYPE=Release -DLEGACY=true
 cd profiler/build
 make
 ```
-profiler binary should be found at `profiler/build/tracy-profiler`
+profiler binary should be found at `profiler/build/tracy-profiler`<br>
 for more information go to [wolfpld/tracy](https://github.com/wolfpld/tracy) and read the docs
 
 ### Testing
