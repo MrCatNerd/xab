@@ -1,5 +1,5 @@
 #include "meson_error_codes.h"
-#include "ffmpeg_reader/packet_queue.h"
+#include "video/ffmpeg_reader/packet_queue.h"
 
 int main(void) {
     packet_queue_t pq = packet_queue_init(60);

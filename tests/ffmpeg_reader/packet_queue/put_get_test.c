@@ -1,5 +1,5 @@
 #include "meson_error_codes.h"
-#include "ffmpeg_reader/packet_queue.h"
+#include "video/ffmpeg_reader/packet_queue.h"
 #include <assert.h>
 #include <libavcodec/packet.h>
 #include <libavutil/mem.h>
