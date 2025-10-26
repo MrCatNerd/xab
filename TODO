@@ -12,7 +12,6 @@ will be implemented (probably)
 - lazy rendering - (toggleable), if there are no new frames to draw than don't redraw - this will be on by default and can be turned off so if you have a time based shader or smh it'll still look good
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
 - max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
-- add vlc support
 - scaling, fitting, centering, tiling and other background stuff
 - better clean ups so i can clean up something even though its initalizing
 - clean up my bad code lol

@@ -152,7 +152,7 @@ this is my fault because i suck at ffmpeg,
 also many of the features are not implemented (yet?) like frame timing,
 frame dropping
 
-i am also planning to add libVLC support
+no vlc support is planned until vlc 4.x is released
 
 ## Optional dependencies
 
