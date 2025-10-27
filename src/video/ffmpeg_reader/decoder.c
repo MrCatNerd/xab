@@ -15,7 +15,7 @@
 #include "video/ffmpeg_reader/decoder.h"
 #include "video/ffmpeg_reader/packet_queue.h"
 #include "video/ffmpeg_reader/picture_queue.h"
-#include "video/ffmpeg_reader/hw_accel_dec.h"
+#include "video/ffmpeg_reader/hwaccel/hwdec.h"
 #include "logger.h"
 #include "utils.h"
 
@@ -106,7 +106,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     xab_log(LOG_TRACE, "Decoder: Finding video stream index\n", path);
     dst_dec->video_stream_idx =
         av_find_best_stream(dst_dec->av_format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1,
-                            (AVCodec **)(&dst_dec->av_codec), 0);
+                            (const AVCodec **)(&dst_dec->av_codec), 0);
 
     if (dst_dec->video_stream_idx < 0) {
         dst_dec->av_codec = NULL;
@@ -127,21 +127,15 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     dst_dec->vheight = dst_dec->av_codecpar->height;
 
     // hw accel stuff
-    bool try_hw_accel = true;
     switch (hw_accel) {
     default:
-    case VR_HW_ACCEL_AUTO: // attempt hw_accel, if it fails, then fallback to
-                           // software decoding
-        try_hw_accel = true;
-        break;
-    case VR_HW_ACCEL_YES: // attempt hw_acccel, if it fails, then error
-        try_hw_accel = true;
-        break;
-    case VR_HW_ACCEL_NO: // use software decoding
-        try_hw_accel = false;
-        break;
-    }
-    if (try_hw_accel) {
+        /*                  attempt hwaccel                 */
+        // attempt hw_accel, if it fails, then fallback to software decoding
+    case VR_HW_ACCEL_AUTO:
+        /* fall through */
+        // attempt hw_acccel, if it fails, then error
+    case VR_HW_ACCEL_YES:
+
         xab_log(LOG_TRACE, "Decoder: attempting HW accel\n");
         xab_log(LOG_TRACE, "Allocating HW context\n");
         dst_dec->hw_ctx = calloc(1, sizeof(DecoderHW_ctx_t));
@@ -149,13 +143,21 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
         xab_log(LOG_TRACE, "Initalizing HW accel\n");
         // init hardware accceleration, if it fails, free the HW context thingy
         if (!hw_accel_init(dst_dec->hw_ctx, dst_dec->av_codec)) {
+            // TODO: hard error on VR_HW_ACCEL_YES
             xab_log(LOG_INFO, "Decoder: HW accel initialization failed. "
                               "falling back to software decoding\n");
             free(dst_dec->hw_ctx);
             dst_dec->hw_ctx = NULL;
         }
-    } else
-        dst_dec->hw_ctx = NULL; // ensure hw ctx is NULL
+        break;
+
+        /*                  don't attempt hwaccel                    */
+        // use software decoding
+    case VR_HW_ACCEL_NO:
+
+        dst_dec->hw_ctx = NULL;
+        break;
+    }
 
     // -- allocate a codec context and fill it --
     dst_dec->av_codec_ctx = avcodec_alloc_context3(dst_dec->av_codec);

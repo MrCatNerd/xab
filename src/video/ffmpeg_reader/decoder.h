@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 
-#include "hw_accel_dec.h"
+#include "hwaccel/hwdec.h"
 #include "picture_queue.h"
 #include "packet_queue.h"
 

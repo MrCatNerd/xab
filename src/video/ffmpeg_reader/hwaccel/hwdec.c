@@ -1,4 +1,6 @@
-#include "hw_accel_dec.h"
+#include "hwdec.h"
+
+#include "hwaccels_apis.h"
 
 #include <stdbool.h>
 #include <libavutil/buffer.h>
@@ -11,7 +13,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 
 /// av_codec must be initialized before this functions is called
 bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
-    if (!dst_hwa_ctx)
+    if (!dst_hwa_ctx || !av_codec)
         return false;
 
     // get the device type
@@ -29,7 +31,10 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
     // clang-format off
     enum AVHWDeviceType prefered[] = { // a switch statement would be more ideal but the sunk cost fallacy has kicked in
         // prefered device type by order (higher=better)
+#ifdef HWA_VDPAU
         AV_HWDEVICE_TYPE_VDPAU,
+#endif
+        // i havn't implemented implementations for these so just pray to the ffmpeg gods they work
         AV_HWDEVICE_TYPE_CUDA,
         AV_HWDEVICE_TYPE_VAAPI,
         AV_HWDEVICE_TYPE_QSV,
@@ -94,6 +99,17 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
             dst_hwa_ctx->hw_pix_fmt = config->pix_fmt;
             break;
         }
+    }
+
+    switch (dst_hwa_ctx->dev_type) {
+    default:
+    case AV_HWDEVICE_TYPE_NONE:
+        break;
+#ifdef HWA_VDPAU
+    case AV_HWDEVICE_TYPE_VDPAU:
+        init_vdpau();
+        break;
+#endif
     }
 
     return true;
