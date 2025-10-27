@@ -41,17 +41,8 @@ context_t context_create(struct argument_options *opts) {
         }
     }
 
-    xab_log(LOG_DEBUG, "Connecting to the X server\n");
-    int screen_nbr = -1;
-    xcb_connection_t *connection = xcb_connect(NULL, &screen_nbr);
-    if (connection == NULL || xcb_connection_has_error(connection)) {
-        xab_log(LOG_FATAL, "Unable to connect to the X server.\n");
-        exit(EXIT_FAILURE);
-    }
-    Assert(0 >= screen_nbr && "Invalid screen number.");
-
     xab_log(LOG_DEBUG, "Getting xcb data...\n");
-    context.xdata = x_data_from_xcb_connection(connection, screen_nbr);
+    context.xdata = x_data_init();
 
     xab_log(LOG_VERBOSE,
             "\nInformation of xcb screen %" PRIu32
@@ -265,9 +256,7 @@ void context_free(context_t *context) {
     destroy_window(&context->window, context->display, &context->xdata);
 
     // disconnect from the X server
-    xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
-    if (context->xdata.connection)
-        xcb_disconnect(context->xdata.connection);
+    x_data_free(&context->xdata);
 
     xab_log(LOG_DEBUG, "Context was freed sucessfully\n");
 }

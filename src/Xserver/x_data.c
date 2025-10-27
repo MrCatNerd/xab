@@ -1,14 +1,28 @@
 #include "Xserver/x_data.h"
+
+#include <stdlib.h>
+
 #include "logger.h"
 #include "utils.h"
 
-x_data_t x_data_from_xcb_connection(xcb_connection_t *connection,
-                                    int screen_nbr) {
+x_data_t x_data_init(void) {
     Assert(connection != NULL && "Invalid xcb connection!");
 
-    x_data_t xdata = {0};
-    xdata.connection = connection;
-    xdata.screen_nbr = screen_nbr;
+    x_data_t xdata = {
+        .connection = NULL,
+        .visual = NULL,
+        .screen = NULL,
+        .screen_nbr = -1,
+    };
+
+    xab_log(LOG_DEBUG, "Connecting to the X server\n");
+    xdata.connection = xcb_connect(NULL, &xdata.screen_nbr);
+    if (xdata.connection == NULL ||
+        xcb_connection_has_error(xdata.connection)) {
+        xab_log(LOG_FATAL, "Unable to connect to the X server.\n");
+        exit(EXIT_FAILURE);
+    }
+    Assert(xdata.screen_nbr >= 0 && "Invalid screen number.");
 
     xab_log(LOG_DEBUG, "Getting the first xcb screen\n");
     xdata.screen =
@@ -34,4 +48,12 @@ x_data_t x_data_from_xcb_connection(xcb_connection_t *connection,
     Assert(xdata.visual != NULL && "Unable to get the xcb root visual!");
 
     return xdata;
+}
+
+void x_data_free(x_data_t *xdata) {
+    Assert(xdata != NULL && "Invalid xdata pointer!");
+
+    xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
+    if (xdata->connection)
+        xcb_disconnect(xdata->connection);
 }
