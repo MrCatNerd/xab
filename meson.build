@@ -62,38 +62,32 @@ endif
 # automatic log level by build type
 buildtype = get_option('buildtype')
 if log_level == 'auto'
-  if buildtype == 'plain'
-    log_level = 'trace'
-  elif buildtype == 'debug'
-    log_level = 'debug'
-  elif buildtype == 'release' or buildtype == 'debugoptimized'
-    log_level = 'warn'
-  else
-    # all of the other buildtypes will default to info log level
-    log_level = 'info'
-  endif
+  buildtype_map = {
+    'plain': 'trace',
+    'debug': 'debug',
+    'release': 'warn',
+    'debugoptimized': 'warn',
+  }
+  # all of the other buildtypes will default to 'info' log level
+  log_level = buildtype_map.get(buildtype, 'info')
 endif
 
 # each log level as a number, trace=0 -> fatal=6
-log_num = -1
-if log_level == 'trace'
-  log_num = 0
-elif log_level == 'verbose'
-  log_num = 1
-elif log_level == 'debug'
-  log_num = 2
-elif log_level == 'info'
-  log_num = 3
-elif log_level == 'warn'
-  log_num = 4
-elif log_level == 'error'
-  log_num = 5
-elif log_level == 'fatal'
-  log_num = 6
-elif log_level == 'auto'
+if log_level == 'auto'
   warning('automatic buildtype didn\'t work for some reason, defaulting to info...')
-  log_num = 3
+  log_level = 'info'
 endif
+log_map = {
+  'trace': 0,
+  'verbose': 1,
+  'debug': 2,
+  'info': 3,
+  'warn': 4,
+  'error': 5,
+  'fatal': 6,
+  'auto': -1,
+}
+log_num = log_map.get(log_level, -1)
 assert(log_num >= 0)
 add_project_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
 
