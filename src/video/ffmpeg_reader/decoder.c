@@ -38,9 +38,9 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
     dst_dec->theight = height;
 
     // initialize packet queue
-    xab_log(LOG_TRACE, "Decoder: Initalizing packet queue\n");
+    xab_log(LOG_TRACE, "Decoder: Initializing packet queue\n");
     dst_dec->pacq = packet_queue_init(128);
-    xab_log(LOG_TRACE, "Decoder: Initalizing picture queue\n");
+    xab_log(LOG_TRACE, "Decoder: Initializing picture queue\n");
     dst_dec->picq = picture_queue_init(64);
 
     // allocate packets and frames
@@ -140,7 +140,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path, unsigned int width,
         xab_log(LOG_TRACE, "Allocating HW context\n");
         dst_dec->hw_ctx = calloc(1, sizeof(DecoderHW_ctx_t));
 
-        xab_log(LOG_TRACE, "Initalizing HW accel\n");
+        xab_log(LOG_TRACE, "Initializing HW accel\n");
         // init hardware accceleration, if it fails, free the HW context thingy
         if (!hw_accel_init(dst_dec->hw_ctx, dst_dec->av_codec)) {
             // TODO: hard error on VR_HW_ACCEL_YES

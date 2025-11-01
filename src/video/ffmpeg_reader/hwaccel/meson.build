@@ -7,13 +7,37 @@ src_files += files('hwdec.c')
 # - qsv
 # - cuda
 # - opencl
-hwaccels = [dependency('vdpau', required: false)]
+hwaccels = {
+  'vdpau': {
+    'deps': [
+      dependency('vdpau', required: false),
+      dependency('x11', required: false),
+    ],
+    'files': ['vdpau.c', 'vdpau_vtable.c'],
+  },
+}
 
-foreach hwa : hwaccels
-  if hwa.found()
-    hwa_name = hwa.name()
-    src_files += files(hwa_name + '.c')
-    add_project_arguments('-DHWA_' + hwa_name.to_upper(), language: 'c')
+foreach hwa_name : hwaccels.keys()
+  hwa_info = hwaccels.get(hwa_name)
+
+  # ensure all dependency requirements are met
+  hwa_deps = hwa_info.get('deps')
+
+  has_required_deps = true
+  foreach dep : hwa_deps
+    if not dep.found()
+      has_required_deps = false
+    endif
+  endforeach
+
+  if not has_required_deps
+    message('Skipping ' + hwa_name + ' - missing dependencies')
+    continue
   endif
+
+  # if they are then add the hwaaccel
+  hwa_files = hwa_info.get('files')
+  src_files += files(hwa_files)
+  add_project_arguments('-DHWA_' + hwa_name.to_upper(), language: 'c')
+  video_reader_deps += hwa_deps
 endforeach
-video_reader_deps += hwaccels

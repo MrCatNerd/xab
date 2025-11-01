@@ -76,6 +76,7 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
     dst_hwa_ctx->dev_type = device_type;
     if (dst_hwa_ctx->dev_type == AV_HWDEVICE_TYPE_NONE) {
         xab_log(LOG_ERROR, "Decoder: No hardware device types available!\n");
+        hw_accel_close(dst_hwa_ctx);
         return false;
     }
 
@@ -88,6 +89,7 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
                     "Decoder: `%s` decoder does not support device type `%s`\n",
                     av_codec->name,
                     av_hwdevice_get_type_name(dst_hwa_ctx->dev_type));
+            hw_accel_close(dst_hwa_ctx);
             return false;
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
@@ -107,7 +109,11 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
         break;
 #ifdef HWA_VDPAU
     case AV_HWDEVICE_TYPE_VDPAU:
-        init_vdpau();
+        if (init_vdpau(&dst_hwa_ctx->hwa_api_handle) < 0) {
+            xab_log(LOG_ERROR, "Failed to initialize VDPAU!\n");
+            hw_accel_close(dst_hwa_ctx);
+            return false;
+        }
         break;
 #endif
     }
@@ -120,13 +126,23 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
     int error = 0;
 
     // init device
+#ifdef HWA_VDPAU
+    create_device_vdpau_t ret = create_device_vdpau(hwa_ctx->hwa_api_handle);
+    if (ret.err < 0) {
+        xab_log(LOG_ERROR, "Failed creating VDPAU device!\n");
+        hw_accel_close(hwa_ctx);
+        return AVERROR(EINVAL);
+    }
+    hwa_ctx->hw_device_ctx = (AVBufferRef *)ret.hwctx;
+#else
     if ((error = av_hwdevice_ctx_create(
              &hwa_ctx->hw_device_ctx, hwa_ctx->dev_type, NULL, NULL, 0)) < 0) {
         xab_log(LOG_ERROR, "Decoder: Failed to create specified HW device\n");
+        hw_accel_close(hwa_ctx);
         return error;
     }
-
     av_codec_ctx->hw_device_ctx = av_buffer_ref(hwa_ctx->hw_device_ctx);
+#endif
 
     // check if it is possible to convert the GPU pixel format to something
     // valid
@@ -139,15 +155,16 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
     enum AVPixelFormat *pixfmt = (enum AVPixelFormat *)AV_PIX_FMT_NONE;
     for (pixfmt = hw_frames_constraints->valid_sw_formats;
          *pixfmt != AV_PIX_FMT_NONE; pixfmt++) {
-        if (*pixfmt == AV_PIX_FMT_YUV420P)
+        if (*pixfmt == AV_PIX_FMT_YUV420P || *pixfmt == AV_PIX_FMT_RGBA)
             break;
     }
     av_hwframe_constraints_free(&hw_frames_constraints);
 
-    // if the GPU is unable to convert to YUV420p then give up and let down
+    // if the GPU is unable to convert to YUV420p/RGB then give up and let down
     if (*pixfmt == AV_PIX_FMT_NONE) {
         xab_log(LOG_ERROR,
                 "Decoder: your device is unable to convert to YUV420p :(\n");
+        hw_accel_close(hwa_ctx);
         return AVERROR(EINVAL);
     }
 
@@ -177,5 +194,6 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 }
 
 void hw_accel_close(DecoderHW_ctx_t *hwa_ctx) {
-    av_buffer_unref(&hwa_ctx->hw_device_ctx);
+    if (hwa_ctx->hw_device_ctx)
+        av_buffer_unref(&hwa_ctx->hw_device_ctx);
 }

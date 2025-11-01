@@ -1,6 +1,13 @@
 #pragma once
 
-// im still not sure if i wanna implement hwaccel like that or in some other way
-// so it might get removed
+#include <libavutil/hwcontext.h>
 
-extern int init_vdpau(void);
+typedef void *HwaAPIHandle;
+
+extern int init_vdpau(HwaAPIHandle *handle);
+typedef struct {
+        int err;
+        AVHWDeviceContext *hwctx;
+} create_device_vdpau_t;
+extern create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle);
+extern int exit_vdpau(HwaAPIHandle handle);

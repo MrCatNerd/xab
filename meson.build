@@ -20,8 +20,8 @@ version_patch = split_version[2].to_int()
 # get the git info
 git_prog = find_program('git', required: false)
 if git_prog.found()
-  git_branch = run_command(git_prog,'rev-parse','--abbrev-ref','HEAD', check: false).stdout().strip()
-  git_commit = run_command(git_prog,'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
+  git_branch = run_command(git_prog, 'rev-parse', '--abbrev-ref', 'HEAD', check: false).stdout().strip()
+  git_commit = run_command(git_prog, 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
 else
   git_branch = 'null'
   git_commit = 'null'
@@ -176,6 +176,7 @@ xcb_deps = [
   dependency('xproto'),
   dependency('xcb-util'),
 ]
+
 epoxy_dep = dependency('epoxy-updated', fallback: 'epoxy-updated')
 egl_dep = dependency('egl')
 hashmap_c_dep = dependency('hashmap.c', fallback: 'hashmap.c')
@@ -193,7 +194,8 @@ if xrandr_dep.found()
   add_project_arguments('-DHAVE_LIBXRANDR', language: 'c')
 endif
 
-deps = xcb_deps + [
+deps = [
+  xcb_deps,
   epoxy_dep,
   egl_dep,
   cglm_dep,

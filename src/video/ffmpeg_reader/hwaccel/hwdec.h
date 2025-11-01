@@ -14,8 +14,11 @@
 #include <libavformat/avio.h>
 #include <libavutil/pixfmt.h>
 
+#include "hwaccels_apis.h"
+
 typedef struct DecoderHW_ctx {
         AVBufferRef *hw_device_ctx;
+        HwaAPIHandle hwa_api_handle;
         enum AVHWDeviceType dev_type;
         enum AVPixelFormat hw_pix_fmt;
 } DecoderHW_ctx_t;

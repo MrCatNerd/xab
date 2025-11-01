@@ -56,4 +56,6 @@ void x_data_free(x_data_t *xdata) {
     xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
     if (xdata->connection)
         xcb_disconnect(xdata->connection);
+    else
+        xab_log(LOG_WARN, "No X connection specified!\n");
 }
