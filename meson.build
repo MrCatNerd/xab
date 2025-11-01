@@ -85,7 +85,6 @@ log_map = {
   'warn': 4,
   'error': 5,
   'fatal': 6,
-  'auto': -1,
 }
 log_num = log_map.get(log_level, -1)
 assert(log_num >= 0)
