@@ -45,8 +45,14 @@ static void UnrefSharedHandle(VdpauSharedHandle_t *shandle) {
         return;
 
     if (--shandle->refs <= 0) {
-        shandle->vtable->device_destroy(shandle->device);
-        free(shandle->vtable);
+        xab_log(LOG_VERBOSE,
+                "Shared module has %d refs left, uninitializing...\n",
+                shandle->refs);
+        if (shandle->vtable) {
+            if (shandle->vtable->device_destroy && shandle->device)
+                shandle->vtable->device_destroy(shandle->device);
+            free(shandle->vtable);
+        }
         memset(shandle, 0, sizeof(VdpauSharedHandle_t));
     }
 }
@@ -75,10 +81,15 @@ int initSharedHandle(void) {
     xab_log(LOG_VERBOSE, "Allocating VDPAU vtable memory\n");
     shandle->vtable = calloc(1, sizeof(VdpauVTable_t));
     {
-        int status = vdpau_vtable_init(shandle->vtable, shandle->device,
-                                       shandle->get_proc_address);
+        const int status = vdpau_vtable_init(shandle->vtable, shandle->device,
+                                             shandle->get_proc_address);
         if (status < 0)
             return status;
+    }
+    if (!shandle->vtable->is_initialized) {
+        xab_log(LOG_ERROR, "VDPAU shared handle's vtable isn't initialized "
+                           "even though init was called!\n");
+        return -1;
     }
 
     // abuse ref system
@@ -114,10 +125,14 @@ int init_vdpau(HwaAPIHandle *handle) {
     vdp_handle->picture_height = 0;
 
     // create video output surface
-    // xab_log(LOG_VERBOSE, "Creating video output surface\n");
-    // vdp_handle->shandle->vtable->output_surface_create(
-    //     vdp_handle->shandle->device, VDP_RGBA_FORMAT_B8G8R8A8, 1, 1,
-    //     &vdp_handle->output_surface);
+    xab_log(LOG_VERBOSE, "Creating video output surface\n");
+    VdpStatus status = vdp_handle->shandle->vtable->output_surface_create(
+        vdp_handle->shandle->device, VDP_RGBA_FORMAT_R8G8B8A8, 1, 1,
+        &vdp_handle->output_surface);
+    if (status != VDP_STATUS_OK) {
+        xab_log(LOG_ERROR, "Couldn't create VDPAU output surface!\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -137,7 +152,7 @@ create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle) {
     xab_log(LOG_VERBOSE, "Creating VDPAU AVHWDeviceContext\n");
     create_device_vdpau_t ret = {
         .err = -1,
-        .hwctx = NULL,
+        .avref = NULL,
     };
 
     VdpauHandle_t *vdp_handle = handle;
@@ -146,6 +161,7 @@ create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle) {
             "Allocating AVHWDeviceContext via av_hwdevice_ctx_alloc\n");
     AVBufferRef *avref = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VDPAU);
     if (!avref) {
+        xab_log(LOG_ERROR, "Failed to allocate VDPAU AVHWDeviceContext!\n");
         if (exit_vdpau(handle) < 0) {
             xab_log(LOG_WARN, "exit_vdpau failed!\n");
         }
@@ -155,7 +171,7 @@ create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle) {
     vdp_handle->av_device_ref = avref;
 
     xab_log(LOG_TRACE, "Setting AVHWDeviceContext's free device callback\n");
-    AVHWDeviceContext *hwctx = (void *)avref;
+    AVHWDeviceContext *hwctx = (void *)avref->data;
     hwctx->free = free_device_ref;
     hwctx->user_opaque = handle;
 
@@ -180,7 +196,7 @@ create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle) {
         return ret;
     }
 
-    ret.hwctx = hwctx;
+    ret.avref = avref;
     ret.err = 0;
     xab_log(LOG_DEBUG, "VDPAU device created successfully!\n");
     return ret;
@@ -189,14 +205,26 @@ create_device_vdpau_t create_device_vdpau(HwaAPIHandle handle) {
 int exit_vdpau(HwaAPIHandle handle) {
     if (!handle)
         return -1;
+    xab_log(LOG_VERBOSE, "Exiting a VDPAU hwaccel instance...\n");
+
     VdpauHandle_t *vdp_handle = handle;
 
-    if (vdp_handle->output_surface != VDP_INVALID_HANDLE)
+    if (vdp_handle->output_surface != VDP_INVALID_HANDLE) {
+        xab_log(LOG_TRACE, "Destroying VDPAU output surface\n");
         vdp_handle->shandle->vtable->output_surface_destroy(
             vdp_handle->output_surface);
-    av_buffer_unref(&vdp_handle->av_device_ref);
+    }
 
+    if (vdp_handle->av_device_ref) {
+        xab_log(LOG_TRACE, "Unrefing VDPAU device ref\n");
+        av_buffer_unref(&vdp_handle->av_device_ref);
+    }
+
+    xab_log(LOG_TRACE, "Unrefing VPDAU shared handle\n");
     UnrefSharedHandle(vdp_handle->shandle);
+
+    xab_log(LOG_TRACE, "Freeing the VDPAU hwaccel instance's handle\n");
     free(vdp_handle);
+
     return 0;
 }

@@ -133,7 +133,7 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
         hw_accel_close(hwa_ctx);
         return AVERROR(EINVAL);
     }
-    hwa_ctx->hw_device_ctx = (AVBufferRef *)ret.hwctx;
+    hwa_ctx->hw_device_ctx = ret.avref;
 #else
     if ((error = av_hwdevice_ctx_create(
              &hwa_ctx->hw_device_ctx, hwa_ctx->dev_type, NULL, NULL, 0)) < 0) {
@@ -146,12 +146,14 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
 
     // check if it is possible to convert the GPU pixel format to something
     // valid
+    xab_log(LOG_TRACE, "Getting HWFrame constraints\n");
     AVHWFramesConstraints *hw_frames_constraints =
         av_hwdevice_get_hwframe_constraints(hwa_ctx->hw_device_ctx, NULL);
 
     if (!hw_frames_constraints)
         return AVERROR(EINVAL);
 
+    xab_log(LOG_TRACE, "Validating pixel formats\n");
     enum AVPixelFormat *pixfmt = (enum AVPixelFormat *)AV_PIX_FMT_NONE;
     for (pixfmt = hw_frames_constraints->valid_sw_formats;
          *pixfmt != AV_PIX_FMT_NONE; pixfmt++) {

@@ -1,7 +1,9 @@
 #include "vdpau_vtable.h"
-#include "logger.h"
 
 #include <vdpau/vdpau.h>
+
+#include "logger.h"
+#include "utils.h"
 
 int vdpau_vtable_init(VdpauVTable_t *target, VdpDevice device,
                       VdpGetProcAddress *get_proc_address) {
@@ -24,11 +26,14 @@ int vdpau_vtable_init(VdpauVTable_t *target, VdpDevice device,
 
     for (const struct vdpau_function *vdpau_func = vdpau_funcs;
          vdpau_func->offset >= 0; vdpau_func++) {
-        VdpStatus status = get_proc_address(
-            device, vdpau_func->id,
-            (void **)((char *)&target +
-                      vdpau_func->offset)); // convert (char *) cuz of c pointer
-                                            // arithmetic scaling type shi
+        const void *addr =
+            ((char *)target + // convert (char *) cuz of c pointer arithmetic
+                              // scaling type shi
+             vdpau_func->offset);
+        Assert(addr != NULL && "Invalid VPDAU vtable address!");
+
+        VdpStatus status =
+            get_proc_address(device, vdpau_func->id, (void **)addr);
         if (status != VDP_STATUS_OK) {
             xab_log(LOG_ERROR,
                     "Error when calling vdp_get_proc_address(function "
@@ -36,6 +41,11 @@ int vdpau_vtable_init(VdpauVTable_t *target, VdpDevice device,
                     vdpau_func->id,
                     target->get_error_string ? target->get_error_string(status)
                                              : "?");
+            return -1;
+        }
+        if ((*(void **)addr) == NULL) {
+            xab_log(LOG_ERROR, "Invalid vtable address! (%d)\n",
+                    vdpau_func->id);
             return -1;
         }
     }
