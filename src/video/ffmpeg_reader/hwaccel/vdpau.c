@@ -56,7 +56,7 @@ int initSharedHandle(void) {
     if (initialized)
         return 0;
 
-    xab_log(LOG_VERBOSE, "Initalized VDPAU shared handle...\n");
+    xab_log(LOG_VERBOSE, "Initalizing VDPAU shared handle...\n");
     VdpauSharedHandle_t *shandle = RefSharedHandle();
 
     // create device
