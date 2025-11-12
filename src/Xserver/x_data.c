@@ -6,8 +6,6 @@
 #include "utils.h"
 
 x_data_t x_data_init(void) {
-    Assert(connection != NULL && "Invalid xcb connection!");
-
     x_data_t xdata = {
         .connection = NULL,
         .visual = NULL,
