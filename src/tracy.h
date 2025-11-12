@@ -28,12 +28,12 @@
 // haha macro abuse go bRRR
 #define ON_TRACY(stuff)
 
+// stolen from tracy/TracyC.h
+// cuz it might not be installed
+
 typedef const void *TracyCZoneCtx;
 
 typedef const void *TracyCLockCtx;
-
-// stolen from tracy/TracyC.h
-// cuz it might not be installed
 
 #define TracyCZone(c, x)
 #define TracyCZoneN(c, x, y)
@@ -108,6 +108,9 @@ typedef const void *TracyCLockCtx;
 
 #define TracyCIsConnected 0
 #define TracyCIsStarted 0
+
+#define TracyCBeginSamplingProfiling() 0
+#define TracyCEndSamplingProfiling()
 
 #ifdef TRACY_FIBERS
 #define TracyCFiberEnter(fiber)

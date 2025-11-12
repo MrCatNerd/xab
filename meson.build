@@ -118,13 +118,13 @@ tracy_enable = get_option('tracy_enable')
 # will be an empty list unless tracy is enabled, which in that case this will be a dependency
 tracy_dep = []
 if tracy_enable
-  tracy_dep = dependency('tracy', static: true, version: '>= 0.12.2')
+  tracy_dep = dependency('tracy', static: true, version: '>= 0.13.0')
   tracy_version = tracy_dep.version().strip()
 
-  if tracy_version != '0.12.2'
+  if tracy_version != '0.13.0'
     warning(
       'tracy ' + tracy_dep.version().strip(),
-      'is not supported, tracy 0.12.2 is preferred',
+      'is not supported, tracy 0.13.0 is preferred',
     )
   endif
 

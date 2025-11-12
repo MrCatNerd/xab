@@ -1,9 +1,8 @@
-project('tracy', ['cpp'], version: '0.12.2', meson_version: '>=1.3.0', default_options : ['cpp_std=c++11'])
+project('tracy', ['cpp'], version: '0.13.0', meson_version: '>=1.3.0', default_options : ['cpp_std=c++11'])
 
 # disable all of the warnings
 # im not sure if this is the way to do it but it works ig
 add_project_arguments('-w', language: 'cpp')
-
 
 # internal compiler flags
 tracy_compile_args = []
@@ -22,8 +21,8 @@ if get_option('on_demand')
   tracy_common_args += ['-DTRACY_ON_DEMAND']
 endif
 
-if get_option('callstack')
-  tracy_common_args += ['-DTRACY_CALLSTACK']
+if get_option('callstack') > 0
+  tracy_common_args += ['-DTRACY_CALLSTACK='+get_option('callstack').to_string()]
 endif
 
 if get_option('no_callstack')
@@ -182,7 +181,7 @@ common_includes = [
     'public/common/TracySocket.hpp',
     'public/common/TracyStackFrames.hpp',
     'public/common/TracySystem.hpp',
-    'public/common/TracyUwp.hpp',
+    'public/common/TracyWinFamily.hpp',
     'public/common/TracyYield.hpp'
 ]
 
@@ -225,7 +224,8 @@ endif
 pkg = import('pkgconfig')
 pkg.generate(tracy,
   extra_cflags : tracy_dep_compile_args,
-  requires     : tracy_public_deps)
+  requires     : tracy_public_deps,
+  libraries: [tracy])
 
 tracy_dep = declare_dependency(
     compile_args        : tracy_dep_compile_args,
@@ -233,4 +233,3 @@ tracy_dep = declare_dependency(
     include_directories : tracy_public_include_dirs)
 
 meson.override_dependency('tracy', tracy_dep)
-
