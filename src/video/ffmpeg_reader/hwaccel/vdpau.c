@@ -146,8 +146,6 @@ static int x_error_handler(Display *dpy, XErrorEvent *pErr) {
             return 0;
         }
     }
-    XCloseDisplay(dpy);
-    exit(1);
     return 0;
 }
 
@@ -185,13 +183,22 @@ int initSharedHandle(void) {
     {
         const int status = vdpau_vtable_init(shandle->vtable, shandle->device,
                                              shandle->get_proc_address);
-        if (status < 0)
+        if (status < 0) {
+
+            xab_log(LOG_ERROR,
+                    "VDPAU vtable Initialization returned %d, freeing vtable "
+                    "memory",
+                    status);
+            free(shandle->vtable);
+            shandle->vtable = NULL;
             return status;
-    }
-    if (!shandle->vtable->is_initialized) {
-        xab_log(LOG_ERROR, "VDPAU shared handle's vtable isn't initialized "
-                           "even though init was called!\n");
-        return -1;
+        } else if (!shandle->vtable->is_initialized) {
+            xab_log(LOG_ERROR, "VDPAU shared handle's vtable isn't initialized "
+                               "even though init was called! freeing vtable\n");
+            free(shandle->vtable);
+            shandle->vtable = NULL;
+            return -1;
+        }
     }
 
     // abuse ref system
