@@ -13,4 +13,4 @@ subdir('render')
 subdir('Xserver')
 
 # configure the file
-configure_file(input:'version.h.in', output:  'version.h', configuration: version_conf)
+configure_file(input: 'version.h.in', output: 'version.h', configuration: version_conf)
