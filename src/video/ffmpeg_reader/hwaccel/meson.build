@@ -17,6 +17,7 @@ hwaccels = {
   },
 }
 
+hwaccelsxmacro = '' # macro abuse go brrr
 foreach hwa_name : hwaccels.keys()
   hwa_info = hwaccels.get(hwa_name)
 
@@ -40,4 +41,10 @@ foreach hwa_name : hwaccels.keys()
   src_files += files(hwa_files)
   add_project_arguments('-DHWA_' + hwa_name.to_upper(), language: 'c')
   video_reader_deps += hwa_deps
+
+  hwaccelsxmacro += '\t\\\n\tX(' + hwa_name.to_lower() + ','  + hwa_name.to_upper() + ')'
 endforeach
+
+hwaccelslist_config = configuration_data()
+hwaccelslist_config.set('hwaccelsxmacro', hwaccelsxmacro)
+configure_file(input: 'hwaccelslist.h.in', output: 'hwaccelslist.h', configuration: hwaccelslist_config)

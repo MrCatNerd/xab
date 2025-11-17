@@ -1,12 +1,14 @@
 #include "hwdec.h"
 
 #include "hwaccels_apis.h"
+#include "video/ffmpeg_reader/hwaccel/hwaccelslist.h"
 
 #include <stdbool.h>
 #include <libavutil/buffer.h>
 #include <libavutil/hwcontext.h>
 
 #include "logger.h"
+#include "utils.h"
 
 static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
                                         const enum AVPixelFormat *pix_fmts);
@@ -107,15 +109,16 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
     default:
     case AV_HWDEVICE_TYPE_NONE:
         break;
-#ifdef HWA_VDPAU
-    case AV_HWDEVICE_TYPE_VDPAU:
-        if (init_vdpau(&dst_hwa_ctx->hwa_api_handle) < 0) {
-            xab_log(LOG_ERROR, "Failed to initialize VDPAU!\n");
-            hw_accel_close(dst_hwa_ctx);
-            return false;
-        }
+#define HWA_INIT(lower_name, upper_name)                                       \
+    case AV_HWDEVICE_TYPE_##upper_name:                                        \
+        if (init_##lower_name(&dst_hwa_ctx->hwa_api_handle) < 0) {             \
+            xab_log(LOG_ERROR, "Failed to initialize %s!\n", #upper_name);     \
+            hw_accel_close(dst_hwa_ctx);                                       \
+            return false;                                                      \
+        }                                                                      \
         break;
-#endif
+        HWACCELSXMACRO(HWA_INIT)
+#undef HWA_INIT
     }
 
     return true;
@@ -123,26 +126,36 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
 
 int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
                          AVCodecContext *av_codec_ctx) {
-    int error = 0;
+    Assert(hwa_ctx != NULL && av_codec_ctx != NULL && "Invalid pointers!");
 
-    // init device
-#ifdef HWA_VDPAU
-    create_device_vdpau_t ret = create_device_vdpau(hwa_ctx->hwa_api_handle);
-    if (ret.err < 0) {
-        xab_log(LOG_ERROR, "Failed creating VDPAU device!\n");
-        hw_accel_close(hwa_ctx);
-        return AVERROR(EINVAL);
+    int error = 0;
+    switch (hwa_ctx->dev_type) {
+#define HWA_INIT_DEV(lower_name, upper_name)                                   \
+    case AV_HWDEVICE_TYPE_##upper_name: {                                      \
+        create_device_##lower_name##_t ret =                                   \
+            create_device_##lower_name(hwa_ctx->hwa_api_handle);               \
+        if (ret.err < 0) {                                                     \
+            xab_log(LOG_ERROR, "Failed creating %s device!\n", #upper_name);   \
+            hw_accel_close(hwa_ctx);                                           \
+            return AVERROR(EINVAL);                                            \
+        }                                                                      \
+        hwa_ctx->hw_device_ctx = ret.avref;                                    \
+    } break;
+
+        HWACCELSXMACRO(HWA_INIT_DEV);
+#undef HWA_INIT_DEV
+    default:
+        if ((error = av_hwdevice_ctx_create(&hwa_ctx->hw_device_ctx,
+                                            hwa_ctx->dev_type, NULL, NULL, 0)) <
+            0) {
+            xab_log(LOG_ERROR,
+                    "Decoder: Failed to create specified HW device\n");
+            hw_accel_close(hwa_ctx);
+            return error;
+        }
+        av_codec_ctx->hw_device_ctx = av_buffer_ref(hwa_ctx->hw_device_ctx);
+        break;
     }
-    hwa_ctx->hw_device_ctx = ret.avref;
-#else
-    if ((error = av_hwdevice_ctx_create(
-             &hwa_ctx->hw_device_ctx, hwa_ctx->dev_type, NULL, NULL, 0)) < 0) {
-        xab_log(LOG_ERROR, "Decoder: Failed to create specified HW device\n");
-        hw_accel_close(hwa_ctx);
-        return error;
-    }
-    av_codec_ctx->hw_device_ctx = av_buffer_ref(hwa_ctx->hw_device_ctx);
-#endif
 
     // check if it is possible to convert the GPU pixel format to something
     // valid
@@ -196,6 +209,13 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 }
 
 void hw_accel_close(DecoderHW_ctx_t *hwa_ctx) {
+
+#define HWA_EXIT(lower_name, upper_name)                                       \
+    if (!exit_##lower_name(hwa_ctx->hwa_api_handle)) {                         \
+        xab_log(LOG_ERROR, "Failed exiting %s hwaccel!\n", #upper_name);       \
+    }
+    HWACCELSXMACRO(HWA_EXIT);
+#undef HWA_EXIT
     if (hwa_ctx->hw_device_ctx)
         av_buffer_unref(&hwa_ctx->hw_device_ctx);
 }
