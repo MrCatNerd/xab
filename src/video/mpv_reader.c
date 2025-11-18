@@ -321,14 +321,17 @@ static void handle_mpv_events(VRStateInternal_t *internal_state) {
             break;
 
         switch (event->event_id) {
-        case MPV_EVENT_LOG_MESSAGE:
-            xab_log(LOG_VERBOSE, "Mpv log message: `%s`\n", event->data);
-            break;
+        case MPV_EVENT_LOG_MESSAGE: {
+            mpv_event_log_message *lm = event->data;
+            xab_log(
+                LOG_VERBOSE, "MPV log message: %s:%s", lm->prefix,
+                lm->text); // TODO: dynamic log glevel based on lm->log_level
+        } break;
         case MPV_EVENT_IDLE:
-            xab_log(LOG_DEBUG, "Mpv state: idle\n");
+            xab_log(LOG_DEBUG, "MPV state: idle\n");
             break;
         case MPV_EVENT_FILE_LOADED:
-            xab_log(LOG_DEBUG, "Mpv state: file loaded\n");
+            xab_log(LOG_DEBUG, "MPV state: file loaded\n");
             break;
         case MPV_EVENT_NONE:
         default:
