@@ -1,25 +1,37 @@
 #include "ipc.h"
-#include "context.h"
-#include "logger.h"
-#include "ipc_utils.h"
-#include "utils.h"
-#include "tracy.h"
+#include "ipc_spec.h"
 
 #include <errno.h>
 #include <netinet/in.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <hashmap.h>
 
-#include "ipc_spec.h"
+#include "context.h"
+#include "logger.h"
+#include "ipc_utils.h"
+#include "utils.h"
+#include "tracy.h"
 
 static int set_nonblocking(int sockfd);
 static int negotiate_with_new_client(IPC_client_t *client);
-static void ipc_client_close(IPC_client_t *client, int epoll_fd);
+static void ipc_client_close(const IPC_client_t *client, int epoll_fd);
+
+static int client_compare(const void *a, const void *b, void *udata) {
+    (void)udata;
+    const IPC_client_t *ca = a;
+    const IPC_client_t *cb = b;
+    return ca->fd == cb->fd;
+}
+
+static uint64_t client_hash(const void *item, uint64_t seed0, uint64_t seed1) {
+    const IPC_client_t *client = item;
+    return hashmap_sip(&client->fd, sizeof(client->fd), seed0, seed1);
+}
 
 int xab_ipc_capabilities(void) {
     return IpcXabCapabilitiesNone
@@ -33,12 +45,14 @@ IPC_handle_t ipc_init(const char *name) {
     Assert(name != NULL);
     IPC_handle_t handle = {
         .server_fd = -1,
-        .clients = NULL,
-        .client_count = 0,
+        .clients = hashmap_new(sizeof(IPC_client_t), 0, 0, 0, client_hash,
+                               client_compare, NULL, NULL),
         .path = name,
         .server_addr = {0},
         .epoll_fd = 0,
     };
+
+    Assert(handle->clients != NULL && "Failed to create clients hashmap");
 
     // create socket
     handle.server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -116,7 +130,10 @@ static int negotiate_with_new_client(IPC_client_t *client) {
             0) {
             xab_log(LOG_ERROR, "An error occured while recieving the client's "
                                "xab IPC protocol version\n");
-            // TODO: handle error
+            ipc_client_close(client,
+                             -1); // use -1 as epoll fd cuz we the client's not
+                                  // in the epoll yet
+            return -1;
         }
         client_version = ntohl(client_version);
 
@@ -148,7 +165,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
     TracyCZoneNC(tracy_ctx, "IPC event poll", TRACY_COLOR_BLUE, true);
     Assert(handle != NULL && "IPC handle pointer is NULL!");
     struct epoll_event events[8] = {0};
-    int n = epoll_wait(handle->epoll_fd, events, 8, 0);
+    const int n = epoll_wait(handle->epoll_fd, events, 8, 0);
     if (n > 0)
         xab_log(LOG_VERBOSE, "%d epoll events ready\n", n);
     for (int i = 0; i < n; i++) {
@@ -158,45 +175,42 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
             int client_fd = -1;
             xab_log(LOG_DEBUG, "Accepting IPC client connections...\n");
             while ((client_fd = accept(handle->server_fd, NULL, NULL)) >= 0) {
-                // allocate space for client
-                if (handle->clients == NULL)
-                    handle->clients = calloc(1, (++handle->client_count) *
-                                                    sizeof(IPC_client_t));
-                else {
-                    handle->clients =
-                        realloc(handle->clients, (++handle->client_count) *
-                                                     sizeof(IPC_client_t));
-                    Assert(handle->clients != NULL &&
-                           "realloc failed miserably!");
-                    // zero out the new memory
-                    memset(&handle->clients[handle->client_count - 1], 0,
-                           sizeof(IPC_client_t));
-                }
-
                 Assert(client_fd >= 0 && "Invalid client fd!\n");
 
                 // copy over the client
-                IPC_client_t *client =
-                    &handle->clients[handle->client_count - 1];
-                client->fd = client_fd;
-                if (negotiate_with_new_client(client) < 0) {
-                    memset(&handle->clients[handle->client_count - 1], 0,
-                           sizeof(IPC_client_t)); // TODO: proper memory sizing
+                IPC_client_t client = {.fd = client_fd};
+                {
+                    const IPC_client_t *ret =
+                        hashmap_set(handle->clients, &client);
+                    if (ret) {
+                        Assert(ret->fd == client->fd &&
+                               "Hashmap set got clients with different FD's "
+                               "replaced");
+                        xab_log(LOG_WARN,
+                                "Client connection %d got reset in the hashmap",
+                                client.fd);
+                    }
+                    if (hashmap_oom(handle->clients))
+                        xab_log(LOG_ERROR,
+                                "IPC clients hashmap Out-Of-Memory!\n");
+                }
+                if (negotiate_with_new_client(&client) < 0) {
+                    hashmap_delete(handle->clients, &client);
                     continue;
                 }
 
                 struct epoll_event events = {
                     .events = EPOLLIN,
-                    .data.fd = client->fd,
+                    .data.fd = client.fd,
                 };
 
-                if (epoll_ctl(handle->epoll_fd, EPOLL_CTL_ADD, client->fd,
+                if (epoll_ctl(handle->epoll_fd, EPOLL_CTL_ADD, client.fd,
                               &events)) {
                     xab_log(LOG_ERROR, "epoll_ctl EPOLL_CTL_ADD failed!\n");
                     // TODO: handle error
                 }
 
-                xab_log(LOG_INFO, "Connected to client (fd %d)\n", client->fd);
+                xab_log(LOG_INFO, "Connected to client (fd %d)\n", client.fd);
             }
 
             if (client_fd == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -206,70 +220,69 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
                         errno);
             }
         } else {
-            // check each client
-            // TODO: use a hasmap instead
-            Assert(handle->clients != NULL && "clients pointer is NULL!");
-            for (int i = 0; i < handle->client_count; i++) {
-                IPC_client_t *client = &handle->clients[i];
-
-                if (event.data.fd == client->fd) {
-                    IpcCommands_e data = IPC_NONE;
-                    ssize_t n = recv_exact(client->fd, &data, sizeof(data),
-                                           MSG_DONTWAIT);
-                    if (n == 0)
-                        ipc_client_close(client, handle->epoll_fd);
-                    else if (n < 0) {
-                        // if the error is not relating to MSG_DONTWAIT
-                        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                            xab_log(
-                                LOG_WARN,
-                                "Recieved a packet errored with errno: `%d`\n",
-                                errno);
-                        }
-                    } else if (n != sizeof(data)) {
-                        xab_log(LOG_DEBUG,
-                                "Recieved partial packet, skipping for now\n");
-                        return;
-                    }
-
-                    // remember kids! never forget to ntohl your recvs!
-                    data = ntohl(data);
-
-                    switch (data) {
-                    default:
-                        xab_log(LOG_WARN, "Invalid IPC command from client!\n");
-                        break;
-                        // im too lazy to send an invalid back to the client
-                    case IPC_INVALID:
-                        break;
-                    case IPC_NONE:
-                        break;
-                    case IPC_RESTART:
-                        // TODO: this
-                        break;
-                    case IPC_XAB_SHUTDOWN:
-                        // TODO: this
-                        break;
-                    case IPC_CLIENT_DISCONNECT:
-                        xab_log(LOG_INFO, "Client %d issued a disconnect...\n",
-                                client->fd);
-                        ipc_client_close(client, handle->epoll_fd);
-                        break;
-                    case IPC_CHANGE_BACKGROUNDS:
-                        // TODO: this
-                        break;
-                    case IPC_GET_MONITORS:
-                        // TODO: this
-                        break;
-                    }
+            // check the clients
+            Assert(handle->clients != NULL &&
+                   "clients hashmap pointer is NULL!");
+            const IPC_client_t *client = hashmap_get(
+                handle->clients, &(IPC_client_t){.fd = event.data.fd});
+            if (client == NULL)
+                continue;
+            IpcCommands_e data = IPC_NONE;
+            ssize_t n =
+                recv_exact(client->fd, &data, sizeof(data), MSG_DONTWAIT);
+            if (n == 0) {
+                ipc_client_close(client, handle->epoll_fd);
+                hashmap_delete(handle->clients, client);
+            } else if (n < 0) {
+                // if the error is not relating to MSG_DONTWAIT
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    xab_log(LOG_WARN,
+                            "Recieved a packet errored with errno: `%d`\n",
+                            errno);
                 }
+            } else if (n != sizeof(data)) {
+                xab_log(LOG_DEBUG,
+                        "Recieved partial packet, skipping for now\n");
+                return;
+            }
+
+            // remember kids! never forget to ntohl your recvs!
+            data = ntohl(data);
+
+            switch (data) {
+            default:
+                xab_log(LOG_WARN, "Invalid IPC command from client!\n");
+                break;
+                // im too lazy to send an invalid back to the client
+            case IPC_INVALID:
+                break;
+            case IPC_NONE:
+                break;
+            case IPC_RESTART:
+                // TODO: this
+                break;
+            case IPC_XAB_SHUTDOWN:
+                // TODO: this
+                break;
+            case IPC_CLIENT_DISCONNECT:
+                xab_log(LOG_INFO, "Client %d issued a disconnect...\n",
+                        client->fd);
+                ipc_client_close(client, handle->epoll_fd);
+                hashmap_delete(handle->clients, client);
+                break;
+            case IPC_CHANGE_BACKGROUNDS:
+                // TODO: this
+                break;
+            case IPC_GET_MONITORS:
+                // TODO: this
+                break;
             }
         }
     }
     TracyCZoneEnd(tracy_ctx);
 }
 
-static void ipc_client_close(IPC_client_t *client, int epoll_fd) {
+static void ipc_client_close(const IPC_client_t *client, int epoll_fd) {
     Assert(client != NULL && "Client pointer is NULL!");
 
     // close client fd
@@ -289,8 +302,16 @@ static void ipc_client_close(IPC_client_t *client, int epoll_fd) {
         if (close(client->fd) < 0) {
             xab_log(LOG_ERROR, "Failed closing IPC client FD %d\n", client->fd);
         }
-        client->fd = -1;
     }
+}
+
+static bool client_hashmap_disconnect(const void *item, void *udata) {
+    if (!udata)
+        return false;
+    const int epoll_fd = *(int *)udata;
+    const IPC_client_t *client = item;
+    ipc_client_close(client, epoll_fd);
+    return true;
 }
 
 void ipc_close(IPC_handle_t *handle) {
@@ -308,15 +329,8 @@ void ipc_close(IPC_handle_t *handle) {
     }
 
     // close client fds
-    if (handle->client_count > 0 && handle->clients != NULL)
-        for (int i = 0; i < handle->client_count; i++)
-            ipc_client_close(&handle->clients[i], handle->epoll_fd);
-    if (handle->clients) {
-        xab_log(LOG_TRACE, "Freeing clients' memeory\n");
-        free(handle->clients);
-        handle->clients = NULL;
-        handle->client_count = 0;
-    }
+    hashmap_scan(handle->clients, client_hashmap_disconnect, &handle->epoll_fd);
+    hashmap_free(handle->clients);
 
     // close server fd
     if (handle->server_fd >= 0) {

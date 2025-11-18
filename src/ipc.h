@@ -6,6 +6,7 @@
 #include <sys/un.h>
 
 #include "context.h"
+#include "hashmap.h"
 
 // go see ipc_spec.h for ipc commands and stuff
 
@@ -18,8 +19,7 @@ typedef struct IPC_handle {
         int server_fd;
         struct sockaddr_un server_addr;
 
-        int client_count;
-        IPC_client_t *clients;
+        struct hashmap *clients;
 
         // epoll stuff
         int epoll_fd;
