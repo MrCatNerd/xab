@@ -322,11 +322,19 @@ static void handle_mpv_events(VRStateInternal_t *internal_state) {
 
         switch (event->event_id) {
         case MPV_EVENT_LOG_MESSAGE: {
-            mpv_event_log_message *lm = event->data;
-            xab_log(
-                LOG_VERBOSE, "MPV log message: %s:%s", lm->prefix,
-                lm->text); // TODO: dynamic log glevel based on lm->log_level
-        } break;
+            const mpv_event_log_message *log_message = event->data;
+            mpv_log_level log_level = log_message->log_level;
+            // Im not sure these mappings are 100% correct but I don't really
+            // care
+            if (log_level == MPV_LOG_LEVEL_NONE)
+                log_level = MPV_LOG_LEVEL_TRACE;
+            else if (log_level == MPV_LOG_LEVEL_INFO)
+                log_level += 10;
+            else if (log_level == MPV_LOG_LEVEL_V)
+                log_level -= 10;
+            xab_log((((LOG_FATAL + 1) * 10) - log_level) / 10,
+                    "MPV log message: %s", log_message->text, log_level);
+        }; break;
         case MPV_EVENT_IDLE:
             xab_log(LOG_DEBUG, "MPV state: idle\n");
             break;
