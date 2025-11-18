@@ -283,7 +283,7 @@ static void ipc_client_close(IPC_client_t *client, int epoll_fd) {
             }
         }
 
-        xab_log(LOG_TRACE, "Closing client FD %d\n", client->fd);
+        xab_log(LOG_INFO, "Closing client FD %d\n", client->fd);
         if (shutdown(client->fd, SHUT_RDWR) < 0)
             xab_log(LOG_ERROR, "Shutting down client FD failed\n");
         if (close(client->fd) < 0) {
