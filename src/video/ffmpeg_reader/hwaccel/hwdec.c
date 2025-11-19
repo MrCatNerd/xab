@@ -209,13 +209,19 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
 }
 
 void hw_accel_close(DecoderHW_ctx_t *hwa_ctx) {
-
+    switch (hwa_ctx->dev_type) {
 #define HWA_EXIT(lower_name, upper_name)                                       \
-    if (!exit_##lower_name(hwa_ctx->hwa_api_handle)) {                         \
-        xab_log(LOG_ERROR, "Failed exiting %s hwaccel!\n", #upper_name);       \
-    }
-    HWACCELSXMACRO(HWA_EXIT);
+    case AV_HWDEVICE_TYPE_##upper_name:                                        \
+        if (!exit_##lower_name(hwa_ctx->hwa_api_handle)) {                     \
+            xab_log(LOG_ERROR, "Failed exiting %s hwaccel!\n", #upper_name);   \
+        }                                                                      \
+        break;
+        HWACCELSXMACRO(HWA_EXIT);
 #undef HWA_EXIT
+    default:
+        xab_log(LOG_WARN, "Device type has no explicit HW exit function!\n");
+        break;
+    }
     if (hwa_ctx->hw_device_ctx)
         av_buffer_unref(&hwa_ctx->hw_device_ctx);
 }
