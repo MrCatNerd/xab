@@ -112,7 +112,7 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
 #define HWA_INIT(lower_name, upper_name)                                       \
     case AV_HWDEVICE_TYPE_##upper_name:                                        \
         if (init_##lower_name(&dst_hwa_ctx->hwa_api_handle) < 0) {             \
-            xab_log(LOG_ERROR, "Failed to initialize %s!\n", #upper_name);     \
+            xab_log(LOG_ERROR, "Failed to initialize " #upper_name "!\n");     \
             hw_accel_close(dst_hwa_ctx);                                       \
             return false;                                                      \
         }                                                                      \
@@ -135,7 +135,7 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
         create_device_##lower_name##_t ret =                                   \
             create_device_##lower_name(hwa_ctx->hwa_api_handle);               \
         if (ret.err < 0) {                                                     \
-            xab_log(LOG_ERROR, "Failed creating %s device!\n", #upper_name);   \
+            xab_log(LOG_ERROR, "Failed creating " #upper_name " device!\n");   \
             hw_accel_close(hwa_ctx);                                           \
             return AVERROR(EINVAL);                                            \
         }                                                                      \
@@ -213,7 +213,7 @@ void hw_accel_close(DecoderHW_ctx_t *hwa_ctx) {
 #define HWA_EXIT(lower_name, upper_name)                                       \
     case AV_HWDEVICE_TYPE_##upper_name:                                        \
         if (!exit_##lower_name(hwa_ctx->hwa_api_handle)) {                     \
-            xab_log(LOG_ERROR, "Failed exiting %s hwaccel!\n", #upper_name);   \
+            xab_log(LOG_ERROR, "Failed exiting " #upper_name " hwaccel!\n");   \
         }                                                                      \
         break;
         HWACCELSXMACRO(HWA_EXIT);
