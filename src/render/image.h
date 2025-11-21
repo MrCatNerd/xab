@@ -41,4 +41,4 @@ Shader_t *image_get_appropriate_wallpaper_shader(Image_t *image,
                                                  ShaderCache_t *scache);
 
 /// call this only if you own the textures!
-void image_destroy(Image_t *image);
+void image_destroy_textures(Image_t *image);

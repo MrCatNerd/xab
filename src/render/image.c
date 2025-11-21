@@ -79,7 +79,7 @@ Shader_t *image_get_appropriate_wallpaper_shader(Image_t *image,
     return NULL;
 }
 
-void image_destroy(Image_t *image) {
+void image_destroy_textures(Image_t *image) {
     Assert(image != NULL && "Invalid image pointer!");
     if (image->textures && image->texture_count > 0) {
         for (int i = 0; i < image->texture_count; i++) {
