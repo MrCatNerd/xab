@@ -16,6 +16,7 @@ void image_create(Image_t *target, ImageColorStandard_e cstandard,
 
     target->cstandard = cstandard;
     target->crange = crange;
+    const TextureConfiguration_t tconf = DEFAULT_TEXTURE_CONF_B(pixelated);
     switch (cstandard) {
     case IMAGE_CSTD_UNKNOWN:
     case IMAGE_CSTD_SRGB: {
@@ -23,7 +24,7 @@ void image_create(Image_t *target, ImageColorStandard_e cstandard,
                 pixelated ? "pixelated" : "");
         target->texture_count = 1;
         target->textures = calloc(1, sizeof(Texture_t));
-        create_texture(target->textures, width, height, GL_RGB, pixelated);
+        create_texture(target->textures, width, height, GL_RGB, tconf);
     } break;
     case IMAGE_CSTD_YUV_UNKNOWN:
     case IMAGE_CSTD_YUV_BT601:
@@ -36,9 +37,9 @@ void image_create(Image_t *target, ImageColorStandard_e cstandard,
         // clang-format off
         // YUV420P has the Y full size and the UV half size
         // GL_R is just ragebait especially when GL_RG is valid
-        create_texture(target->textures + 0,       width       ,       height       , GL_RED, pixelated); // Y
-        create_texture(target->textures + 1, (int)(width * 0.5), (int)(height * 0.5), GL_RED, pixelated); // U
-        create_texture(target->textures + 2, (int)(width * 0.5), (int)(height * 0.5), GL_RED, pixelated); // V
+        create_texture(target->textures + 0,       width       ,       height       , GL_RED, tconf); // Y
+        create_texture(target->textures + 1, (int)(width * 0.5), (int)(height * 0.5), GL_RED, tconf); // U
+        create_texture(target->textures + 2, (int)(width * 0.5), (int)(height * 0.5), GL_RED, tconf); // V
         // clang-format on
     } break;
     }

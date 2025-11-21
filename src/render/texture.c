@@ -7,21 +7,15 @@
 #include "utils.h"
 
 void create_texture(Texture_t *target, int width, int height,
-                    int gl_internal_format, bool pixelated) {
+                    int gl_internal_format, TextureConfiguration_t conf) {
     Assert(target != NULL && "Invalid texture target pointer!");
 
     // Texture
     xab_log(LOG_DEBUG, "Creating texture: %dx%dpx\n", width, height);
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                    pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    reconfigure_texture(target, &conf);
 
     target->width = width;
     target->height = height;
@@ -31,6 +25,15 @@ void create_texture(Texture_t *target, int width, int height,
     clear_texture(target);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void reconfigure_texture(Texture_t *texture, TextureConfiguration_t *conf) {
+    Assert(texture != NULL && conf != NULL && "Invalid pointers!");
+    bind_texture(texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, conf->min_filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, conf->mag_filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, conf->wrap_s);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, conf->wrap_t);
 }
 void bind_texture(const Texture_t *texture) {
     glBindTexture(GL_TEXTURE_2D, texture->id);
