@@ -211,10 +211,10 @@ void render_video(VideoReaderState_t *state) {
                 {MPV_RENDER_PARAM_OPENGL_FBO,
                  &(mpv_opengl_fbo){
                      .fbo = internal_state->framebuffer.fbo_id,
-                     .w = internal_state->framebuffer.width,
-                     .h = internal_state->framebuffer.height,
+                     .w = internal_state->framebuffer.texture.width,
+                     .h = internal_state->framebuffer.texture.height,
                      .internal_format =
-                         internal_state->framebuffer.gl_internal_format,
+                         internal_state->framebuffer.texture.gl_internal_format,
                  }},
                 // i don't flip for compatibility with other video readers, the
                 // orthographic projection already flips it
@@ -238,7 +238,7 @@ void render_video(VideoReaderState_t *state) {
 }
 
 unsigned int get_video_ogl_texture(VideoReaderState_t *state) {
-    return VR_INTERNAL(state->internal)->framebuffer.texture_color_id;
+    return VR_INTERNAL(state->internal)->framebuffer.texture.id;
 }
 
 void pause_video(VideoReaderState_t *state) {

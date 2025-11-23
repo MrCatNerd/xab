@@ -67,7 +67,7 @@ void wallpaper_render(wallpaper_t *wallpaper, Camera_t *camera,
     // glViewport(0, 0, abs((int)(camera->vpc.right - camera->vpc.left)),
     //            abs((int)(camera->vpc.top - camera->vpc.bottom)));
 
-    glViewport(0, 0, fbo_dest->width, fbo_dest->height);
+    glViewport(0, 0, fbo_dest->texture.width, fbo_dest->texture.height);
 
     use_shader(wallpaper->shader);
 
