@@ -133,9 +133,9 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     // shader stuff
     activate_texture(0);
     bind_texture(&fb->texture);
+    use_shader(fb->shader);
     glUniform1i(shader_get_uniform_location(fb->shader, "u_screenTexture"), 0);
     glUniform1f(shader_get_uniform_location(fb->shader, "u_Time"), da_time);
-    use_shader(fb->shader);
 
     // geometry stuff
     glBindVertexArray(fb->vao);
