@@ -5,6 +5,7 @@
 #include <mpv/render_gl.h>
 #include <epoxy/egl.h>
 
+#include "render/image.h"
 #include "render/shader_cache.h"
 #include "video/video_reader_interface.h"
 #include "logger.h"
@@ -40,9 +41,16 @@ VideoReaderState_t open_video(const char *path,
 
     // create a framebuffer
     xab_log(LOG_DEBUG, "Creating video framebuffer\n");
-    internal_state->framebuffer = create_framebuffer(
-        state.vrc.width * state.vrc.scale, state.vrc.height * state.vrc.scale,
-        state.vrc.gl_internal_format, scache);
+    internal_state->framebuffer =
+        create_framebuffer(state.vrc.width * state.vrc.scale,
+                           state.vrc.height * state.vrc.scale, GL_RGB, scache);
+
+    // create an image and point it to the framebuffer
+    state.image = calloc(1, sizeof(Image_t));
+    state.image->cstandard = IMAGE_CSTD_SRGB;
+    state.image->crange = IMAGE_CRANGE_JPEG;
+    state.image->textures = &internal_state->framebuffer.texture;
+    state.image->texture_count = 1;
 
     // create an mpv handle
     xab_log(LOG_DEBUG, "Initializing mpv handle\n");
@@ -237,10 +245,6 @@ void render_video(VideoReaderState_t *state) {
     TracyCZoneEnd(tracy_ctx);
 }
 
-unsigned int get_video_ogl_texture(VideoReaderState_t *state) {
-    return VR_INTERNAL(state->internal)->framebuffer.texture.id;
-}
-
 void pause_video(VideoReaderState_t *state) {
     mpv_command_async(VR_INTERNAL(state->internal)->mpv_handle, 0,
                       (const char *[]){"set", "pause", "yes", NULL});
@@ -271,6 +275,12 @@ void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
 
     // delete framebuffer
     delete_framebuffer(&internal_state->framebuffer, scache);
+
+    // cleanup image
+    // we don't need to use image_destroy_textures because the textures are
+    // owned by the framebuffer
+    free(state->image);
+    state->image = NULL;
 
     free(state->internal);
 }

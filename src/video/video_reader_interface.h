@@ -1,6 +1,9 @@
 #pragma once
 
+#include <stdbool.h>
+
 #include "render/shader_cache.h"
+#include "render/image.h"
 
 // TODO: maybe expose the actual video with and height from the struct (not the
 // target width and height from VideoReaderRenderConfig)
@@ -30,10 +33,6 @@ typedef struct VideoReaderRenderConfig {
          */
         bool pixelated;
         /**
-         * @brief gl internal format of the video framebuffer/texture
-         */
-        int gl_internal_format;
-        /**
          * @brief harwdare acceleration: use the enum 'VR_HW_ACCEL' to specify
          */
         enum VR_HW_ACCEL hw_accel;
@@ -49,6 +48,12 @@ typedef struct VideoReaderState {
          * @brief path to the video
          */
         const char *path;
+
+        /**
+         * @brief image of the video
+         */
+        Image_t *image;
+
         /**
          * @brief video rendering config, do not change after initialization
          */
@@ -78,14 +83,6 @@ VideoReaderState_t open_video(const char *path,
  * @param state - video reader state
  */
 void render_video(VideoReaderState_t *state);
-
-/**
- * @brief Get an id to the video reader's opengl texture
- *
- * @param state - video reader state
- * @return id to the video reader's opengl texture
- */
-unsigned int get_video_ogl_texture(VideoReaderState_t *state);
 
 /**
  * @brief Pause a video

@@ -29,7 +29,6 @@ bool picture_queue_put(picture_queue_t *pq, AVFrame *src_picture) {
         return false;
 
     // ref dat picture
-
     if (av_frame_ref(pq->queue[pq->front_idx].picture, src_picture) < 0) {
         xab_log(LOG_WARN, "picture queue: refing the picture failed...\n");
         return false;

@@ -1,28 +1,32 @@
-#include <time.h>
+#include "video/video_reader_interface.h"
+
+#include <assert.h>
 #include <epoxy/gl.h>
 #include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavcodec/codec_par.h>
 #include <libavcodec/packet.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
-#include <libswscale/swscale.h>
-#include <libavformat/avio.h>
 #include <libavutil/pixfmt.h>
+#include <libswscale/swscale.h>
+#include <stdlib.h>
+#include <time.h>
 
-#include "render/shader_cache.h"
-#include "video/video_reader_interface.h"
-#include "video/ffmpeg_reader/decoder.h"
 #include "logger.h"
+#include "render/image.h"
+#include "render/shader_cache.h"
+#include "render/texture.h"
 #include "tracy.h"
+#include "video/ffmpeg_reader/decoder.h"
 
 static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx);
 
 #define VR_INTERNAL(vrs) ((VRStateInternal_t *)vrs)
 typedef struct VRStateInternal {
         Decoder_t decoder;
-        unsigned int texture_id;
 } VRStateInternal_t;
 
 static double get_time_since_start(void);
@@ -38,36 +42,18 @@ VideoReaderState_t open_video(const char *path,
 
     VRStateInternal_t *internal_state = VR_INTERNAL(state.internal);
 
-    if (state.vrc.gl_internal_format != GL_RGBA &&
-        state.vrc.gl_internal_format != GL_RGB) {
-        xab_log(LOG_WARN, "ffmpeg video reader does not currently "
-                          "support any texture format other than RGB/RGBA");
-        state.vrc.gl_internal_format = GL_RGB;
-        // currently im just ignoring the alpha channel but i might not in the
-        // future if i won't be not lazy
-    }
+    xab_log(LOG_DEBUG, "Creating video image: %fx%fpx\n",
+            (int)(state.vrc.width * state.vrc.scale),
+            (int)(state.vrc.height * state.vrc.scale));
+    state.image = calloc(1, sizeof(Image_t));
+    image_create(state.image, IMAGE_CSTD_YUV_UNKNOWN, IMAGE_CRANGE_JPEG,
+                 (int)(state.vrc.width * state.vrc.scale),
+                 (int)(state.vrc.height * state.vrc.scale),
+                 state.vrc.pixelated);
 
     xab_log(LOG_DEBUG, "Reading video file: %s\n", path);
-    decoder_init(&internal_state->decoder, path, state.vrc.width,
-                 state.vrc.height, state.vrc.pixelated, &decoder_callback_ctx,
-                 internal_state, vr_config.hw_accel);
-
-    // Texture
-    xab_log(LOG_DEBUG, "Creating video texture: %dx%dpx\n",
-            internal_state->decoder.twidth, internal_state->decoder.theight);
-    glGenTextures(1, &internal_state->texture_id);
-    glBindTexture(GL_TEXTURE_2D, internal_state->texture_id);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    state.vrc.pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                    state.vrc.pixelated ? GL_NEAREST : GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, state.vrc.gl_internal_format,
-                 state.vrc.width, state.vrc.height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                 0); // set all to black
-    glBindTexture(GL_TEXTURE_2D, 0);
+    decoder_init(&internal_state->decoder, path, &decoder_callback_ctx,
+                 state.image, vr_config.hw_accel);
 
     return state;
 }
@@ -84,14 +70,165 @@ void render_video(VideoReaderState_t *state) {
     // profit
 }
 
+static void upload_texture_frame(Texture_t *texture, AVFrame *frame, int idx,
+                                 bool uv) {
+    unsigned char *data = frame->data[idx];
+    if (!data)
+        return;
+    const int linesize = frame->linesize[idx];
+    const int data_height = uv ? AV_CEIL_RSHIFT(frame->height, 1)
+                               : frame->height; // U and V are half size
+
+    if (linesize >= 0)
+        subimage_texture(texture, 0, 0, data, linesize, data_height);
+    else
+        // when linesize is negative, pointer starts at last row
+        subimage_texture(texture, 0, 0, data + linesize * (data_height - 1),
+                         -linesize, data_height);
+}
+
 static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx) {
-    VRStateInternal_t *internal_state = VR_INTERNAL(callback_ctx);
-    glBindTexture(GL_TEXTURE_2D, internal_state->texture_id);
+    Image_t *image = callback_ctx;
+    if (!image) // image is still uninitialized
+        return;
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width, frame->height, GL_RGB,
-                    GL_UNSIGNED_BYTE, frame->data[0]);
+    xab_log(LOG_TRACE, "Filling textures and shi\n");
+    upload_texture_frame(&image->textures[0], frame, 0, false);
+    upload_texture_frame(&image->textures[1], frame, 1, true);
+    upload_texture_frame(&image->textures[2], frame, 2, true);
+    switch (frame->colorspace) {
+    default:
+    case AVCOL_SPC_RESERVED:
+    case AVCOL_SPC_UNSPECIFIED:
+    case AVCOL_SPC_RGB: {
+        char *name = NULL;
+        // no budget for reflections lol
+        switch (frame->colorspace) {
+        case AVCOL_SPC_RGB:
+            name = "AVCOL_SPC_RGB";
+            break;
+        case AVCOL_SPC_BT709:
+            name = "AVCOL_SPC_BT709";
+            break;
+        default:
+        case AVCOL_SPC_UNSPECIFIED:
+            name = "AVCOL_SPC_UNSPECIFIED";
+            break;
+        case AVCOL_SPC_RESERVED:
+            name = "AVCOL_SPC_RESERVED";
+            break;
+        case AVCOL_SPC_FCC:
+            name = "AVCOL_SPC_FCC";
+            break;
+        case AVCOL_SPC_BT470BG:
+            name = "AVCOL_SPC_BT470BG";
+            break;
+        case AVCOL_SPC_SMPTE170M:
+            name = "AVCOL_SPC_SMPTE170M";
+            break;
+        case AVCOL_SPC_SMPTE240M:
+            name = "AVCOL_SPC_SMPTE240M";
+            break;
+        // case AVCOL_SPC_YCOCG: // =AVCOL_SPC_YCGCO
+        case AVCOL_SPC_YCGCO:
+            name = "AVCOL_SPC_YCGCO";
+            break;
+        case AVCOL_SPC_BT2020_NCL:
+            name = "AVCOL_SPC_BT2020_NCL";
+            break;
+        case AVCOL_SPC_BT2020_CL:
+            name = "AVCOL_SPC_BT2020_CL";
+            break;
+        case AVCOL_SPC_SMPTE2085:
+            name = "AVCOL_SPC_SMPTE2085";
+            break;
+        case AVCOL_SPC_CHROMA_DERIVED_NCL:
+            name = "AVCOL_SPC_CHROMA_DERIVED_NCL";
+            break;
+        case AVCOL_SPC_CHROMA_DERIVED_CL:
+            name = "AVCOL_SPC_CHROMA_DERIVED_CL";
+            break;
+        case AVCOL_SPC_ICTCP:
+            name = "AVCOL_SPC_ICTCP";
+            break;
+        case AVCOL_SPC_IPT_C2:
+            name = "AVCOL_SPC_IPT_C2";
+            break;
+        case AVCOL_SPC_YCGCO_RE:
+            name = "AVCOL_SPC_YCGCO_RE";
+            break;
+        case AVCOL_SPC_YCGCO_RO:
+            name = "AVCOL_SPC_YCGCO_RO";
+            break;
+        case AVCOL_SPC_NB:
+            name = "AVCOL_SPC_NB";
+            break;
+        }
+        assert(name != NULL && "Invalid pointer");
+        xab_log(LOG_WARN,
+                "Unsupported AV colorspace: %s, defaulting to BT709!\n", name);
+    }
+        /* fallthrough */
+    case AVCOL_SPC_BT709:
+        image->cstandard = IMAGE_CSTD_YUV_BT709;
+        break;
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    case AVCOL_SPC_BT470BG:
+    case AVCOL_SPC_SMPTE170M:
+        // bt601
+        image->cstandard = IMAGE_CSTD_YUV_BT601;
+        break;
+
+    // I think AVCOL_SPC_BT2020_CL is more complicated but X11 doesn't
+    // support HDR anyways -_(w_w)_-
+    case AVCOL_SPC_BT2020_NCL:
+        // bt2020
+        image->cstandard = IMAGE_CSTD_YUV_BT2020;
+        break;
+    }
+    switch (frame->color_range) {
+    // AVCOL_RANGE_NB               ///< Not part of ABI
+    default:
+        /* fallthrough */
+        /**
+         * Narrow or limited range content.
+         *
+         * - For luma planes:
+         *
+         *       (219 * E + 16) * 2^(n-8)
+         *
+         *   F.ex. the range of 16-235 for 8 bits
+         *
+         * - For chroma planes:
+         *
+         *       (224 * E + 128) * 2^(n-8)
+         *
+         *   F.ex. the range of 16-240 for 8 bits
+         */
+    case AVCOL_RANGE_MPEG:
+        image->crange = IMAGE_CRANGE_MPEG;
+        break;
+
+        /**
+         * Full range content.
+         *
+         * - For RGB and luma planes:
+         *
+         *       (2^n - 1) * E
+         *
+         *   F.ex. the range of 0-255 for 8 bits
+         *
+         * - For chroma planes:
+         *
+         *       (2^n - 1) * E + 2^(n - 1)
+         *
+         *   F.ex. the range of 1-255 for 8 bits
+         */
+    case AVCOL_RANGE_JPEG:
+        image->crange = IMAGE_CRANGE_JPEG;
+        break;
+    }
+    unbind_texture();
 }
 
 void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
@@ -106,16 +243,12 @@ void close_video(VideoReaderState_t *state, ShaderCache_t *scache) {
     // cleanup ffmpeg things
     decoder_destroy(&internal_state->decoder);
 
-    // cleanup opengl things
-    glDeleteTextures(1, &internal_state->texture_id);
+    // cleanup image
+    image_destroy_textures(state->image);
+    free(state->image);
+    state->image = NULL;
 
     free(state->internal);
-}
-
-unsigned int get_video_ogl_texture(VideoReaderState_t *state) {
-    // hehe no framebuffer get rekt
-
-    return VR_INTERNAL(state->internal)->texture_id;
 }
 
 // idk if this is the right approach, but it works... sort of

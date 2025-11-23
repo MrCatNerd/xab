@@ -187,7 +187,7 @@ int initSharedHandle(void) {
 
             xab_log(LOG_ERROR,
                     "VDPAU vtable Initialization returned %d, freeing vtable "
-                    "memory",
+                    "memory\n",
                     status);
             free(shandle->vtable);
             shandle->vtable = NULL;
@@ -236,10 +236,11 @@ int init_vdpau(HwaAPIHandle *handle) {
     // create video output surface
     xab_log(LOG_VERBOSE, "Creating video output surface\n");
     VdpStatus status = vdp_handle->shandle->vtable->output_surface_create(
-        vdp_handle->shandle->device, VDP_RGBA_FORMAT_R8G8B8A8, 1, 1,
+        vdp_handle->shandle->device, VDP_RGBA_FORMAT_B8G8R8A8, 1, 1,
         &vdp_handle->output_surface);
     if (status != VDP_STATUS_OK) {
-        xab_log(LOG_ERROR, "Couldn't create VDPAU output surface!\n");
+        xab_log(LOG_ERROR, "Couldn't create VDPAU output surface: %s\n",
+                vdp_handle->shandle->vtable->get_error_string(status));
         return -1;
     }
 

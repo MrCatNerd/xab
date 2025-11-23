@@ -1,4 +1,4 @@
-#include "render/shader_cache.h"
+#include "render/image.h"
 
 #include <epoxy/gl.h>
 
@@ -15,14 +15,16 @@
 #include <cglm/types.h>
 #endif
 
-#include "wallpaper.h"
+#include "logger.h"
 #include "render/camera.h"
 #include "render/framebuffer.h"
-#include "logger.h"
 #include "render/shader.h"
-#include "video/video_reader_interface.h"
+#include "render/shader_cache.h"
 #include "render/shader_cache.h"
 #include "tracy.h"
+#include "utils.h"
+#include "video/video_reader_interface.h"
+#include "wallpaper.h"
 
 void wallpaper_init(float scale, int width, int height, int x, int y,
                     bool pixelated, const char *video_path, wallpaper_t *dest,
@@ -33,24 +35,22 @@ void wallpaper_init(float scale, int width, int height, int x, int y,
     dest->x = x;
     dest->y = y;
 
-    // load shaders
-    dest->shader = shader_cache_create_or_cache_shader(
-        "res/shaders/wallpaper_vertex.glsl",
-        "res/shaders/wallpaper_fragment.glsl", scache);
-    // "res/shaders/mouse_distance_thingy.glsl");
-
     // create vrc
     VideoReaderRenderConfig_t vrc = {
         .width = width,
         .height = height,
         .scale = scale,
         .pixelated = pixelated,
-        .gl_internal_format = GL_RGBA,
         .hw_accel = hw_accel,
     };
 
     // open video
     dest->video = open_video(video_path, vrc, scache);
+
+    // load shader
+    Assert(dest->video.image != NULL && "Invalid video image pointer!");
+    dest->shader =
+        image_get_appropriate_wallpaper_shader(dest->video.image, scache);
 }
 
 void wallpaper_render(wallpaper_t *wallpaper, Camera_t *camera,
@@ -71,11 +71,53 @@ void wallpaper_render(wallpaper_t *wallpaper, Camera_t *camera,
 
     use_shader(wallpaper->shader);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, get_video_ogl_texture(&wallpaper->video));
-    glUniform1i(
-        shader_get_uniform_location(wallpaper->shader, "u_wallpaperTexture"),
-        0);
+    image_activate_and_bind_textures(wallpaper->video.image);
+    // TODO: some kind of way to do this in the image instead of here (maybe
+    // UBOs?)
+    switch (wallpaper->video.image->cstandard) {
+    case IMAGE_CSTD_UNKNOWN:
+    case IMAGE_CSTD_SRGB:
+        glUniform1i(shader_get_uniform_location(wallpaper->shader,
+                                                "u_wallpaperTexture"),
+                    0);
+        break;
+    case IMAGE_CSTD_YUV_BT601:
+        glUniform1i(
+            shader_get_uniform_location(wallpaper->shader, "u_colorspace"), 1);
+        goto set_yuv_common_uniforms;
+    case IMAGE_CSTD_YUV_UNKNOWN:
+    case IMAGE_CSTD_YUV_BT709:
+        glUniform1i(
+            shader_get_uniform_location(wallpaper->shader, "u_colorspace"), 0);
+        glUniform1i(shader_get_uniform_location(wallpaper->shader,
+                                                "u_wallpaperTexture"),
+                    0);
+        goto set_yuv_common_uniforms;
+    case IMAGE_CSTD_YUV_BT2020:
+        glUniform1i(
+            shader_get_uniform_location(wallpaper->shader, "u_colorspace"), 2);
+        goto set_yuv_common_uniforms;
+
+    set_yuv_common_uniforms:
+        if (wallpaper->video.image->crange == IMAGE_CRANGE_JPEG)
+            glUniform1i(
+                shader_get_uniform_location(wallpaper->shader, "u_colorrange"),
+                0);
+        else if (wallpaper->video.image->crange == IMAGE_CRANGE_MPEG)
+            glUniform1i(
+                shader_get_uniform_location(wallpaper->shader, "u_colorrange"),
+                1);
+        glUniform1i(shader_get_uniform_location(wallpaper->shader,
+                                                "u_wallpaperTextureY"),
+                    0);
+        glUniform1i(shader_get_uniform_location(wallpaper->shader,
+                                                "u_wallpaperTextureU"),
+                    1);
+        glUniform1i(shader_get_uniform_location(wallpaper->shader,
+                                                "u_wallpaperTextureV"),
+                    2);
+        break;
+    }
 
 #ifdef HAVE_LIBCGLM
     bool all_identity = false;

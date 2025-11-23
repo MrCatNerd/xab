@@ -123,7 +123,6 @@ static void mainloop(struct argument_options *opts) {
                 0, 0, context.window.width,
                 context.window
                     .height); // we have to set the Viewport on every cycle
-
             // clear screen
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |

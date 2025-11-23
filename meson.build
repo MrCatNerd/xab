@@ -104,7 +104,6 @@ elif video_library == 'ffmpeg'
     dependency('libavcodec'),
     dependency('libavutil'),
     dependency('libavformat'),
-    dependency('libswscale'),
     dependency('threads'),
   ]
 else

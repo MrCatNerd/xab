@@ -36,7 +36,7 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
 #ifdef HWA_VDPAU
         AV_HWDEVICE_TYPE_VDPAU,
 #endif
-        // i havn't implemented implementations for these so just pray to the ffmpeg gods they work
+        // i havn't implemented these so just pray to the ffmpeg gods they work
         AV_HWDEVICE_TYPE_CUDA,
         AV_HWDEVICE_TYPE_VAAPI,
         AV_HWDEVICE_TYPE_QSV,
