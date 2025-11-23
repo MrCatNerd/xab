@@ -38,7 +38,6 @@ typedef struct Decoder {
         AVFrame *av_frame;
         AVFrame *av_pass_frame;
         AVPacket *av_packet;
-        size_t frame_size_bytes;
 
         double pt_sec;
         double time_base;

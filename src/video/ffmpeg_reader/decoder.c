@@ -203,11 +203,6 @@ void decoder_init(Decoder_t *dst_dec, const char *path,
     xab_log(LOG_TRACE, "Decoder: Getting time information\n");
     dst_dec->time_base = av_q2d(dst_dec->video->time_base);
 
-    // get the frame size
-    dst_dec->frame_size_bytes = dst_dec->vwidth * dst_dec->vheight * 3;
-    xab_log(LOG_DEBUG, "Decoder: Frame size %zuMB\n",
-            dst_dec->frame_size_bytes / 1048576);
-
     xab_log(LOG_TRACE, "Decoder: Creating threads...\n");
     // initialize mutexes and conds and stuff
     dst_dec->packet_dead = false;

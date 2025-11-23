@@ -6,7 +6,6 @@
 
 #include "logger.h"
 #include "texture.h"
-#include "shader_cache.h"
 #include "utils.h"
 
 void image_create(Image_t *target, ImageColorStandard_e cstandard,
