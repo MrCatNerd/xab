@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "render/shader.h"
 #include "render/shader_cache.h"
+#include "render/texture.h"
 #include "render/vertex.h"
 #include "tracy.h"
 
@@ -21,8 +22,13 @@ static const unsigned int indices[] = {0, 1, 2, 0, 3, 2};
 
 FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
                                  ShaderCache_t *scache) {
-    // create fbo
     FrameBuffer_t fb;
+
+    // create texture
+    create_texture(&fb.texture, width, height, gl_internal_format,
+                   DEFAULT_TEXTURE_CONF);
+
+    // create fbo
     glGenFramebuffers(1, &fb.fbo_id);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo_id);
@@ -31,44 +37,22 @@ FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
     glGenRenderbuffers(1, &fb.rbo_id);
     glBindRenderbuffer(GL_RENDERBUFFER, fb.rbo_id);
 
-    fb.width = width;
-    fb.height = height;
-    fb.gl_internal_format = gl_internal_format;
-
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fb.width,
-                          fb.height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                               GL_RENDERBUFFER, fb.rbo_id);
 
-    // create texture
-    glGenTextures(1, &fb.texture_color_id);
-
-    if (fb.texture_color_id == 0) {
-        xab_log(LOG_ERROR, "Failed to generate framebuffer color texture!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, fb.texture_color_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, fb.gl_internal_format, fb.width, fb.height,
-                 0, fb.gl_internal_format, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
     // attach texture to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           fb.texture_color_id, 0);
+                           fb.texture.id, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         xab_log(LOG_ERROR, "framebuffer #%d not complete\n", fb.fbo_id);
         exit(EXIT_FAILURE);
     }
 
-    xab_log(LOG_DEBUG, "Created framebuffer #%d %dx%dpx\n", fb.fbo_id, fb.width,
-            fb.height);
+    xab_log(LOG_DEBUG, "Created framebuffer #%d %dx%dpx\n", fb.fbo_id,
+            fb.texture.width, fb.texture.height);
 
     // create quad
     // VBO
@@ -107,7 +91,7 @@ FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
     // "res/shaders/mouse_distance_thingy.glsl");
 
     // unbind buffers
-    glBindTexture(GL_TEXTURE_2D, 0);
+    unbind_texture();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
@@ -147,10 +131,11 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     glDisable(GL_CULL_FACE);
 
     // shader stuff
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fb->texture_color_id);
-    use_shader(fb->shader);
+    activate_texture(0);
+    bind_texture(&fb->texture);
+    glUniform1i(shader_get_uniform_location(fb->shader, "u_screenTexture"), 0);
     glUniform1f(shader_get_uniform_location(fb->shader, "u_Time"), da_time);
+    use_shader(fb->shader);
 
     // geometry stuff
     glBindVertexArray(fb->vao);
@@ -164,7 +149,7 @@ void render_framebuffer_end_render(FrameBuffer_t *fb, int dest, float da_time) {
     // unbind stuff
     glUseProgram(0);
     glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    unbind_texture();
 
     TracyCZoneEnd(tracy_ctx);
 }
@@ -198,7 +183,7 @@ void render_framebuffer_borrow_shader(FrameBuffer_t *fb, int dest,
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    unbind_texture();
 
     TracyCZoneEnd(tracy_ctx);
 }
@@ -207,7 +192,7 @@ void delete_framebuffer(FrameBuffer_t *fb, ShaderCache_t *scache) {
     // delete stuff
     xab_log(LOG_VERBOSE, "Deleting framebuffer #%d\n", fb->fbo_id);
     shader_cache_unref_shader(fb->shader, scache);
-    glDeleteTextures(1, &fb->texture_color_id);
+    destroy_texture(&fb->texture);
     glDeleteBuffers(1, &fb->ebo);
     glDeleteBuffers(1, &fb->vbo);
     glDeleteVertexArrays(1, &fb->vao);

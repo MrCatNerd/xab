@@ -5,5 +5,7 @@ src_files += files(
   'framebuffer.c',
   'shader.c',
   'shader_cache.c',
+  'texture.c',
+  'image.c',
   'window.c',
 )

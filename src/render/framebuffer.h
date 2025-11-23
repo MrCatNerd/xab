@@ -2,16 +2,15 @@
 
 #include "render/shader.h"
 #include "render/shader_cache.h"
+#include "render/texture.h"
 
 typedef struct FrameBuffer {
-        unsigned int width, height;
+        Texture_t texture;
         unsigned int vbo, vao, ebo;
         Shader_t *shader;
 
         unsigned int fbo_id;
         unsigned int rbo_id;
-        unsigned int texture_color_id;
-        int gl_internal_format;
 } FrameBuffer_t;
 
 FrameBuffer_t create_framebuffer(int width, int height, int gl_internal_format,
