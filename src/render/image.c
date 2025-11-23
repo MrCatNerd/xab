@@ -58,28 +58,6 @@ void image_activate_and_bind_textures(const Image_t *image) {
     }
 }
 
-Shader_t *image_get_appropriate_wallpaper_shader(Image_t *image,
-                                                 ShaderCache_t *scache) {
-    switch (image->cstandard) {
-    case IMAGE_CSTD_SRGB:
-    case IMAGE_CSTD_UNKNOWN:
-        return shader_cache_create_or_cache_shader(
-            "res/shaders/wallpaper_vertex.glsl",
-            "res/shaders/wallpaper_fragment.glsl", scache);
-        break;
-    case IMAGE_CSTD_YUV_UNKNOWN:
-    case IMAGE_CSTD_YUV_BT601:
-    case IMAGE_CSTD_YUV_BT709:
-    case IMAGE_CSTD_YUV_BT2020:
-        return shader_cache_create_or_cache_shader(
-            "res/shaders/wallpaper_vertex.glsl",
-            "res/shaders/wallpaper_fragment_yuv420p.glsl", scache);
-        break;
-    }
-    xab_log(LOG_ERROR, "Invalid image type!, returning NULL shader pointer\n");
-    return NULL;
-}
-
 void image_destroy_textures(Image_t *image) {
     Assert(image != NULL && "Invalid image pointer!");
     if (image->textures && image->texture_count > 0) {

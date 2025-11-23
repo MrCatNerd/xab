@@ -36,9 +36,5 @@ void image_clear(Image_t *image);
 void image_activate_and_bind_textures(const Image_t *image);
 void image_set_uniforms(const Image_t *image);
 
-// NOTE: You must unref the shader from the shader cache manually!
-Shader_t *image_get_appropriate_wallpaper_shader(Image_t *image,
-                                                 ShaderCache_t *scache);
-
-/// call this only if you own the textures!
+/// NOTE: call this only if you own the textures!
 void image_destroy_textures(Image_t *image);
