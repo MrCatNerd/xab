@@ -53,7 +53,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path,
     );
 
     // initialize packet queue
-    xab_log(LOG_TRACE, "Decoder: Initializing pcket queue\n");
+    xab_log(LOG_TRACE, "Decoder: Initializing packet queue\n");
     dst_dec->pacq = packet_queue_init(128);
     xab_log(LOG_TRACE, "Decoder: Initializing picture queue\n");
     dst_dec->picq = picture_queue_init(64);
@@ -86,7 +86,7 @@ void decoder_init(Decoder_t *dst_dec, const char *path,
     dst_dec->callback_ctx = callback_ctx;
 
     // -- initalize av context --
-    xab_log(LOG_TRACE, "Decoder: Allocating context\n", path);
+    xab_log(LOG_TRACE, "Decoder: Allocating context\n");
     dst_dec->av_format_ctx = avformat_alloc_context();
     if (dst_dec->av_format_ctx == NULL) {
         xab_log(LOG_ERROR, "Couldn't create AVFormatContext\n");
@@ -100,13 +100,13 @@ void decoder_init(Decoder_t *dst_dec, const char *path,
     }
 
     // read stream information
-    xab_log(LOG_TRACE, "Decoder: Finding stream information\n", path);
+    xab_log(LOG_TRACE, "Decoder: Finding stream information\n");
     if (avformat_find_stream_info(dst_dec->av_format_ctx, NULL) < 0) {
         xab_log(LOG_ERROR, "Unable to get stream info\n");
     }
 
     // find video stream
-    xab_log(LOG_TRACE, "Decoder: Finding video stream index\n", path);
+    xab_log(LOG_TRACE, "Decoder: Finding video stream index\n");
     dst_dec->video_stream_idx =
         av_find_best_stream(dst_dec->av_format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1,
                             (const AVCodec **)(&dst_dec->av_codec), 0);
