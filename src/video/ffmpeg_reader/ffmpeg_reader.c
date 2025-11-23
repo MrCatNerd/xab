@@ -179,51 +179,17 @@ static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx) {
         image->cstandard = IMAGE_CSTD_YUV_BT601;
         break;
 
-    // I think AVCOL_SPC_BT2020_CL is more complicated but X11 doesn't
-    // support HDR anyways -_(w_w)_-
+    // TODO: AVCOL_SPC_BT2020_CL
     case AVCOL_SPC_BT2020_NCL:
         // bt2020
         image->cstandard = IMAGE_CSTD_YUV_BT2020;
         break;
     }
     switch (frame->color_range) {
-    // AVCOL_RANGE_NB               ///< Not part of ABI
     default:
-        /* fallthrough */
-        /**
-         * Narrow or limited range content.
-         *
-         * - For luma planes:
-         *
-         *       (219 * E + 16) * 2^(n-8)
-         *
-         *   F.ex. the range of 16-235 for 8 bits
-         *
-         * - For chroma planes:
-         *
-         *       (224 * E + 128) * 2^(n-8)
-         *
-         *   F.ex. the range of 16-240 for 8 bits
-         */
     case AVCOL_RANGE_MPEG:
         image->crange = IMAGE_CRANGE_MPEG;
         break;
-
-        /**
-         * Full range content.
-         *
-         * - For RGB and luma planes:
-         *
-         *       (2^n - 1) * E
-         *
-         *   F.ex. the range of 0-255 for 8 bits
-         *
-         * - For chroma planes:
-         *
-         *       (2^n - 1) * E + 2^(n - 1)
-         *
-         *   F.ex. the range of 1-255 for 8 bits
-         */
     case AVCOL_RANGE_JPEG:
         image->crange = IMAGE_CRANGE_JPEG;
         break;
