@@ -53,7 +53,7 @@ bool packet_queue_get(packet_queue_t *pq, AVPacket *dest_packet) {
     // ref the dest packet and unref the queue packet
     if (av_packet_ref(dest_packet, pq->queue[pq->rear_idx].packet) != 0) {
         xab_log(LOG_WARN,
-                "packet_queue (get): unable te ref the dest packet!\n");
+                "packet_queue (get): unable to ref the dest packet!\n");
         // i don't want to return because this will stuck our queue
     }
 

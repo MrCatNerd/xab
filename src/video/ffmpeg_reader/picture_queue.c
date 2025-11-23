@@ -51,7 +51,7 @@ bool picture_queue_get(picture_queue_t *pq, AVFrame *dest_picture) {
     // ref the dest picture and unref the queue picture
     if (av_frame_ref(dest_picture, pq->queue[pq->rear_idx].picture) != 0) {
         xab_log(LOG_WARN,
-                "picture_queue (get): unable te ref the dest picture!\n");
+                "picture_queue (get): unable to ref the dest picture!\n");
         // i don't want to return because this will stuck our queue
     }
 

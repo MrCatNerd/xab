@@ -139,7 +139,7 @@ int hw_accel_init_device(DecoderHW_ctx_t *hwa_ctx,
             hw_accel_close(hwa_ctx);                                           \
             return AVERROR(EINVAL);                                            \
         }                                                                      \
-        hwa_ctx->hw_device_ctx = ret.avref;                                    \
+        hwa_ctx->hw_device_ctx = av_buffer_ref(ret.avref);                     \
     } break;
 
         HWACCELSXMACRO(HWA_INIT_DEV);
