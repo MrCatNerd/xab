@@ -15,12 +15,12 @@ void create_texture(Texture_t *target, int width, int height,
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
 
-    reconfigure_texture(target, &conf);
-
     target->width = width;
     target->height = height;
     target->id = texture_id;
     target->gl_internal_format = gl_internal_format;
+
+    reconfigure_texture(target, &conf);
 
     clear_texture(target);
 
