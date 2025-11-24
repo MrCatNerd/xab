@@ -49,7 +49,8 @@ length_string_t ReadFile(const char *path) {
     } else {
         xab_log(
             LOG_ERROR,
-            "Reading file: `%s` failed, returning an empty string instead\n");
+            "Reading file: `%s` failed, returning an empty string instead\n",
+            path);
 
         buffer.str = calloc(1, sizeof(char));
         buffer.str[0] = '\0';
