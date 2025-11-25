@@ -1,4 +1,4 @@
-project('hashmap.c', 'c')
+project('hashmap.c', 'c', version:'0.8.1')
 
 files = files('hashmap.c')
 inc_dirs = include_directories('.')

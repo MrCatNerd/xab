@@ -6,7 +6,7 @@
 * bce-1.3:
 - i assigned a variable to the executable thingy so i can use get_variable from a meson subproject thingy
 
-* hashmap.c:
+* hashmap.c-0.8.1:
 - added a meson.build file
 
 * epoxy-updated:

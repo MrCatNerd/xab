@@ -1,11 +1,11 @@
 
 [wrap-git]
-directory = hashmap.c
+directory = hashmap.c-0.8.1
 
 url = https://github.com/tidwall/hashmap.c.git
 revision = v0.8.1
 depth = 1
-patch_directory = hashmap.c
+patch_directory = hashmap.c-0.8.1
 
 [provide]
 dependency_names = hashmap.c
