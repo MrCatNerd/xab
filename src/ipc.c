@@ -243,7 +243,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
             } else if (n != sizeof(data)) {
                 xab_log(LOG_DEBUG,
                         "Recieved partial packet, skipping for now\n");
-                return;
+                continue;
             }
 
             // remember kids! never forget to ntohl your recvs!
