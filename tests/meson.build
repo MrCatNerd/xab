@@ -10,6 +10,8 @@ tests_common_deps = [
   hashmap_c_dep, # same here
 ]
 
+subdir('arg_parser')
+
 if get_option('video_reader') == 'ffmpeg'
   subdir('ffmpeg_reader')
 endif

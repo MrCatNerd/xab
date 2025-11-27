@@ -1,4 +1,4 @@
-packet_tests_prefix = 'ffmpeg_reader-packet_queue'
+packet_tests_prefix = 'ffmpeg_reader-packet_queue-'
 packet_tests_sources = [
     # packet queue source
     join_paths(
