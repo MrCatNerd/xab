@@ -124,7 +124,7 @@ static int negotiate_with_new_client(IPC_client_t *client) {
     // verify client version matches - disconnect if it doesn't
     {
         int client_version = -1;
-        Assert(sizeof(client_version) != sizeof(ipc_proto_version));
+        Assert(sizeof(client_version) == sizeof(ipc_proto_version));
         xab_log(LOG_DEBUG, "Waiting for client version...\n");
         if (recv_exact(client->fd, &client_version, sizeof(client_version), 0) <
             0) {
