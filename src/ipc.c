@@ -329,8 +329,12 @@ void ipc_close(IPC_handle_t *handle) {
     }
 
     // close client fds
-    hashmap_scan(handle->clients, client_hashmap_disconnect, &handle->epoll_fd);
-    hashmap_free(handle->clients);
+    if (handle->clients) {
+        hashmap_scan(handle->clients, client_hashmap_disconnect,
+                     &handle->epoll_fd);
+        hashmap_free(handle->clients);
+        handle->clients = NULL;
+    }
 
     // close server fd
     if (handle->server_fd >= 0) {
