@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils.h"
 #include "video/video_reader_interface.h"
 #include "wallpaper.h"
 #include "logger.h"
@@ -12,11 +13,13 @@
 // spaghetti code go bRRR
 
 static void usage(const char *program_name) {
+    Assert(program_name != NULL && "Invalid program_name!");
     printf("Usage: %s <path/to/file.mp4> [options]\n", program_name);
     printf("Use -h for help\n");
 }
 
 static void help(const char *program_name) {
+    Assert(program_name != NULL && "Invalid program_name!");
     printf(
         "xab - X11 Animated Background\n\n"
         "Usage: %s <path/to/file.mp4> [options]\n\n"
@@ -47,7 +50,11 @@ struct argument_options parse_args(int argc, char *argv[]) {
         .ipc = false,
     };
 
-    const char *program_name = argv[0];
+    char *program_name = NULL;
+    if (argc == 0 || argv == NULL)
+        program_name = "xab";
+    else
+        program_name = argv[0];
     if (argc <= 1) {
         usage(program_name);
         exit(EXIT_SUCCESS);
@@ -177,6 +184,8 @@ void clean_opts(struct argument_options *opts) {
             opts->wallpaper_options[i].video_path = NULL;
         }
     }
-    free(opts->wallpaper_options);
-    opts->wallpaper_options = NULL;
+    if (opts->wallpaper_options) {
+        free(opts->wallpaper_options);
+        opts->wallpaper_options = NULL;
+    }
 }
