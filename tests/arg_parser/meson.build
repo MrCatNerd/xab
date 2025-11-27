@@ -26,3 +26,12 @@ executable(
   dependencies: tests_common_deps + video_reader_deps,
   include_directories: tests_common_include_dirs,
 ), args: [])
+
+# full args test
+test(arg_parser_tests_prefix + 'full_args_test',
+executable(
+  arg_parser_tests_prefix + 'full_args_test',
+  [ 'full_args_test.c', arg_parser_tests_sources ],
+  dependencies: tests_common_deps + video_reader_deps,
+  include_directories: tests_common_include_dirs,
+), args: [])
