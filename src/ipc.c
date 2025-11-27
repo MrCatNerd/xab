@@ -114,7 +114,7 @@ static int negotiate_with_new_client(IPC_client_t *client) {
     // send xab IPC protocl version
     xab_log(LOG_DEBUG, "Sending xab IPC protocol version\n");
     const int ipc_proto_version = htonl(IPC_PROTO_VERSION);
-    if (send(client->fd, &ipc_proto_version, sizeof(ipc_proto_version), 0) <
+    if (send_all(client->fd, &ipc_proto_version, sizeof(ipc_proto_version), 0) <
         0) {
         xab_log(LOG_ERROR, "An error occured while sending the xab IPC "
                            "protocol version to the IPC client!\n");
@@ -155,7 +155,7 @@ static int negotiate_with_new_client(IPC_client_t *client) {
     // send capabilities
     {
         int capabilities = htonl(xab_ipc_capabilities());
-        send(client->fd, &capabilities, sizeof(capabilities), 0);
+        send_all(client->fd, &capabilities, sizeof(capabilities), 0);
     }
 
     return 0;
