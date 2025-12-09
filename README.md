@@ -9,8 +9,7 @@
 > If you are using a picom compositor, using the `egl` backend is *highly* recommended
 
 > [!WARNING]
-> Performance currently kinda sucks, im trying my best<br>
-> Update: performance sucks less on GPUs less than 12 years old lol
+> Performance kinda sucks on GPUs without hwdec support
 
 ---
 
