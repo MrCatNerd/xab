@@ -198,6 +198,9 @@ static void set_init_mpv_options(VideoReaderState_t *state) {
     // don't worry 'bout it
     mpv_set_option_string(internal_state->mpv_handle, "video-timing-offset",
                           "0");
+
+    // disable audio
+    mpv_set_option_string(internal_state->mpv_handle, "audio", "no");
 }
 
 void render_video(VideoReaderState_t *state) {
