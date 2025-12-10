@@ -201,6 +201,15 @@ static void set_init_mpv_options(VideoReaderState_t *state) {
 
     // disable audio
     mpv_set_option_string(internal_state->mpv_handle, "audio", "no");
+
+    // disable subtitles
+    mpv_set_option_string(internal_state->mpv_handle, "sub", "no");
+    mpv_set_option_string(internal_state->mpv_handle, "sub-auto", "no");
+    mpv_set_option_string(internal_state->mpv_handle, "osd-level", "0");
+
+    // disable osc
+    mpv_set_option_string(internal_state->mpv_handle, "osc", "no");
+    mpv_set_option_string(internal_state->mpv_handle, "osd-bar", "no");
 }
 
 void render_video(VideoReaderState_t *state) {
