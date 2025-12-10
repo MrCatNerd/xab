@@ -105,16 +105,6 @@ xcb_window_t *setup_background(xcb_pixmap_t window_pixmap, x_data_t *xdata) {
 }
 
 static void set_background_pixmap(xcb_pixmap_t pixmap, x_data_t *xdata) {
-    const uint32_t *ROOT_WINDOW_EVENT_MASK = (const uint32_t[]){
-        XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
-        XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |
-        XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-        XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_PROPERTY_CHANGE};
-
-    xcb_change_window_attributes(xdata->connection, xdata->screen->root,
-                                 XCB_CW_EVENT_MASK, (uint32_t[]){0});
-
     // fetch the background property before we change it, so we can close it
     // later
     xcb_get_property_cookie_t property_cookie = xcb_get_property_unchecked(
@@ -148,9 +138,6 @@ static void set_background_pixmap(xcb_pixmap_t pixmap, x_data_t *xdata) {
     // make sure our pixmap is not destroyed when we disconnect
     xcb_set_close_down_mode(xdata->connection, XCB_CLOSE_DOWN_RETAIN_PERMANENT);
     xcb_flush(xdata->connection);
-
-    xcb_change_window_attributes(xdata->connection, xdata->screen->root,
-                                 XCB_CW_EVENT_MASK, ROOT_WINDOW_EVENT_MASK);
 }
 
 static xcb_window_t *find_desktop(x_data_t *xdata) {
