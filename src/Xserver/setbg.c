@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 
-#include "context.h"
 #include "Xserver/atom.h"
 #include "logger.h"
 #include "Xserver/x_data.h"
