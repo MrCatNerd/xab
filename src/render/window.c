@@ -198,7 +198,7 @@ Window_t init_window(WindowType_e window_type, EGLDisplay display,
     switch (win.window_type) {
     case XPIXMAP_BACKGROUND:;
         win.surface =
-            eglCreateWindowSurface(display, config, win.xpixmap, pixmap_attr);
+            eglCreatePixmapSurface(display, config, win.xpixmap, pixmap_attr);
         break;
     case XWINDOW_BACKGROUND:
     case XWINDOW:
