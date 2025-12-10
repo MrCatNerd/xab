@@ -56,7 +56,7 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
     // get monitors
     xcb_randr_get_monitors_reply_t *monitors_reply =
         xcb_randr_get_monitors_reply(
-            connection, xcb_randr_get_monitors(connection, screen->root, 0),
+            connection, xcb_randr_get_monitors(connection, screen->root, 1),
             NULL);
 
     if (!monitors_reply)
