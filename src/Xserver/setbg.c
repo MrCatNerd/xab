@@ -72,7 +72,9 @@ xcb_window_t *setup_background(xcb_pixmap_t window_pixmap, x_data_t *xdata) {
 
             void *data_esetroot = xcb_get_property_value(reply_esetroot);
 
-            if (data_xroot && data_esetroot)
+            if (reply_xroot->value_len >= sizeof(xcb_pixmap_t) && data_xroot &&
+                reply_esetroot->value_len >= sizeof(xcb_pixmap_t) &&
+                data_esetroot)
                 if (reply_esetroot->type == XCB_ATOM_PIXMAP &&
                     *(xcb_pixmap_t *)data_esetroot ==
                         *(xcb_pixmap_t *)data_xroot)
