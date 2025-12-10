@@ -87,6 +87,8 @@ VideoReaderState_t open_video(const char *path,
                     "xab does not support any other mpv vo than \"libmpv\"\n");
         mpv_set_option_string(internal_state->mpv_handle, "vo", "libmpv");
     }
+    if (vo_option)
+        mpv_free(vo_option);
 
     // run again after mpv_initialize to override options in config files
     set_init_mpv_options(&state);
