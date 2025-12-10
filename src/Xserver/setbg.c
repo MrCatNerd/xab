@@ -191,35 +191,37 @@ static xcb_window_t *find_desktop_recursive(x_data_t *xdata,
                     return window;
                 }
             }
-            free(reply);
-
-            return ret_props;
         }
+
+        free(reply);
     }
 
     // otherwise, check children
-    xcb_query_tree_reply_t *reply = xcb_query_tree_reply(
-        xdata->connection, xcb_query_tree(xdata->connection, *window), NULL);
-    if (!reply) {
-        xab_log(LOG_FATAL, "xcb_query_tree failed!\n");
-        xcb_disconnect(xdata->connection);
-        exit(EXIT_FAILURE);
+    {
+        xcb_query_tree_reply_t *reply = xcb_query_tree_reply(
+            xdata->connection, xcb_query_tree(xdata->connection, *window),
+            NULL);
+        if (!reply) {
+            xab_log(LOG_FATAL, "xcb_query_tree failed!\n");
+            xcb_disconnect(xdata->connection);
+            exit(EXIT_FAILURE);
+        }
+
+        xcb_window_t *children = xcb_query_tree_children(reply);
+        unsigned int n_children =
+            (unsigned int)xcb_query_tree_children_length(reply);
+
+        for (unsigned int i = 0; i < n_children; i++) {
+            xcb_window_t *child =
+                find_desktop_recursive(xdata, &children[i], prop_desktop);
+            if (child == NULL)
+                continue;
+
+            return child;
+        }
+        if (reply)
+            free(reply);
     }
-
-    xcb_window_t *children = xcb_query_tree_children(reply);
-    unsigned int n_children =
-        (unsigned int)xcb_query_tree_children_length(reply);
-
-    for (unsigned int i = 0; i < n_children; i++) {
-        xcb_window_t *child =
-            find_desktop_recursive(xdata, &children[i], prop_desktop);
-        if (child == NULL)
-            continue;
-
-        return child;
-    }
-    if (n_children)
-        free(reply);
 
     return NULL;
 }
