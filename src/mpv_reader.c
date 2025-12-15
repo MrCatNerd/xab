@@ -84,7 +84,7 @@ VideoReaderState_t open_video(const char *path,
     mpv_render_param render_param[] = {
         {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
         {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
-         &(mpv_opengl_init_params){get_proc_address_mpv, NULL, NULL}},
+         &(mpv_opengl_init_params){get_proc_address_mpv, NULL}},
         {MPV_RENDER_PARAM_ADVANCED_CONTROL, &(int){1}},
         {MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME, &(int){0}},
         {MPV_RENDER_PARAM_INVALID, NULL},
