@@ -185,7 +185,7 @@ context_t context_create(struct argument_options *opts) {
 
     // allocate wallpapers and set wallpaper_count
     context.wallpaper_count = opts->n_wallpaper_options;
-    context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
+    context.wallpapers = calloc(context.wallpaper_count, sizeof(wallpaper_t));
 
     // allocate the shader cache
     context.scache = create_shader_cache();

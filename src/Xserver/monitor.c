@@ -64,7 +64,7 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
 
     const int monitor_count =
         xcb_randr_get_monitors_monitors_length(monitors_reply);
-    monitors = calloc(sizeof(monitor_t *), monitor_count);
+    monitors = calloc(monitor_count, sizeof(monitor_t *));
 
     // iterate through monitors and set the appropriate values
     xcb_randr_monitor_info_iterator_t monitors_iter =
@@ -79,7 +79,7 @@ get_monitors_t get_monitors(xcb_connection_t *connection,
         char *name = xcb_get_atom_name_name(name_reply);
         name[xcb_get_atom_name_name_length(name_reply)] = '\0';
 
-        monitors[i] = calloc(sizeof(monitor_t), 1);
+        monitors[i] = calloc(1, sizeof(monitor_t));
         create_monitor(monitors[i], name, i, monitor_info->primary > 0,
                        monitor_info->x, monitor_info->y, monitor_info->width,
                        monitor_info->height);
