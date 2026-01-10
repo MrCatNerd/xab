@@ -1,6 +1,6 @@
 -- CHANGES --
 
-* tracy-0.13.0:
+* tracy-0.13.1:
 - i added a project argument to disable all of the warnings (-w) cuz it was annoying
 
 * bce-1.3:
