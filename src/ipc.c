@@ -52,7 +52,7 @@ IPC_handle_t ipc_init(const char *name) {
         .epoll_fd = 0,
     };
 
-    Assert(handle.clients != NULL && "Failed to create clients hashmap");
+    Assert(handle->clients != NULL && "Failed to create clients hashmap");
 
     // create socket
     handle.server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -183,7 +183,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
                     const IPC_client_t *ret =
                         hashmap_set(handle->clients, &client);
                     if (ret) {
-                        Assert(ret->fd == client.fd &&
+                        Assert(ret->fd == client->fd &&
                                "Hashmap set got clients with different FD's "
                                "replaced");
                         xab_log(LOG_WARN,

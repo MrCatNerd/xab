@@ -28,7 +28,7 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
         return false;
     } */
 
-    // automatic hwdevice type selection
+    // automatic
     // this code is very spaghet
     // clang-format off
     enum AVHWDeviceType prefered[] = { // a switch statement would be more ideal but the sunk cost fallacy has kicked in
@@ -197,7 +197,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
     // i set the pixel format in the opaque thingy
     const enum AVPixelFormat hw_pix_fmt =
         (const enum AVPixelFormat) * (const enum AVPixelFormat *)ctx->opaque;
-    const enum AVPixelFormat *p = NULL;
+    const enum AVPixelFormat *p;
 
     for (p = pix_fmts; *p != -1; p++) {
         if (*p == hw_pix_fmt)
