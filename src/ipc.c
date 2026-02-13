@@ -25,7 +25,8 @@ static int client_compare(const void *a, const void *b, void *udata) {
     (void)udata;
     const IPC_client_t *ca = a;
     const IPC_client_t *cb = b;
-    return ca->fd == cb->fd;
+    // -1,0,1 for strcmp styled return
+    return (ca->fd > cb->fd) - (ca->fd < cb->fd);
 }
 
 static uint64_t client_hash(const void *item, uint64_t seed0, uint64_t seed1) {
@@ -64,7 +65,7 @@ IPC_handle_t ipc_init(const char *name) {
 
     struct stat st = {0};
     xab_log(LOG_DEBUG, "Creating directory if missing: `%s`\n", IPC_DIR);
-    if (stat("/tmp/xab", &st) == -1) {
+    if (stat(IPC_DIR, &st) == -1) {
         if (mkdir(IPC_DIR, 1777) < 0)
             xab_log(LOG_ERROR, "Failed creating directory: `%s`\n", IPC_DIR);
     }
@@ -78,10 +79,10 @@ IPC_handle_t ipc_init(const char *name) {
     }
 
     // listen for clients
-    xab_log(LOG_INFO, "Listening for unix domian socket clients...\n");
+    xab_log(LOG_INFO, "Listening for unix domain socket clients...\n");
     if (listen(handle.server_fd, 5) < 0) {
         xab_log(LOG_ERROR,
-                "An error occured while listening to incoming connections\n");
+                "An error occurred while listening to incoming connections\n");
         // TODO: handle error
     }
 
@@ -101,8 +102,7 @@ IPC_handle_t ipc_init(const char *name) {
         // TODO: handle error
     }
 
-    // set the epoll and server file descriptors to non-blocknig
-    set_nonblocking(handle.epoll_fd);
+    // set the server file descriptor to non-blocknig
     set_nonblocking(handle.server_fd);
 
     return handle;
@@ -176,6 +176,8 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
             xab_log(LOG_DEBUG, "Accepting IPC client connections...\n");
             while ((client_fd = accept(handle->server_fd, NULL, NULL)) >= 0) {
                 Assert(client_fd >= 0 && "Invalid client fd!\n");
+                // set the client file descriptor to non-blocknig
+                set_nonblocking(client_fd);
 
                 // copy over the client
                 IPC_client_t client = {.fd = client_fd};
