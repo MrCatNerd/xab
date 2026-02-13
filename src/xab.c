@@ -198,7 +198,7 @@ static void cleanup(
 }
 
 int main(int argc, char *argv[]) {
-    ON_TRACY(xab_log(LOG_TRACE, "Starting up the tracy profiler...");)
+    ON_TRACY(xab_log(LOG_TRACE, "Starting up the tracy profiler...\n");)
 
     struct argument_options opts = parse_args(argc, argv);
 
