@@ -1,10 +1,10 @@
 # xab IPC protocol
 
 > [!NOTE]
-> the IPC protcol is not finished yet but im treating it as it is in this document cuz I don't wanna change it later, don't expect this document to be a reliable source of information until its merged to main!, also why tf are you trying to implement an IPC client for xab go do something else lol
+> the IPC protocol is not finished yet but im treating it as it is in this document cuz I don't wanna change it later, don't expect this document to be a reliable source of information until its merged to main!, also why tf are you trying to implement an IPC client for xab go do something else lol
 
 ## The problems
-The original problems I tackled when creating the xab IPC protcol were:
+The original problems I tackled when creating the xab IPC protocol were:
 - I was bored and I wanted to try out IPC for a long time
 - I had time to burn (not a problem btw)
 - I wanted to create a fancy GUI for xab
@@ -23,7 +23,7 @@ Introducing IPC:
 In computer science, [inter-process communication](https://en.wikipedia.org/wiki/Inter-process_communication) (IPC)
 is the sharing of data between running processes in a computer system, or between multiple such systems.
 
-xab utilizes IPC to recieve commands from different processes and communicate back to them.
+xab utilizes IPC to receive commands from different processes and communicate back to them.
 to communicate, both processes need to share the same way of communicating AKA a communication protocol.
 
 > A [communication protocol](https://en.wikipedia.org/wiki/Communication_protocol)
@@ -39,14 +39,14 @@ there are many different ways of implementing IPC, one of them is via a Unix dom
 - message queues
 - signals
 
-I decided to name the protcol: `the xab inter-process communication protocol` or `xab IPC protocl` for short, very creative I know...
+I decided to name the protocol: `the xab inter-process communication protocol` or `xab IPC protocol` for short, very creative I know...
 
 ## Actually implementing this
 > "To communicate with another process, you must first become the process" - Sun Tzu, The art of War
 
 > "I never said that shi" - Sun Tzu, The art of War
 
-first, we gotta make a specification, as mentioned, I want xab to recieve commands, so the best way to start is by listing out the commands I want xab to recieve:
+first, we gotta make a specification, as mentioned, I want xab to receive commands, so the best way to start is by listing out the commands I want xab to receive:
 I will segment all commands to 2 different categories:
 - set state - control xab's state
 - get state - get information about xab's current state
@@ -63,15 +63,16 @@ I will segment all commands to 2 different categories:
 
 ### Get state commands
 - get all of the current monitors (if capable)
+- get all of the backgrounds' data
 - get xab's capabilities (custom positioning, get monitors, etc...)
 
 great! we defined our commands, but there's a big problem, we're using a network socket to communicate,
-if you had some experience with sockets you know that **ya gotta know** the size of the data being sent before reading it, or else you might end up truncating the data, over allocating, or even memory leaking! which is very bad for RAM :(
+if you have some experience with sockets you know that **ya gotta know** the size of the data being sent before reading it, or else you might end up truncating the data, over allocating, or even memory leaking! which is very bad for RAM :(
 so we have four choices:
 1. hopes and dreams: pray the program doesn't segfault (recommended).
-2. be flexible: send the size of the rest of your message in a single 32-bit integer at the beggining. (tuff)
+2. be flexible: send the size of the rest of your message in a single 32-bit integer at the beginning. (tuff)
 3. be consistent: use the same size for the message, only works if the message is structured with no dynamic data (tuffer)
-4. over allocate:  just allocate 2048 bytes cuz there aint no way the message is exceeding that (boooring)
+4. over allocate:  just allocate 2048 bytes cuz there aint no way the message size is exceeding that (boooring)
 
 I chose 2 and 3 for different states of the protocol
 
@@ -80,42 +81,55 @@ I chose 2 and 3 for different states of the protocol
 
 ### Is it just me or is this state machine kinda THICC
 
-if you have been paying close attention, you may have noticed that the protocol is a deterministic finite state machine
+if you have been paying close attention, you may have noticed that the protocol can be represented as a deterministic finite state machine
 
 > A [state machine](https://en.wikipedia.org/wiki/Finite-state_machine)
 > is a mathematical model of computation. It is an abstract machine that can be in exactly one of a finite number of states at any given time. The FSM can change from one state to another in response to some inputs; the change from one state to another is called a transition. An FSM is defined by a list of its states, its initial state, and the inputs that trigger each transition. Finite-state machines are of two types—deterministic finite-state machines and non-deterministic finite-state machines. For any non-deterministic finite-state machine, an equivalent deterministic one can be constructed.
 
 
 I'm not a mathematician and may have fucked up the state machine, pls create an issue if you find one
+<br>
 This is the state machine for the server:
 
-NOTE: this is WIP and probably not deterministic, I will probably sacrifice
-it being technically deterministic for while loops for convenience
+NOTE: this is WIP and probably not deterministic, I might sacrifice
+it being technically deterministic for while loops cuz its more convenient
 
-0. **Mainloop**:
-     mainloop_stuff()
-     next=1
-1. **Scan**: scan for new connections:
-    if new_connections > 0: next=2
-    else: next=3
-2. **ProcessNewConnections**:
-    -- while loop but deterministic or smh
-    if conections remain:
-        if connection is valid then: next=5
-        else: log error, client_cleanup()
-        next=3
-    else: next=2
-3. **ScanNewRequests**:
-    scan for new requests from existing clients:
-    if there are new requests then: next = q4
-    else: next = q0
-4. **DisconnectFromClient**:
-    if client is valid: send IPC_CLIENT_DISCONNECT, disconnect
-    else: log error,
-    client_cleanup(), return
-5. **ValidateCompatibility**:
-    protocol matching: server sends its protocol and client sends his back
-    if protocol don't match then: next=4
+<pre>
+0. <strong>Mainloop</strong>:
+    mainloop_stuff()
+    next = 1
+
+1. <strong>Scan</strong>: scan for new connections
+    if new_connections > 0: next = 2
+    else: next = 3
+
+2. <strong>ProcessNewConnections</strong>:
+    while connections remain:
+        if connection is valid: next = 5
+        else:
+            log_error()
+            client_cleanup()
+            next = 3
+    else: next = 2
+
+3. <strong>ScanNewRequests</strong>:
+    scan for new requests from existing clients
+    if new requests exist: next = 5
+    else: next = 0
+
+4. <strong>DisconnectFromClient</strong>:
+    if client is valid:
+        send IPC_CLIENT_DISCONNECT
+        disconnect
+    else:
+        log_error()
+        client_cleanup()
+        return
+
+5. <strong>ValidateCompatibility</strong>:
+    protocol matching: server sends protocol, client responds
+    if protocol mismatch: next = 4
+</pre>
 
 
 #### TL;DR: server go bRRR

@@ -1,6 +1,6 @@
 # Docs
 
-Currently the is documentation for:
+Currently there is documentation for:
 * IPC
 
 Planned documentation:
