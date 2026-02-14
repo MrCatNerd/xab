@@ -37,7 +37,10 @@ static uint64_t client_hash(const void *item, uint64_t seed0, uint64_t seed1) {
 int xab_ipc_capabilities(void) {
     return IpcXabCapabilitiesNone
 #ifdef HAVE_LIBXRANDR
-           | IpcXabCapabilitiesMultimonitor
+           | IpcXabCapabilitiesMonitors
+#endif
+#ifdef HAVE_LIBCGLM
+           | IpcXabCapabilitiesCustomPositioning
 #endif
         ;
 }
@@ -263,7 +266,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
             case IPC_RESTART:
                 // TODO: this
                 break;
-            case IPC_XAB_SHUTDOWN:
+            case IPC_SHUTDOWN:
                 // TODO: this
                 break;
             case IPC_CLIENT_DISCONNECT:
@@ -272,7 +275,7 @@ void ipc_poll_events(IPC_handle_t *handle, context_t *context) {
                 ipc_client_close(client, handle->epoll_fd);
                 hashmap_delete(handle->clients, client);
                 break;
-            case IPC_CHANGE_BACKGROUNDS:
+            case IPC_CHANGE_BACKGROUND:
                 // TODO: this
                 break;
             case IPC_GET_MONITORS:
