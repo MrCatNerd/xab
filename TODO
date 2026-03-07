@@ -8,7 +8,7 @@ will be implemented (probably)
 - mt safe logging
 - tests (meson test system) with with a dummy root window and stuff + unit tests
 - add more tracy zones and stuff
-- same video on multiple monitors
+- same video on multiple monitors via shared references or something
 - lazy rendering - (toggleable), if there are no new frames to draw than don't redraw - this will be on by default and can be turned off so if you have a time based shader or smh it'll still look good
 - custom shaders option cuz why not (in .config/xab or custom path specified as a flag)
 - max framerate - add a smart fps limiter, and a noraml fps limiter (smart one just takes rendering time into acount or smh like that)
@@ -62,9 +62,10 @@ may or may not be implemented
 - error trace with a txt file for errors and stuff
 - multithreading
 - multiple rendering backends (xcb + vulkan is possible as far as I know)
+- wayland support too lol
 
 -- GIT STUFF --
 - github issue template
 - make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
-- use github actions to build releases
+- use github actions to build releases automatically with precompiled binaries
 - git gud
