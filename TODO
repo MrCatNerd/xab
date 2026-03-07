@@ -66,6 +66,5 @@ may or may not be implemented
 
 -- GIT STUFF --
 - github issue template
-- make a CHANGELOG (ill do this when ill release verson 0.1.0... probably)
 - use github actions to build releases automatically with precompiled binaries
 - git gud
