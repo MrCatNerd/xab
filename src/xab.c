@@ -13,14 +13,17 @@
 #include "wallpaper.h"
 #include "arg_parser.h"
 #include "render/window.h"
-#include "ipc.h"
-#include "ipc_spec.h"
 #include "utils.h"
 #include "tracy.h"
 
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
+#include "ipc.h"
+#include "ipc_spec.h"
+static IPC_handle_t ipc_handle;
+#endif
+
 // auuugggghh global variables scary
 static context_t context;
-static IPC_handle_t ipc_handle;
 static bool keep_running = true;
 
 static void handle_sigint(int sig);
@@ -39,7 +42,12 @@ static void setup(struct argument_options *opts) {
 #endif
 
     if (opts->ipc)
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
         ipc_handle = ipc_init(IPC_PATH);
+#else
+        xab_log(LOG_WARN, "Unable to enable IPC: xab was compiled without an "
+                          "experimental flag")
+#endif
     context = context_create(opts);
 
     TracyCZoneEnd(tracy_ctx);
@@ -103,8 +111,10 @@ static void mainloop(struct argument_options *opts) {
 
         if (context.window.width != 0 && context.window.height != 0) {
             // poll ipc events
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
             if (opts->ipc)
                 ipc_poll_events(&ipc_handle, &context);
+#endif
 
             // poll xcb events
             TracyCZoneNC(tracy_ctx3, "xcb event poll", TRACY_COLOR_BLUE, true);
@@ -206,8 +216,10 @@ int main(int argc, char *argv[]) {
     mainloop(&opts);
     cleanup(&opts);
 
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
     if (opts.ipc)
         ipc_close(&ipc_handle);
+#endif
 
     return EXIT_SUCCESS;
 }

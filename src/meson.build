@@ -2,12 +2,15 @@
 src_files += files(
   'arg_parser.c',
   'context.c',
-  'ipc.c',
   'logger.c',
   'utils.c',
   'wallpaper.c',
   'xab.c',
 )
+
+if enable_experimental_changes
+  src_files += files('ipc.c')
+endif
 
 subdir('render')
 subdir('Xserver')
