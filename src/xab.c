@@ -178,7 +178,6 @@ static void mainloop(struct argument_options *opts) {
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
-            printf("steve!\n");
         }
 
         TracyCFrameMarkEnd("FrameRender");
