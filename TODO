@@ -24,6 +24,13 @@ will be implemented (probably)
 - (i might not fix this) if there is a flag (such as --monitor=1) without a video assigned, xab will run without any video (instead of printing the usage message)
 - use a c testing library instead of abusing meson's testing system, and use meson's testing system for different parts of xab (such as video readers, x11, opengl, etc)
 
+* ipc
+- ipc message spec implementation
+- add an event system to xab
+- dynamic client context memory resizing (don't worry bout it)
+- other things lol
+
+
 * mpv video reader
 - look into mpv specific video reader bug thingy for specific gpus
 

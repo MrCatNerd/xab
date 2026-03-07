@@ -27,34 +27,10 @@
    - [Build Instructions](#to-build)
    - [Installation](#to-install)
 7. [Meson Options](#meson-options)
-<!-- ill do them later -->
-<!-- 8. [Contributing](#contributing) -->
-<!-- 9. [License](#license) -->
+8. [Contributing](#contributing)
+9. [License](#license)
 
 ---
-
-> [!WARNING]
-> IPC is WIP!
-
-## About this branch
-this is the ipc branch, which implements ipc through unix domain sockets,
-you can use this with [xab-gui](https://github.com/MRcatNerd/xab-gui),
-it will be merged to main when all features are complete and stable enough
-
-> [!NOTE]
-> make sure to use the --ipc=1 option when running xab
-
-> [!NOTE]
-> i will not raise the xab ipc protcol version in the spec until i merge to main!
-
-(planned / implemented) featuers:
-- [x] version compatibilty check
-- [x] epolls
-- [x] multiple clients
-- [ ] ipc message spec implementation
-- [ ] add an event system to xab
-- [ ] dynamic client context memory resizing (don't worry bout it)
-- [ ] other things lol
 
 ## Introduction
 xab (X11 Animated Background) is an overkill animated wallpaper setter for X11 that
@@ -142,14 +118,11 @@ If you use a video reader other than the default (mpv), you need to change the '
 
 currently there are two options:
 
-* \[default] libmpv (mpv) - this is the recommended video reader, it uses libmpv to read the video
+* \[default] mpv - this is the recommended video reader, it uses libmpv to read the video
 
 * ffmpeg -
-i made this video reader for educational purposes,
-this is an ffmpeg-based video reader, it is way less performant compared to the the other options,
-this is my fault because i suck at ffmpeg,
-also many of the features are not implemented (yet?) like frame timing,
-frame dropping
+my home made video reader - do not expect ANYTHING to work, memory leaks
+may occur and xab may crash, using --hw_accel=no is currently reccomended
 
 no vlc support is planned until vlc 4.x is released
 
