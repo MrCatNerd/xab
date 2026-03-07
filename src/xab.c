@@ -1,17 +1,31 @@
-#include "pch.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <epoxy/gl.h>
+#include <epoxy/egl.h>
+#include <unistd.h>
 
 #include "context.h"
-#include "video_reader_interface.h"
+#include "video/video_reader_interface.h"
 #include "logger.h"
-#include "framebuffer.h"
-#include "setbg.h"
+#include "render/framebuffer.h"
+#include "Xserver/setbg.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
-#include "window.h"
+#include "render/window.h"
+#include "utils.h"
+#include "tracy.h"
 
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
+#include "ipc.h"
+#include "ipc_spec.h"
+static IPC_handle_t ipc_handle;
+#endif
+
+// auuugggghh global variables scary
 static context_t context;
 static bool keep_running = true;
+
 static void handle_sigint(int sig);
 
 static void setup(struct argument_options *opts) {
@@ -27,23 +41,30 @@ static void setup(struct argument_options *opts) {
             "Currently in release mode\n"); // idk why i did that lol
 #endif
 
+    if (opts->ipc)
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
+        ipc_handle = ipc_init(IPC_PATH);
+#else
+        xab_log(LOG_WARN, "Unable to enable IPC: xab was compiled without an "
+                          "experimental flag")
+#endif
     context = context_create(opts);
 
     TracyCZoneEnd(tracy_ctx);
     ON_TRACY(xab_log(LOG_TRACE, "Ending tracy zone `Setup`\n");)
 }
 
-static void mainloop(void) {
+static void mainloop(struct argument_options *opts) {
     xab_log(LOG_DEBUG, "Running main loop...\n");
+    Assert(opts != NULL && "Invalid opts pointer!");
 
     ON_TRACY(xab_log(LOG_TRACE, "Starting tracy zone `Mainloop`\n");)
     TracyCZoneNC(tracy_ctx, "Mainloop", TRACY_COLOR_WHITE, true);
 
     // set up the signal handler (so the program would gracefully exit on
     // Ctrl+c)
-    struct sigaction sa;
+    struct sigaction sa = {0};
     sa.sa_handler = handle_sigint;
-    sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask); // no additional signals blocked during handler
     sigaction(SIGINT, &sa, NULL);
 
@@ -86,26 +107,37 @@ static void mainloop(void) {
         c1 = c2;
         da_time += delta;
 
-        xcb_get_geometry_cookie_t geometry_cookie = xcb_get_geometry(
-            context.xdata.connection, context.xdata.screen->root);
-        xcb_get_geometry_reply_t *geometry = xcb_get_geometry_reply(
-            context.xdata.connection, geometry_cookie, NULL);
-        const int width = (int)geometry->width;
-        const int height = (int)geometry->height;
-        free(geometry);
-
         TracyCZoneEnd(tracy_ctx2);
 
-        // render only if window size is non-zero (minimized)
-        if (width != 0 && height != 0) {
-            // setup output size covering all client area of window
-            glViewport(0, 0, width,
-                       height); // we have to set the Viewport on every cycle
+        if (context.window.width != 0 && context.window.height != 0) {
+            // poll ipc events
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
+            if (opts->ipc)
+                ipc_poll_events(&ipc_handle, &context);
+#endif
 
+            // poll xcb events
+            TracyCZoneNC(tracy_ctx3, "xcb event poll", TRACY_COLOR_BLUE, true);
+            xcb_generic_event_t *event = NULL;
+            while ((event = xcb_poll_for_event(context.xdata.connection))) {
+                uint8_t rt = event->response_type & ~0x80;
+                window_handle_xcb_event(&context.window, event, rt);
+                free(event);
+            }
+            TracyCZoneEnd(tracy_ctx3);
+
+            TracyCZoneNC(tracy_ctx4, "OpenGL render prepare", TRACY_COLOR_BLUE,
+                         true);
+            // setup output size covering all client area of window
+            glViewport(
+                0, 0, context.window.width,
+                context.window
+                    .height); // we have to set the Viewport on every cycle
             // clear screen
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
                     GL_STENCIL_BUFFER_BIT);
+            TracyCZoneEnd(tracy_ctx4);
 
             // framebuffer start
             render_framebuffer_start_render(&context.framebuffer);
@@ -123,8 +155,11 @@ static void mainloop(void) {
             render_framebuffer_end_render(&context.framebuffer, 0, da_time);
 
             // swap the buffers to show output
+            TracyCZoneNC(tracy_ctx5, "EGL swap buffers", TRACY_COLOR_GREY,
+                         true);
             if (!eglSwapBuffers(context.display, context.window.surface))
                 xab_log(LOG_ERROR, "Failed to swap OpenGL buffers!\n");
+            TracyCZoneEnd(tracy_ctx5);
 
             switch (context.window.window_type) {
             case XPIXMAP_BACKGROUND:
@@ -143,6 +178,7 @@ static void mainloop(void) {
         } else {
             // window is minimized, instead sleep a bit
             usleep(10 * 1000);
+            printf("steve!\n");
         }
 
         TracyCFrameMarkEnd("FrameRender");
@@ -172,13 +208,18 @@ static void cleanup(
 }
 
 int main(int argc, char *argv[]) {
-    ON_TRACY(xab_log(LOG_TRACE, "Starting up the tracy profiler...");)
+    ON_TRACY(xab_log(LOG_TRACE, "Starting up the tracy profiler...\n");)
 
     struct argument_options opts = parse_args(argc, argv);
 
     setup(&opts);
-    mainloop();
+    mainloop(&opts);
     cleanup(&opts);
+
+#ifdef ENABLE_EXPERIMENTAL_CHANGES
+    if (opts.ipc)
+        ipc_close(&ipc_handle);
+#endif
 
     return EXIT_SUCCESS;
 }

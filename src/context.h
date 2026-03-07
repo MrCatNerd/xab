@@ -1,15 +1,13 @@
 #pragma once
 
-#include "pch.h"
-
-#include "framebuffer.h"
-#include "camera.h"
-#include "monitor.h"
-#include "shader_cache.h"
+#include "render/framebuffer.h"
+#include "render/camera.h"
+#include "Xserver/monitor.h"
+#include "render/shader_cache.h"
 #include "wallpaper.h"
 #include "arg_parser.h"
-#include "window.h"
-#include "x_data.h"
+#include "render/window.h"
+#include "Xserver/x_data.h"
 
 typedef struct context {
         x_data_t xdata;

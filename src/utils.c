@@ -1,10 +1,9 @@
-#include "pch.h"
-
 #include "utils.h"
 #include "length_string.h"
 #include "logger.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 length_string_t ReadFile(const char *path) {
     xab_log(LOG_TRACE, "Reading file: %s\n", path);
@@ -50,7 +49,8 @@ length_string_t ReadFile(const char *path) {
     } else {
         xab_log(
             LOG_ERROR,
-            "Reading file: `%s` failed, returning an empty string instead\n");
+            "Reading file: `%s` failed, returning an empty string instead\n",
+            path);
 
         buffer.str = calloc(1, sizeof(char));
         buffer.str[0] = '\0';

@@ -1,0 +1,3 @@
+// clang-format off
+#define HWACCELSXMACRO(X) @hwaccelsxmacro@
+// clang-format on

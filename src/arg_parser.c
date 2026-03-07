@@ -1,7 +1,11 @@
-#include "pch.h"
-
 #include "arg_parser.h"
-#include "video_reader_interface.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "utils.h"
+#include "video/video_reader_interface.h"
 #include "wallpaper.h"
 #include "logger.h"
 #include "version.h"
@@ -9,11 +13,13 @@
 // spaghetti code go bRRR
 
 static void usage(const char *program_name) {
+    Assert(program_name != NULL && "Invalid program_name!");
     printf("Usage: %s <path/to/file.mp4> [options]\n", program_name);
     printf("Use -h for help\n");
 }
 
 static void help(const char *program_name) {
+    Assert(program_name != NULL && "Invalid program_name!");
     printf(
         "xab - X11 Animated Background\n\n"
         "Usage: %s <path/to/file.mp4> [options]\n\n"
@@ -25,7 +31,7 @@ static void help(const char *program_name) {
         "* --vsync=0|1                 | synchronize framerate to monitor "
         "framerate                                  (default: 0)\n"
         "* --max_framerate=0|n         | limit framerate to n fps (overrides "
-        "vsync)                                  (default: 0)\n"
+        "vsync)                                  (default: 1)\n"
         "\nper video/monitor options:\n"
         "* -p=0|1, --pixelated=0|1     | use point instead of bilinear "
         "filtering for rendering the background        (default: 0 - "
@@ -41,9 +47,14 @@ struct argument_options parse_args(int argc, char *argv[]) {
         .n_wallpaper_options = 0,
         .vsync = true,
         .max_framerate = 0,
+        .ipc = false,
     };
 
-    const char *program_name = argv[0];
+    char *program_name = NULL;
+    if (argc == 0 || argv == NULL)
+        program_name = "xab";
+    else
+        program_name = argv[0];
     if (argc <= 1) {
         usage(program_name);
         exit(EXIT_SUCCESS);
@@ -99,6 +110,8 @@ struct argument_options parse_args(int argc, char *argv[]) {
 
         } else if (!strcmp(key, "--vsync") || !strcmp(key, "-v")) {
             opts.vsync = atoi(value) != 0;
+        } else if (!strcmp(key, "--ipc")) {
+            opts.ipc = atoi(value) != 0;
         } else if (!strcmp(key, "--max_framerate") || !strcmp(key, "-m")) {
             opts.max_framerate = atoi(value) != 0;
             // NOTE: any if statement below is a per-video statement, if there
@@ -171,6 +184,8 @@ void clean_opts(struct argument_options *opts) {
             opts->wallpaper_options[i].video_path = NULL;
         }
     }
-    free(opts->wallpaper_options);
-    opts->wallpaper_options = NULL;
+    if (opts->wallpaper_options) {
+        free(opts->wallpaper_options);
+        opts->wallpaper_options = NULL;
+    }
 }

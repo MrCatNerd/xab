@@ -20,8 +20,8 @@ version_patch = split_version[2].to_int()
 # get the git info
 git_prog = find_program('git', required: false)
 if git_prog.found()
-  git_branch = run_command(git_prog,'rev-parse','--abbrev-ref','HEAD', check: false).stdout().strip()
-  git_commit = run_command(git_prog,'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
+  git_branch = run_command(git_prog, 'rev-parse', '--abbrev-ref', 'HEAD', check: false).stdout().strip()
+  git_commit = run_command(git_prog, 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
 else
   git_branch = 'null'
   git_commit = 'null'
@@ -54,47 +54,39 @@ extra_link_args = []
 # --- logging and stuff ---
 
 log_level = get_option('log')
-should_enable_ansii_colors = get_option('ansii_log')
 
-if should_enable_ansii_colors
+if get_option('ansii_log')
   add_project_arguments('-DLOG_ANSII_COLORS', language: 'c')
 endif
 
 # automatic log level by build type
 buildtype = get_option('buildtype')
 if log_level == 'auto'
-  if buildtype == 'plain'
-    log_level = 'trace'
-  elif buildtype == 'debug'
-    log_level = 'debug'
-  elif buildtype == 'release' or buildtype == 'debugoptimized'
-    log_level = 'warn'
-  else
-    # all of the other buildtypes will default to info log level
-    log_level = 'info'
-  endif
+  buildtype_map = {
+    'plain': 'trace',
+    'debug': 'debug',
+    'release': 'warn',
+    'debugoptimized': 'warn',
+  }
+  # all of the other buildtypes will default to 'info' log level
+  log_level = buildtype_map.get(buildtype, 'info')
 endif
 
 # each log level as a number, trace=0 -> fatal=6
-log_num = -1
-if log_level == 'trace'
-  log_num = 0
-elif log_level == 'verbose'
-  log_num = 1
-elif log_level == 'debug'
-  log_num = 2
-elif log_level == 'info'
-  log_num = 3
-elif log_level == 'warn'
-  log_num = 4
-elif log_level == 'error'
-  log_num = 5
-elif log_level == 'fatal'
-  log_num = 6
-elif log_level == 'auto'
+if log_level == 'auto'
   warning('automatic buildtype didn\'t work for some reason, defaulting to info...')
-  log_num = 3
+  log_level = 'info'
 endif
+log_map = {
+  'trace': 0,
+  'verbose': 1,
+  'debug': 2,
+  'info': 3,
+  'warn': 4,
+  'error': 5,
+  'fatal': 6,
+}
+log_num = log_map.get(log_level, -1)
 assert(log_num >= 0)
 add_project_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
 
@@ -103,16 +95,15 @@ add_project_arguments('-DLOG_LEVEL=' + log_num.to_string(), language: 'c')
 video_library = get_option('video_reader')
 video_reader_deps = []
 if video_library == 'mpv'
-  src_files += files('src/mpv_reader.c')
+  src_files += files('src/video/mpv_reader.c')
   video_reader_deps += dependency('mpv')
 elif video_library == 'ffmpeg'
-  subdir('src/ffmpeg_reader')
+  subdir('src/video/ffmpeg_reader')
   video_reader_deps += [
     dependency('threads'),
     dependency('libavcodec'),
     dependency('libavutil'),
     dependency('libavformat'),
-    dependency('libswscale'),
     dependency('threads'),
   ]
 else
@@ -126,13 +117,13 @@ tracy_enable = get_option('tracy_enable')
 # will be an empty list unless tracy is enabled, which in that case this will be a dependency
 tracy_dep = []
 if tracy_enable
-  tracy_dep = dependency('tracy', static: true, version: '>= 0.11.2')
+  tracy_dep = dependency('tracy', static: true, version: '>= 0.13.0')
   tracy_version = tracy_dep.version().strip()
 
-  if tracy_version != '0.11.2'
+  if tracy_version != '0.13.0'
     warning(
       'tracy ' + tracy_dep.version().strip(),
-      'is not supported, tracy 0.11.2 is preferred',
+      'is not supported, tracy 0.13.0 is preferred',
     )
   endif
 
@@ -177,6 +168,7 @@ xcb_deps = [
   dependency('xproto'),
   dependency('xcb-util'),
 ]
+
 epoxy_dep = dependency('epoxy-updated', fallback: 'epoxy-updated')
 egl_dep = dependency('egl')
 hashmap_c_dep = dependency('hashmap.c', fallback: 'hashmap.c')
@@ -194,7 +186,8 @@ if xrandr_dep.found()
   add_project_arguments('-DHAVE_LIBXRANDR', language: 'c')
 endif
 
-deps = xcb_deps + [
+deps = [
+  xcb_deps,
   epoxy_dep,
   egl_dep,
   cglm_dep,
@@ -205,13 +198,6 @@ deps = xcb_deps + [
   tracy_dep,
 ]
 
-# --- pch ---
-
-pch_files = [join_paths('src', 'pch.h')]
-if (get_option('nopch'))
-  pch_files = []
-endif
-
 # --- source files ---
 subdir('res/shaders')
 subdir('src')
@@ -220,7 +206,7 @@ subdir('src')
 executable(
   meson.project_name(),
   src_files,
-  c_pch: pch_files,
+  c_pch: get_option('nopch') ? [] : [join_paths('src', 'pch', 'pch.h')],
   link_args: extra_link_args,
   dependencies: deps,
   include_directories: project_include_dirs,

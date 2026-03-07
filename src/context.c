@@ -1,22 +1,24 @@
-#include "pch.h"
-
 #include <epoxy/common.h>
 #include <epoxy/gl.h>
 #include <epoxy/egl.h>
 #include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_LIBXRANDR
+#include <xcb/randr.h>
+#endif /* HAVE_LIBXRANDR */
 
 #include "context.h"
-#include "x_data.h"
-#include "egl_stuff.h"
+#include "Xserver/x_data.h"
+#include "render/egl_stuff.h"
 #include "logger.h"
-#include "atom.h"
+#include "Xserver/atom.h"
 #include "wallpaper.h"
-#include "framebuffer.h"
-#include "shader_cache.h"
-#include "monitor.h"
+#include "render/framebuffer.h"
+#include "render/shader_cache.h"
+#include "Xserver/monitor.h"
 #include "utils.h"
-#include "camera.h"
-#include "window.h"
+#include "render/camera.h"
+#include "render/window.h"
 
 context_t context_create(struct argument_options *opts) {
     context_t context = {0};
@@ -39,17 +41,8 @@ context_t context_create(struct argument_options *opts) {
         }
     }
 
-    xab_log(LOG_DEBUG, "Connecting to the X server\n");
-    int screen_nbr = -1;
-    xcb_connection_t *connection = xcb_connect(NULL, &screen_nbr);
-    if (connection == NULL || xcb_connection_has_error(connection)) {
-        xab_log(LOG_FATAL, "Unable to connect to the X server.\n");
-        exit(EXIT_FAILURE);
-    }
-    Assert(0 >= screen_nbr && "Invalid screen number.");
-
     xab_log(LOG_DEBUG, "Getting xcb data...\n");
-    context.xdata = x_data_from_xcb_connection(connection, screen_nbr);
+    context.xdata = x_data_init();
 
     xab_log(LOG_VERBOSE,
             "\nInformation of xcb screen %" PRIu32
@@ -192,7 +185,7 @@ context_t context_create(struct argument_options *opts) {
 
     // allocate wallpapers and set wallpaper_count
     context.wallpaper_count = opts->n_wallpaper_options;
-    context.wallpapers = calloc(sizeof(wallpaper_t), context.wallpaper_count);
+    context.wallpapers = calloc(context.wallpaper_count, sizeof(wallpaper_t));
 
     // allocate the shader cache
     context.scache = create_shader_cache();
@@ -231,10 +224,6 @@ context_t context_create(struct argument_options *opts) {
                        &context.wallpapers[i], opts->hw_accel, &context.scache);
     }
 
-    // cleanup the monitors cuz we just copied the monitor data to the
-    // wallpaper thingy
-    cleanup_monitors(context.monitor_count, context.monitors);
-
     xab_log(LOG_DEBUG, "Freeing atom manager\n");
     atom_manager_free();
 
@@ -242,6 +231,9 @@ context_t context_create(struct argument_options *opts) {
 }
 
 void context_free(context_t *context) {
+    // can't clean up monitors right after init cuz IPC might request them
+    cleanup_monitors(context->monitor_count, context->monitors);
+
     // close and clean up the videos
     for (int i = 0; i < context->wallpaper_count; i++)
         wallpaper_close(&context->wallpapers[i], &context->scache);
@@ -264,7 +256,7 @@ void context_free(context_t *context) {
     destroy_window(&context->window, context->display, &context->xdata);
 
     // disconnect from the X server
-    xab_log(LOG_DEBUG, "Disconnecting from the X server...\n");
-    if (context->xdata.connection)
-        xcb_disconnect(context->xdata.connection);
+    x_data_free(&context->xdata);
+
+    xab_log(LOG_DEBUG, "Context was freed sucessfully\n");
 }

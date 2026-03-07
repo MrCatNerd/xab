@@ -1,6 +1,8 @@
 #pragma once
 
-#include "pch.h"
+#include <stdbool.h>
+
+#include "video/video_reader_interface.h"
 
 struct wallpaper_argument_options {
         char *video_path;
@@ -18,6 +20,7 @@ struct argument_options {
         bool vsync;
         enum VR_HW_ACCEL hw_accel;
         int max_framerate; // unfinished
+        bool ipc;
 };
 
 struct argument_options parse_args(int argc, char **argv);

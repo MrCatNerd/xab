@@ -9,7 +9,7 @@
 > If you are using a picom compositor, using the `egl` backend is *highly* recommended
 
 > [!WARNING]
-> Performance currently kinda sucks, im trying my best
+> Performance kinda sucks on GPUs without hwdec support
 
 ---
 
@@ -27,9 +27,8 @@
    - [Build Instructions](#to-build)
    - [Installation](#to-install)
 7. [Meson Options](#meson-options)
-<!-- ill do them later -->
-<!-- 8. [Contributing](#contributing) -->
-<!-- 9. [License](#license) -->
+8. [Contributing](#contributing)
+9. [License](#license)
 
 ---
 
@@ -55,14 +54,15 @@ xab bg.mp4 --monitor=0 pixel_bg.gif --monitor=1 --pixelated=1
 ```
 
 global options:
-| Option | Description | default |
+| Option | Description | Default |
 |--------|-------------|---------|
 | `-v=0\|1`, `--vsync=0\|1` | synchronize framerate to monitor framerate | 1 |
 | `--hw_accel=yes\|no\|auto` | use hardware acceleration for video decoding (hardware needs to support it) | auto |
+| `--ipc=1\|0` | enable IPC for xab | 0 |
 <!-- | `--max_framerate=0\|n` | limit framerate to n fps (overrides vsync) | 0 | -->
 
 per video/monitor options:
-| Option | Description | default |
+| Option | Description | Default |
 |--------|-------------|---------|
 | `-p=0\|1`, `--pixelated=0\|1` | use point instead of bilinear filtering for rendering the background | 0 (bilinear) |
 | `-M=n`, `--monitor=n` | which monitor to use ([optional dependencies](#optional-dependencies) required) | -1 (fullscreen) |
@@ -118,16 +118,13 @@ If you use a video reader other than the default (mpv), you need to change the '
 
 currently there are two options:
 
-* \[default] libmpv (mpv) - this is the recommended video reader, it uses libmpv to read the video
+* \[default] mpv - this is the recommended video reader, it uses libmpv to read the video
 
 * ffmpeg -
-i made this video reader for educational purposes,
-this is an ffmpeg-based video reader, it is way less performant compared to the the other options,
-this is my fault because i suck at ffmpeg,
-also many of the features are not implemented (yet?) like frame timing,
-frame dropping
+my home made video reader - do not expect ANYTHING to work, memory leaks
+may occur and xab may crash, using --hw_accel=no is currently reccomended
 
-i am also planning to add libVLC support
+no vlc support is planned until vlc 4.x is released
 
 ## Optional dependencies
 
@@ -216,8 +213,17 @@ xab uses tracy for profiling:
 meson setup tbuild --buildtype=debugoptimized \
     -Dlog=trace -Dopengl_debug_callback=disabled -Dtracy_enable=true
 meson compile -C tbuild
-
 ```
+
+to build the profiler, cd to `./subprojects/tracy-x.xx.x/` then run
+```sh
+# tracy only supports cmake to actually build the profiler so deal with it
+cmake -B profiler/build -S profiler -DCMAKE_BUILD_TYPE=Release -DLEGACY=true
+cd profiler/build
+make -j$(nproc)
+```
+profiler binary should be found at `profiler/build/tracy-profiler`<br>
+for more information go to [wolfpld/tracy](https://github.com/wolfpld/tracy) and read the docs
 
 ### Testing
 currently, xab has only tests for some components of the `ffmpeg` video reader,
