@@ -46,7 +46,7 @@ static void setup(struct argument_options *opts) {
         ipc_handle = ipc_init(IPC_PATH);
 #else
         xab_log(LOG_WARN, "Unable to enable IPC: xab was compiled without an "
-                          "experimental flag")
+                          "experimental flag");
 #endif
     context = context_create(opts);
 
