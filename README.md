@@ -5,12 +5,6 @@
 > [!WARNING]
 > THIS PROJECT IS EXPERIMENTAL
 
-> [!WARNING]
-> If you are using a picom compositor, using the `egl` backend is *highly* recommended
-
-> [!WARNING]
-> Performance kinda sucks on GPUs without hwdec support
-
 ---
 
 ## Table of Contents
