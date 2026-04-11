@@ -137,7 +137,7 @@ context_t context_create(struct argument_options *opts) {
 
 #ifdef ENABLE_OPENGL_DEBUG_CALLBACK
     // enable debug callback
-    glDebugMessageCallback(&DebugCallback, NULL);
+    glDebugMessageCallback(&debugCallback, NULL);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 

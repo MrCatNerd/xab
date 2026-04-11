@@ -18,7 +18,7 @@ _Pragma("GCC diagnostic push")
     _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
 
         static void APIENTRY
-    DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+    debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
                   GLsizei length, const GLchar *message, const void *user) {
     xab_log(LOG_ERROR, "%s\n", message);
     if (severity == GL_DEBUG_SEVERITY_HIGH ||
