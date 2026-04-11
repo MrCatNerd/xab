@@ -46,6 +46,7 @@ will be implemented (probably)
 - video frame dropping (can be turned off as an option/flag, on by default)
 - enter draining mode and call avcodec_flush_buffers when looping a video (https://ffmpeg.org/doxygen/trunk/group__lavc__encdec.html)
 - fix my bad ffmpeg reader implementation with a new shiny one (if this is the only one left then delete)
+- make the queues thread safe cuz they aren't cuz im dumb (preferably lock-free)
 
 
 --- IDEA LIST ---
