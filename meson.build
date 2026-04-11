@@ -47,7 +47,7 @@ if c_compiler.get_id() not in ['gcc']
   )
 endif
 
-project_include_dirs = [include_directories('src'), include_directories('res')]
+inc_dirs = [include_directories('src'), include_directories('res')]
 src_files = []
 extra_link_args = []
 
@@ -208,7 +208,7 @@ executable(
   c_pch: get_option('nopch') ? [] : [join_paths('src', 'pch', 'pch.h')],
   link_args: extra_link_args,
   dependencies: deps,
-  include_directories: project_include_dirs,
+  include_directories: inc_dirs,
   install: true,
 )
 
