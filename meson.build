@@ -100,10 +100,9 @@ if video_library == 'mpv'
 elif video_library == 'ffmpeg'
   subdir('src/video/ffmpeg_reader')
   video_reader_deps += [
-    dependency('threads'),
     dependency('libavcodec'),
-    dependency('libavutil'),
     dependency('libavformat'),
+    dependency('libavutil'),
     dependency('threads'),
   ]
 else
