@@ -124,7 +124,7 @@ it being technically deterministic for while loops cuz its more convenient
     else:
         log_error()
         client_cleanup()
-        return
+    return
 
 5. <strong>ValidateCompatibility</strong>:
     protocol matching: server sends protocol, client responds
@@ -137,12 +137,11 @@ it being technically deterministic for while loops cuz its more convenient
 ---
 
 The entire header specification can be found at `src/ipc_spec.h`, there is also
-a rust one [here](https://github.com/MrCatNerd/xab-gui/blob/main/src/ipc_spec.rs)
+an equivalent rust one [here](https://github.com/MrCatNerd/xab-gui/blob/main/src/ipc_spec.rs)
 
 implementation files:
 * `src/ipc.c` - main implementation file
 * `src/ipc.h` - main header file for the implementation
-* - specification file, describes constants, enums etc
 
 a couple more things about the xab IPC protocol:
 * uses unix domain sockets for IPC
