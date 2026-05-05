@@ -26,6 +26,7 @@
 
 ---
 
+<<<<<<< HEAD
 > [!WARNING]
 > IPC is WIP!
 
@@ -137,9 +138,7 @@ currently there are two options:
 
 * \[default] mpv - this is the recommended video reader, it uses libmpv to read the video
 
-* ffmpeg -
-my home made video reader - do not expect ANYTHING to work, memory leaks
-may occur and xab may crash, using --hw_accel=no is currently reccomended
+* ffmpeg - my home made video reader - do not expect ANYTHING to work, memory leaks may occur and xab may crash, using --hw_accel=no is currently reccomended
 
 no vlc support is planned until vlc 4.x is released
 
