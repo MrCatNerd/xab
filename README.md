@@ -26,7 +26,6 @@
 
 ---
 
-<<<<<<< HEAD
 > [!WARNING]
 > IPC is WIP!
 
