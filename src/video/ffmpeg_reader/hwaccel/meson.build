@@ -15,6 +15,12 @@ hwaccels = {
     ],
     'files': ['vdpau.c', 'vdpau_vtable.c'],
   },
+  'vaapi':{
+    'deps': [
+      dependency('libva', required: false),
+    ],
+    'files': ['vaapi.c']
+  },
 }
 
 hwaccelsxmacro = '' # macro abuse go brrr

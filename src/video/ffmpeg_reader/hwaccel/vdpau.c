@@ -7,6 +7,7 @@
 #include <libavutil/buffer.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <vdpau/vdpau.h>
 #include <vdpau/vdpau_x11.h>
 #include <libavutil/hwcontext.h>
@@ -149,7 +150,7 @@ static int x_error_handler(Display *dpy, XErrorEvent *pErr) {
     return 0;
 }
 
-int initSharedHandle(void) {
+static int initSharedHandle(void) {
     static _Atomic bool initialized = false;
     if (initialized)
         return 0;

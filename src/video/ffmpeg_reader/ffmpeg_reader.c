@@ -101,72 +101,9 @@ static void decoder_callback_ctx(AVFrame *frame, void *callback_ctx) {
     case AVCOL_SPC_RESERVED:
     case AVCOL_SPC_UNSPECIFIED:
     case AVCOL_SPC_RGB: {
-        char *name = NULL;
-        // no budget for reflections lol
-        switch (frame->colorspace) {
-        case AVCOL_SPC_RGB:
-            name = "AVCOL_SPC_RGB";
-            break;
-        case AVCOL_SPC_BT709:
-            name = "AVCOL_SPC_BT709";
-            break;
-        default:
-        case AVCOL_SPC_UNSPECIFIED:
-            name = "AVCOL_SPC_UNSPECIFIED";
-            break;
-        case AVCOL_SPC_RESERVED:
-            name = "AVCOL_SPC_RESERVED";
-            break;
-        case AVCOL_SPC_FCC:
-            name = "AVCOL_SPC_FCC";
-            break;
-        case AVCOL_SPC_BT470BG:
-            name = "AVCOL_SPC_BT470BG";
-            break;
-        case AVCOL_SPC_SMPTE170M:
-            name = "AVCOL_SPC_SMPTE170M";
-            break;
-        case AVCOL_SPC_SMPTE240M:
-            name = "AVCOL_SPC_SMPTE240M";
-            break;
-        // case AVCOL_SPC_YCOCG: // =AVCOL_SPC_YCGCO
-        case AVCOL_SPC_YCGCO:
-            name = "AVCOL_SPC_YCGCO";
-            break;
-        case AVCOL_SPC_BT2020_NCL:
-            name = "AVCOL_SPC_BT2020_NCL";
-            break;
-        case AVCOL_SPC_BT2020_CL:
-            name = "AVCOL_SPC_BT2020_CL";
-            break;
-        case AVCOL_SPC_SMPTE2085:
-            name = "AVCOL_SPC_SMPTE2085";
-            break;
-        case AVCOL_SPC_CHROMA_DERIVED_NCL:
-            name = "AVCOL_SPC_CHROMA_DERIVED_NCL";
-            break;
-        case AVCOL_SPC_CHROMA_DERIVED_CL:
-            name = "AVCOL_SPC_CHROMA_DERIVED_CL";
-            break;
-        case AVCOL_SPC_ICTCP:
-            name = "AVCOL_SPC_ICTCP";
-            break;
-        case AVCOL_SPC_IPT_C2:
-            name = "AVCOL_SPC_IPT_C2";
-            break;
-        case AVCOL_SPC_YCGCO_RE:
-            name = "AVCOL_SPC_YCGCO_RE";
-            break;
-        case AVCOL_SPC_YCGCO_RO:
-            name = "AVCOL_SPC_YCGCO_RO";
-            break;
-        case AVCOL_SPC_NB:
-            name = "AVCOL_SPC_NB";
-            break;
-        }
-        assert(name != NULL && "Invalid pointer");
         xab_log(LOG_WARN,
-                "Unsupported AV colorspace: %s, defaulting to BT709!\n", name);
+                "Unsupported AV colorspace: %s, defaulting to BT709!\n",
+                frame->colorspace);
     }
         /* fallthrough */
     case AVCOL_SPC_BT709:

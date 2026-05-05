@@ -33,12 +33,14 @@ bool hw_accel_init(DecoderHW_ctx_t *dst_hwa_ctx, const AVCodec *av_codec) {
     // clang-format off
     enum AVHWDeviceType prefered[] = { // a switch statement would be more ideal but the sunk cost fallacy has kicked in
         // prefered device type by order (higher=better)
+#ifdef HWA_VAAPI
+        AV_HWDEVICE_TYPE_VAAPI,
+#endif
 #ifdef HWA_VDPAU
         AV_HWDEVICE_TYPE_VDPAU,
 #endif
         // i havn't implemented these so just pray to the ffmpeg gods they work
         AV_HWDEVICE_TYPE_CUDA,
-        AV_HWDEVICE_TYPE_VAAPI,
         AV_HWDEVICE_TYPE_QSV,
         AV_HWDEVICE_TYPE_VULKAN,
         AV_HWDEVICE_TYPE_OPENCL,
@@ -219,12 +221,13 @@ void hw_accel_close(DecoderHW_ctx_t *hwa_ctx) {
         if (!exit_##lower_name(hwa_ctx->hwa_api_handle)) {                     \
             xab_log(LOG_ERROR, "Failed exiting " #upper_name " hwaccel!\n");   \
         }                                                                      \
-        break;
-            HWACCELSXMACRO(HWA_EXIT);
+        break;                                                                 \
+        HWACCELSXMACRO(HWA_EXIT);
 #undef HWA_EXIT
         default:
             xab_log(LOG_WARN,
-                    "Device type has no explicit HW exit function!\n");
+                    "Device type (%d) has no explicit HW exit function!\n",
+                    hwa_ctx->dev_type);
             break;
         }
     if (hwa_ctx->hw_device_ctx)
