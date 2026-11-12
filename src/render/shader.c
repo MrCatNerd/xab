@@ -122,7 +122,7 @@ Shader_t create_shader(const char *vertex_path, const char *fragment_path) {
     glDeleteShader(vshader);
     glDeleteShader(fshader);
 
-    // if the shader files were memeory allocated than free them (this only
+    // if the shader files were memeory allocated then free them (this only
     // happens when actually reading a file and not getting it from BCE)
     if (vshader_src.should_free)
         free((void *)vshader_src.lenstr.str);
